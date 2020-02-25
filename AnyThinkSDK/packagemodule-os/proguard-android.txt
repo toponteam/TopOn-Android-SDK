@@ -1,0 +1,7 @@
+-keep public class com.anythink.network.**
+-keepclassmembers class com.anythink.network.** {
+   public *;
+}
+
+-dontwarn com.anythink.hb.**
+-keep class com.anythink.hb.**{ *;}

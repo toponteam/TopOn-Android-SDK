@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff">
+
+
+    <LinearLayout
+        android:id="@+id/anythink_policy_loading_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical">
+
+    </LinearLayout>
+
+
+    <RelativeLayout
+        android:id="@+id/anythink_policy_content_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="39dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/anythink_tips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="30dp"
+            android:layout_marginLeft="30dp"
+            android:layout_marginRight="30dp"
+            android:layout_marginTop="15dp"
+            android:text="I understand that I will still see ads, but they may not be as relevant to my interests." />
+
+        <TextView
+            android:id="@+id/anythink_policy_reject_view"
+            android:layout_width="wrap_content"
+            android:layout_height="20dp"
+            android:layout_above="@id/anythink_tips"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="13dp"
+            android:text="No,Thanks"
+            android:textColor="#777777"
+            android:textSize="15dp" />
+
+        <TextView
+            android:id="@+id/anythink_policy_agree_view"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_above="@id/anythink_policy_reject_view"
+            android:layout_marginLeft="15dp"
+            android:layout_marginRight="15dp"
+            android:layout_marginTop="30dp"
+            android:background="#ff3eb4b4"
+            android:gravity="center"
+            android:text="Yes, I Agree"
+            android:textColor="#ffffff"
+            android:textSize="15dp" />
+
+        <FrameLayout
+            android:id="@+id/anythink_policy_webview_area"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="15dp"
+            android:layout_marginRight="15dp"
+            android:layout_above="@id/anythink_policy_agree_view"
+            android:padding="1dp"></FrameLayout>
+
+
+    </RelativeLayout>
+
+</RelativeLayout>

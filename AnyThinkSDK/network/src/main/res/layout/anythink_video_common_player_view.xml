@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/anythink_video_playercommon_rl_root"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="#ff000000" >
+
+    <LinearLayout
+        android:id="@+id/anythink_video_playercommon_ll_sur_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:visibility="visible" >
+    </LinearLayout>
+
+
+
+    <RelativeLayout
+        android:id="@+id/anythink_video_playercommon_ll_loading"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:visibility="visible"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        >
+
+
+
+        <TextView
+            android:id="@+id/anythink_video_adcountDwon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentLeft="true"
+            android:layout_margin="10dp"
+            android:gravity="center"
+            android:text=""
+            android:textColor="#FFFFFF"
+            android:textSize="@dimen/anythink_video_desc_text_size"
+            android:background="@drawable/anythink_video_round_border"
+            android:visibility="gone"
+            />
+
+
+        <ImageView
+            android:id="@+id/anythink_video_adclose"
+            android:layout_width="@dimen/anythink_video_close_size"
+            android:layout_height="@dimen/anythink_video_close_size"
+            android:layout_alignParentRight="true"
+            android:padding="10dp"
+            android:src="@mipmap/anythink_video_icon_close"
+            android:visibility="gone"
+            />
+
+        <ProgressBar
+            android:id="@+id/anythink_video_progressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            />
+
+        <ImageView
+            android:id="@+id/anythink_video_replay"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            android:src="@mipmap/anythink_video_card_replay"
+            />
+
+
+        <ImageView
+            android:id="@+id/anythink_video_adsoundclose"
+            android:layout_width="@dimen/anythink_video_adchoice_size"
+            android:layout_height="@dimen/anythink_video_adchoice_size"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:padding="10dp"
+            android:src="@mipmap/anythink_video_soundclose_open"
+            android:visibility="gone"
+            />
+    </RelativeLayout>
+
+</RelativeLayout>

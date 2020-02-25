@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.anythink.nativead.views.RoundImageView
+        android:id="@+id/anythink_plugin_splash_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop" />
+
+    <RelativeLayout
+        android:id="@+id/anythink_plugin_splash_right_area"
+        android:layout_width="184dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true">
+
+
+        <TextView
+            android:id="@+id/anythink_plugin_splash_ad_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="11dp"
+            android:includeFontPadding="false"
+            android:ellipsize="marquee"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:shadowColor="#aa000000"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:maxLines="2"
+            android:shadowRadius="10"
+            android:textColor="#ffffff"
+            android:gravity="center"
+            android:textSize="18dp"
+            android:textStyle="bold" />
+
+        <com.anythink.nativead.views.AppRatingView
+            android:id="@+id/anythink_plugin_rating_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/anythink_plugin_splash_ad_title"
+            android:layout_centerHorizontal="true"></com.anythink.nativead.views.AppRatingView>
+
+        <TextView
+            android:id="@+id/anythink_plugin_splash_ad_install_btn"
+            android:layout_width="130dp"
+            android:layout_height="71dp"
+            android:layout_below="@id/anythink_plugin_rating_view"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/anythink_plugin_splash_btn"
+            android:gravity="center"
+            android:textColor="#ffffff"
+            android:padding="0dp"
+            android:textSize="17dp" />
+    </RelativeLayout>
+
+
+    <com.anythink.nativead.views.RoundFrameLayout
+        android:id="@+id/anythink_plugin_splash_ad_content_image_area"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="22dp"
+        android:layout_marginLeft="22dp"
+        android:layout_marginTop="22dp"
+        android:layout_toLeftOf="@id/anythink_plugin_splash_right_area"></com.anythink.nativead.views.RoundFrameLayout>
+
+    <FrameLayout
+        android:id="@+id/anythink_plugin_splash_ad_express_area"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/anythink_plugin_splash_self_ad_logo"
+        android:layout_width="30dp"
+        android:layout_height="16dp"
+        android:background="@drawable/anythink_plugin_splash_ad_bg"
+        android:gravity="center"
+        android:text="AD"
+        android:textColor="#e9e9e9"
+        android:textSize="12dp" />
+
+    <com.anythink.nativead.views.RoundImageView
+        android:id="@+id/anythink_plugin_splash_ad_logo"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_alignRight="@id/anythink_plugin_splash_ad_content_image_area"
+        android:layout_alignTop="@id/anythink_plugin_splash_ad_content_image_area"
+        android:layout_margin="7dp"
+        android:src="@drawable/anythink_plugin_splash_ad_logo" />
+
+</RelativeLayout>

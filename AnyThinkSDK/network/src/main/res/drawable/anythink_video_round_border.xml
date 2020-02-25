@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shape
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval"
+    android:useLevel="false">
+
+    <!-- view背景色 -->
+    <solid android:color="@color/anythink_videoad_count_color" />
+
+    <!-- 边框颜色 宽度 -->
+    <size
+        android:width="25dp"
+        android:height="25dp"
+        />
+
+</shape>

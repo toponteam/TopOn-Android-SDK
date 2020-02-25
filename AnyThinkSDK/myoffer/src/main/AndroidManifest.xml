@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.anythink.myoffer">
+
+    <application>
+        <activity android:name="com.anythink.myoffer.ui.MyOfferAdActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"/>
+    </application>
+</manifest>

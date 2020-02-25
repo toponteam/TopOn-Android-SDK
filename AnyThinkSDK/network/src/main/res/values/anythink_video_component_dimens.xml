@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="anythink_video_adchoice_size">35dp</dimen>
+    <dimen name="anythink_video_close_size">44dp</dimen>
+    <dimen name="anythink_video_close_margin_1">5dp</dimen>
+    <dimen name="anythink_video_close_margin_2">10dp</dimen>
+    <dimen name="anythink_video_icon_size_1">50dp</dimen>
+    <dimen name="anythink_video_icon_margin_top_1">35dp</dimen>
+    <dimen name="anythink_video_title_size">18dp</dimen>
+    <dimen name="anythink_video_icon_margin_bottom_1">20dp</dimen>
+    <dimen name="anythink_video_button_height">40dp</dimen>
+    <dimen name="anythink_video_icon_margin_left_right_2">15dp</dimen>
+    <dimen name="anythink_video_desc_margin_top_bottom_1">35dp</dimen>
+    <dimen name="anythink_video_desc_text_size">12dp</dimen>
+    <dimen name="anythink_video_button_text_size">16dp</dimen>
+</resources>

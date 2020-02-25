@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="anythink_myoffer_player_view_id" type="id"/>
+    <item name="anythink_myoffer_btn_mute_id" type="id"/>
+    <item name="anythink_myoffer_count_down_view_id" type="id"/>
+    <item name="anythink_myoffer_btn_close_id" type="id"/>
+    <item name="anythink_myoffer_banner_view_id" type="id"/>
+    <item name="anythink_myoffer_main_image_id" type="id"/>
+    <item name="anythink_myoffer_end_card_id" type="id"/>
+    <item name="anythink_myoffer_bg_blur_id" type="id"/>
+    <item name="anythink_myoffer_loading_id" type="id"/>
+
+</resources>

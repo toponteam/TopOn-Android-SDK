@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.anythink.nativead.views.RoundImageView
+        android:id="@+id/anythink_plugin_auto_banner_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="5dp" />
+
+
+    <TextView
+        android:id="@+id/anythink_plugin_auto_banner_cta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_margin="5dp"
+        android:background="@drawable/anythink_plugin_banner_cta_bg"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:paddingLeft="13dp"
+        android:paddingTop="4dp"
+        android:paddingRight="13dp"
+        android:paddingBottom="4dp"
+        android:textColor="#ffffff"
+        android:textSize="0dp" />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_toLeftOf="@id/anythink_plugin_auto_banner_cta"
+        android:layout_toRightOf="@id/anythink_plugin_auto_banner_icon"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/anythink_plugin_auto_banner_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="3dp"
+            android:ellipsize="marquee"
+            android:includeFontPadding="false"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:textColor="#000000"
+            android:textSize="0dp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/anythink_plugin_auto_banner_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="marquee"
+            android:includeFontPadding="false"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:textColor="#666666"
+            android:textSize="0dp" />
+    </LinearLayout>
+
+    <com.anythink.nativead.views.RoundImageView
+        android:id="@+id/anythink_plugin_auto_banner_adchoice_icon"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="2dp" />
+
+    <TextView
+        android:id="@+id/anythink_plugin_auto_banner_adfrom_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="2dp"
+        android:background="@drawable/anythink_plugin_banner_ad_bg"
+        android:paddingLeft="4dp"
+        android:paddingTop="2dp"
+        android:paddingRight="4dp"
+        android:paddingBottom="2dp"
+        android:textColor="#ffffff"
+        android:textSize="9dp" />
+</RelativeLayout>
