@@ -1,6 +1,6 @@
 # TopOn Android SDK
 
-Thanks for taking a look at TopOn! We take pride in having an easy-to-use, flexible monetization solution that works across multiple platforms.
+TopOn is an ad mediation platform that helps global app developers manage ad networks conveniently and maximize revenue lightly. Relying on big data + cloud computing, TopOn collects global mobile marketing resources, which can optimize the choice of advertising delivery, improves the filling rate and eCPM, and maximizes user retention and advertising revenue.
 
 Sign up for an account at [https://www.toponad.com/](https://www.toponad.com/).
 
