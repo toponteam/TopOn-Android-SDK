@@ -10,6 +10,7 @@ import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 import com.kwad.sdk.KsAdSDK;
 import com.kwad.sdk.export.i.IAdRequestManager;
+import com.kwad.sdk.export.i.KsDrawAd;
 import com.kwad.sdk.export.i.KsFeedAd;
 import com.kwad.sdk.export.i.KsNativeAd;
 import com.kwad.sdk.protocol.model.AdScene;
@@ -51,6 +52,11 @@ public class KSATAdapter extends CustomNativeAdapter {
             isVideoSoundEnable = TextUtils.equals("1", (String) serverExtras.get("video_sound"));
         }
 
+        String unit_type = "0";
+        if (serverExtras != null && serverExtras.containsKey("unit_type")) {// 0：native or feed  1: draw
+            unit_type =  (String) serverExtras.get("unit_type");
+        }
+
         int requestNum = 1;
         try {
             if (serverExtras != null) {
@@ -64,6 +70,37 @@ public class KSATAdapter extends CustomNativeAdapter {
 
         AdScene adScene = new AdScene(posId);
         adScene.adNum = requestNum;
+
+        if(TextUtils.equals("1", unit_type)) {//draw
+            KsAdSDK.getAdManager().loadDrawAd(adScene, new IAdRequestManager.DrawAdListener() {
+                @Override
+                public void onError(int i, String s) {
+                    if(mLoadResultListener != null) {
+                        mLoadResultListener.onNativeAdFailed(KSATAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", s));
+                    }
+                }
+
+                @Override
+                public void onDrawAdLoad(@Nullable List<KsDrawAd> list) {
+                    if(list == null || list.size() == 0) {
+                        if (mLoadResultListener != null) {
+                            mLoadResultListener.onNativeAdFailed(KSATAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "kuaishou no fill"));
+                        }
+                    } else {
+                        final List<CustomNativeAd> customNativeAds = new ArrayList<>();
+                        for (final KsDrawAd ksDrawAd : list) {
+                            KSATDrawAd ksatDrawAd = new KSATDrawAd(context, ksDrawAd);
+                            customNativeAds.add(ksatDrawAd);
+                        }
+
+                        if (mLoadResultListener != null) {
+                            mLoadResultListener.onNativeAdLoaded(KSATAdapter.this, customNativeAds);
+                        }
+                    }
+                }
+            });
+            return;
+        }
 
         final boolean finalIsVideoSoundEnable = isVideoSoundEnable;
         if(TextUtils.equals("1", layout_type)) {//native express

@@ -10,4 +10,6 @@ public interface CustomSplashListener {
     public void onSplashAdShow(CustomSplashAdapter customSplashAd);//Ad show
 
     public void onSplashAdClicked(CustomSplashAdapter customSplashAd); //Ad Click
+
+    public void onSplashAdDismiss(CustomSplashAdapter customSplashAd); //Ad Dismiss
 }

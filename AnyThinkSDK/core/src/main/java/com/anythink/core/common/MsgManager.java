@@ -113,22 +113,11 @@ public class MsgManager {
                             return;
                         }
 
-                        //适配使用Androidx的场景
-                        try {
-                            Intent intent = new Intent(action);
-                            intent.putExtra(action, appStrategy.getTC());
-                            android.support.v4.content.LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-                        } catch (Throwable e) {
+                        Intent intent = new Intent(action);
+                        intent.putExtra(action, appStrategy.getTC());
 
-                        }
-
-                        try {
-                            Intent intent = new Intent(action);
-                            intent.putExtra(action, appStrategy.getTC());
-                            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-                        } catch (Throwable e) {
-
-                        }
+                        intent.setPackage(mContext.getPackageName());
+                        mContext.sendBroadcast(intent);
                     }
 
                 } catch (Throwable e) {
@@ -149,16 +138,8 @@ public class MsgManager {
             intent.putExtra("adsourceId", adsourceId);
             intent.putExtra("networkType", String.valueOf(networkType));
 
-            try {
-                android.support.v4.content.LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-            } catch (Throwable e) {
-
-            }
-            try {
-                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-            } catch (Throwable e) {
-
-            }
+            intent.setPackage(mContext.getPackageName());
+            mContext.sendBroadcast(intent);
         } catch (Throwable e) {
 
         }

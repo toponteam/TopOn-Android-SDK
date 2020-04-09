@@ -160,6 +160,14 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
             public void closeFullScreen() {
 
             }
+
+            @Override
+            public void onCloseBanner() {
+                if (mCustomBannerListener != null) {
+                    mCustomBannerListener.onBannerAdClose(MintegralATBannerAdapter.this);
+                }
+            }
+
         });
 
         if (bannerView != null) {

@@ -67,9 +67,16 @@ public class MediationGroupManager extends CommonMediationManager {
             }
             mContainer = null;
             mSkipView = null;
+
+            if (mAdapter != null) {
+                mAdapter.clean();
+            }
+
             if (mCallbackListener != null) {
                 mCallbackListener.onAdDismiss(ATAdInfo.fromAdapter(mAdapter));
             }
+
+
             mCallbackListener = null;
         }
     }
@@ -100,19 +107,6 @@ public class MediationGroupManager extends CommonMediationManager {
 
             onAdLoaded(customSplashAd, null);
 
-            SDKContext.getInstance().runOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (mSkipView != null) {
-                        mSkipView.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                callbackDismiss();
-                            }
-                        });
-                    }
-                }
-            });
         }
 
         @Override
@@ -172,6 +166,11 @@ public class MediationGroupManager extends CommonMediationManager {
             if (mCallbackListener != null) {
                 mCallbackListener.onAdClick(ATAdInfo.fromAdapter(mAdapter));
             }
+        }
+
+        @Override
+        public void onSplashAdDismiss(CustomSplashAdapter customSplashAd) {
+            callbackDismiss();
         }
 
     };

@@ -23,7 +23,7 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
     SplashAd mSplashAd;
 
     @Override
-    public void loadSplashAd(Activity activity, ViewGroup constainer, View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomSplashListener customSplashListener) {
+    public void loadSplashAd(final Activity activity, ViewGroup constainer, final View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomSplashListener customSplashListener) {
 
         mListener = customSplashListener;
 
@@ -63,6 +63,23 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
                     mListener.onSplashAdLoaded(BaiduATSplashAdapter.this);
                     mListener.onSplashAdShow(BaiduATSplashAdapter.this);
                 }
+
+                if (skipView != null && activity != null) {
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            skipView.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    if (mListener != null) {
+                                        mListener.onSplashAdDismiss(BaiduATSplashAdapter.this);
+                                    }
+                                }
+                            });
+
+                        }
+                    });
+                }
             }
 
             @Override
@@ -72,6 +89,7 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
                 }
             }
         };
+
         mSplashAd = new SplashAd(activity, constainer, listener, mAdPlaceId, true);
     }
 

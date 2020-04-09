@@ -119,7 +119,6 @@ public class TTATInitManager extends ATInitMediation {
     @Override
     public List getActivityStatus() {
         ArrayList<String> list = new ArrayList<>();
-        list.add("com.ss.android.socialbase.appdownloader.view.DownloadSizeLimitActivity");
         list.add("com.ss.android.socialbase.appdownloader.view.DownloadTaskDeleteActivity");
         list.add("com.ss.android.downloadlib.activity.TTDelegateActivity");
         list.add("com.bytedance.sdk.openadsdk.activity.TTLandingPageActivity");

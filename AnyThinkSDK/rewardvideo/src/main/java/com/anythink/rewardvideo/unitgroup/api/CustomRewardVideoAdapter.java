@@ -12,6 +12,7 @@ public abstract class CustomRewardVideoAdapter extends AnyThinkBaseAdapter {
     protected CustomRewardVideoListener mLoadResultListener;
     protected CustomRewardedVideoEventListener mImpressionListener;
     protected String mUserId = "";
+    protected String mUserData = "";
 
     public abstract void loadRewardVideoAd(final Activity activity
             , final Map<String, Object> serverExtras
@@ -26,6 +27,10 @@ public abstract class CustomRewardVideoAdapter extends AnyThinkBaseAdapter {
 
     public void setUserId(String userId) {
         mUserId = userId;
+    }
+
+     public void setUserData(String userData) {
+        mUserData = userData;
     }
 
     public void setAdImpressionListener(CustomRewardedVideoEventListener listener) {

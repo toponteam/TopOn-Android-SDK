@@ -32,10 +32,6 @@ public class TTATAdapter extends CustomNativeAdapter {
      */
     String layoutType;
 
-    /**
-     * Is Native Draw Video?  "0"：no， "1"：yes
-     */
-    String personalizedTemplate;
     CustomNativeListener mListener;
 
     String nativeType;
@@ -62,15 +58,11 @@ public class TTATAdapter extends CustomNativeAdapter {
         }
 
         layoutType = "1";
-        personalizedTemplate = "0";
 
         if(serverExtras.containsKey("layout_type")) {
             layoutType = (String) serverExtras.get("layout_type");
         }
 
-        if(serverExtras.containsKey("personalized_template")) {
-            personalizedTemplate = (String) serverExtras.get("personalized_template");
-        }
 
         int requestNum = 1;
         try {
@@ -203,7 +195,7 @@ public class TTATAdapter extends CustomNativeAdapter {
         }
 
         //Native Express Video
-        if(TextUtils.equals("1", nativeType) && TextUtils.equals("1", personalizedTemplate)) {
+        if(TextUtils.equals("1", nativeType)) {
             Log.i(TAG, "load Native Express Video");
             // set size, unity: dp
             adSlotBuilder.setExpressViewAcceptedSize(px2dip(context, width), px2dip(context, height)); //Must be set

@@ -3,6 +3,7 @@ package com.anythink.network.toutiao;
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
@@ -162,6 +163,10 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         if (!TextUtils.isEmpty(mUserId)) {
             adSlotBuilder.setUserID(mUserId);
         }
+
+        if (!TextUtils.isEmpty(mUserData)) {
+            adSlotBuilder.setMediaExtra(mUserData);
+    }
 
         adSlotBuilder.setAdCount(1);
 

@@ -75,20 +75,29 @@ public class ATBannerView extends FrameLayout {
                                 hasCallbackShow = true;
                                 mCustomBannerAd = bannerAdapter;
                                 //Add Banner Ad to ATBannerView
-                                int index = indexOfChild(bannerAdapter.getBannerView());
+                                View networkBannerView = bannerAdapter.getBannerView();
+                                int index = indexOfChild(networkBannerView);
+
                                 if (index < 0) {
                                     removeAllViews();
                                     FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                                     params.gravity = Gravity.CENTER;
-                                    addView(bannerAdapter.getBannerView(), params);
+                                    //TODO Temporary processing
+                                    if (networkBannerView.getParent() != null && networkBannerView.getParent() != ATBannerView.this) {
+                                        ((ViewGroup) networkBannerView.getParent()).removeView(networkBannerView);
+                                    }
+
+                                    addView(networkBannerView, params);
                                 } else {
                                     for (int i = index - 1; i >= 0; i--) {
                                         removeViewAt(i);
                                     }
                                 }
+
+
                                 bannerAdapter.notfiyShow(getContext().getApplicationContext());
                                 if (mListener != null) {
-                                    if (bannerAdapter.isRefresh()) {
+                                    if (isRefresh) {
                                         mListener.onBannerAutoRefreshed(ATAdInfo.fromAdapter(mCustomBannerAd));
                                     } else {
                                         mListener.onBannerLoaded();
@@ -107,7 +116,7 @@ public class ATBannerView extends FrameLayout {
                                 }
                             } else {
                                 hasCallbackShow = false;
-                                if (mListener != null && !bannerAdapter.isRefresh()) {
+                                if (mListener != null && !isRefresh) {
                                     mListener.onBannerLoaded();
                                 }
                             }
@@ -204,8 +213,10 @@ public class ATBannerView extends FrameLayout {
     }
 
 
+    boolean mIsRefresh = false;
     private void loadAd(boolean isRefresh) {
         /**Stop timer**/
+        mIsRefresh = isRefresh;
         if (mAdLoadManager != null) {
             CommonLogUtil.i(TAG, "start to load to stop countdown refresh!");
             stopAutoRefresh(mRefreshRunnable);
@@ -293,7 +304,7 @@ public class ATBannerView extends FrameLayout {
                 View bannerView = bannerAdapter.getBannerView();
                 if (bannerView.getParent() != null && bannerView.getParent() != this) {
                     Log.i(TAG, "Banner View already add in other parent!");
-                    return;
+                    ((ViewGroup) bannerView.getParent()).removeView(bannerView);
                 }
 
                 mCustomBannerAd = bannerAdapter;
@@ -302,7 +313,7 @@ public class ATBannerView extends FrameLayout {
                     removeAllViews();
                     FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                     params.gravity = Gravity.CENTER;
-                    addView(bannerAdapter.getBannerView(), params);
+                    addView(bannerView, params);
                 } else {
                     for (int i = index - 1; i >= 0; i--) {
                         removeViewAt(i);
@@ -310,7 +321,7 @@ public class ATBannerView extends FrameLayout {
                 }
                 bannerAdapter.notfiyShow(getContext().getApplicationContext());
                 if (mListener != null) {
-                    if (bannerAdapter != null && bannerAdapter.isRefresh()) {
+                    if (bannerAdapter != null && mIsRefresh) {
                         mListener.onBannerAutoRefreshed(ATAdInfo.fromAdapter(mCustomBannerAd));
                     } else {
                         mListener.onBannerShow(ATAdInfo.fromAdapter(mCustomBannerAd));

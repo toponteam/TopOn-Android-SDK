@@ -693,6 +693,7 @@ public abstract class CommonMediationManager {
     public void release() {
         CommonLogUtil.i("CommonMediationManager", "finish load, release source!");
         mIsRelease = true;
+        mHasFinishLoad = true;
         try {
             if (mOverTimeRunnableMap != null) {
                 for (Runnable runnable : mOverTimeRunnableMap.values()) {

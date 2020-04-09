@@ -2,6 +2,7 @@ package com.anythink.network.gdt;
 
 import android.app.Activity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -21,6 +22,7 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
     private String mUnitId;
 
     CustomSplashListener mListener;
+
     @Override
     public void loadSplashAd(Activity activity, ViewGroup container, View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomSplashListener customSplashListener) {
         String appid = "";
@@ -63,7 +65,9 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
 
     @Override
     public void onADDismissed() {
-
+        if (mListener != null) {
+            mListener.onSplashAdDismiss(this);
+        }
     }
 
     @Override
@@ -95,6 +99,11 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
 
     @Override
     public void onADExposure() {
+    }
+
+    @Override
+    public void onADLoaded(long l) {
+
     }
 
     @Override

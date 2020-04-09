@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
+import com.anythink.network.sigmob.SigmobATSplashAdapter;
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 import com.anythink.splashad.unitgroup.api.CustomSplashListener;
 import com.bytedance.sdk.openadsdk.AdSlot;
@@ -26,10 +27,16 @@ public class TTATSplashAdapter extends CustomSplashAdapter implements TTSplashAd
 
     CustomSplashListener mListener;
 
+    Activity activity;
+    View skipView;
+
     @Override
     public void loadSplashAd(final Activity activity, final ViewGroup container, View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomSplashListener customSplashListener) {
 
         mListener = customSplashListener;
+
+        this.activity = activity;
+        this.skipView = skipView;
 
         if (serverExtras == null) {
             if (mListener != null) {
@@ -73,7 +80,7 @@ public class TTATSplashAdapter extends CustomSplashAdapter implements TTSplashAd
         int height = activity.getResources().getDisplayMetrics().heightPixels;
         adSlotBuilder.setImageAcceptedSize(width, height); //Must be set
 
-        if(TextUtils.equals("1", personalizedTemplate)) {// Native Express
+        if (TextUtils.equals("1", personalizedTemplate)) {// Native Express
             adSlotBuilder.setExpressViewAcceptedSize(width, height);
         }
 
@@ -132,6 +139,8 @@ public class TTATSplashAdapter extends CustomSplashAdapter implements TTSplashAd
 
     @Override
     public void clean() {
+        activity = null;
+        skipView = null;
     }
 
 
@@ -148,6 +157,28 @@ public class TTATSplashAdapter extends CustomSplashAdapter implements TTSplashAd
         if (mListener != null) {
             mListener.onSplashAdShow(this);
         }
+
+        try {
+            if (skipView != null && activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        skipView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (mListener != null) {
+                                    mListener.onSplashAdDismiss(TTATSplashAdapter.this);
+                                }
+                            }
+                        });
+
+                    }
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override

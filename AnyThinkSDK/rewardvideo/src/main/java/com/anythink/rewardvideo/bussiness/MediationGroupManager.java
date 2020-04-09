@@ -65,6 +65,7 @@ public class MediationGroupManager extends CommonMediationManager {
                 setting = mSettingMap.get(unitGroupInfo.networkType);
             }
             ((CustomRewardVideoAdapter) baseAdapter).setUserId(mUserId);
+            ((CustomRewardVideoAdapter) baseAdapter).setUserData(mCustomData);
             CustomRewardVideoAdapterParser.loadRewardVideoAd((Activity) mActivityRef.get(), (CustomRewardVideoAdapter) baseAdapter, unitGroupInfo, serviceExtras, setting, mCustomRewardVideoListener);
         }
     }

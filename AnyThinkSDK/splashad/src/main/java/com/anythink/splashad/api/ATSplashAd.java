@@ -138,7 +138,7 @@ public class ATSplashAd {
 
     @Deprecated
     public ATSplashAd(Activity activity, ViewGroup container, View skipView, String unitId, ATSplashAdListener listener, Map<String, String> customMap) {
-        this(activity, container, skipView, unitId, listener, 3000L);
+        this(activity, container, skipView, unitId, listener, 5000L);
     }
 
     @Deprecated
@@ -147,7 +147,7 @@ public class ATSplashAd {
     }
 
     public ATSplashAd(Activity activity, ViewGroup container, View skipView, String unitId, ATSplashAdListener listener) {
-        this(activity, container, skipView, unitId, listener, 3000L);
+        this(activity, container, skipView, unitId, listener, 5000L);
     }
 
     public ATSplashAd(final Activity activity, ViewGroup container, View skipView, String unitId, ATSplashAdListener listener, long fetchDelay) {

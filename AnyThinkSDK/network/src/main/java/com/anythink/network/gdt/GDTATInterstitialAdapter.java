@@ -5,6 +5,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
@@ -17,7 +18,6 @@ import com.qq.e.ads.interstitial.InterstitialADListener;
 import com.qq.e.ads.interstitial2.UnifiedInterstitialAD;
 import com.qq.e.ads.interstitial2.UnifiedInterstitialADListener;
 import com.qq.e.ads.interstitial2.UnifiedInterstitialMediaListener;
-import com.qq.e.comm.constants.AdPatternType;
 
 import java.util.Map;
 
@@ -39,6 +39,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
     boolean isReady = false;
 
     int mUnitVersion = 0;
+    String mIsFullScreen;// 0： normal， 1：full screen
 
     @Override
     public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
@@ -135,14 +136,19 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
 
             mInterstitialAD.loadAD();
         } else { //2.0
+
+            mIsFullScreen = "0";
+            if(serverExtras.containsKey("is_fullscreen")) {
+                mIsFullScreen = (String) serverExtras.get("is_fullscreen");
+            }
+
             mUnifiedInterstitialAd = new UnifiedInterstitialAD((Activity) context, mAppId, mUnitId, new UnifiedInterstitialADListener() {
                 @Override
                 public void onADReceive() {
                     isReady = true;
-                    // Interstitial video
-                    if (mUnifiedInterstitialAd.getAdPatternType() == AdPatternType.NATIVE_VIDEO) {
-                        mUnifiedInterstitialAd.setMediaListener(GDTATInterstitialAdapter.this);
-                    }
+                    // Interstitial video or full screen
+                    mUnifiedInterstitialAd.setMediaListener(GDTATInterstitialAdapter.this);
+
                     if (mLoadResultListener != null) {
                         mLoadResultListener.onInterstitialAdLoaded(GDTATInterstitialAdapter.this);
                     }
@@ -196,7 +202,11 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
             // set video option
             setVideoOption(context, serverExtras);
 
-            mUnifiedInterstitialAd.loadAD();
+            if (TextUtils.equals("1", mIsFullScreen)) {//full screen
+                mUnifiedInterstitialAd.loadFullScreenAD();
+            } else {
+                mUnifiedInterstitialAd.loadAD();
+            }
         }
 
     }
@@ -217,9 +227,18 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
 
         }
         if (mUnifiedInterstitialAd != null) {
-            if (context instanceof Activity) {
-                mUnifiedInterstitialAd.show((Activity) context);
+            if(TextUtils.equals("1", mIsFullScreen)) {//full screen
+                if (context instanceof Activity) {
+                    mUnifiedInterstitialAd.showFullScreenAD(((Activity) context));
+                } else {
+                    Log.e(TAG, "Gdt (Full Screen) show fail: context need be Activity");
+                }
             } else {
+                if (context instanceof Activity) {
+                    mUnifiedInterstitialAd.show(((Activity) context));
+                } else {
+                    mUnifiedInterstitialAd.show();
+                }
                 mUnifiedInterstitialAd.show();
             }
         }

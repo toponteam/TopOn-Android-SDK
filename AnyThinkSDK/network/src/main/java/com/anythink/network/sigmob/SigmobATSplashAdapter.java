@@ -18,14 +18,14 @@ import com.sigmob.windad.WindAdError;
 
 import java.util.Map;
 
-public class SigmobATSplashAdapter extends CustomSplashAdapter implements WindSplashADListener {
+public class SigmobATSplashAdapter extends CustomSplashAdapter {
 
     private static final String TAG = SigmobATSplashAdapter.class.getSimpleName();
     private CustomSplashListener mListener;
     private String mPlacementId = "";
 
     @Override
-    public void loadSplashAd(final Activity activity, final ViewGroup constainer, View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomSplashListener customSplashListener) {
+    public void loadSplashAd(final Activity activity, final ViewGroup constainer, final View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomSplashListener customSplashListener) {
         mListener = customSplashListener;
 
         String appId = "";
@@ -55,14 +55,60 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter implements WindSp
             }
         }
 
+
         SigmobATInitManager.getInstance().initSDK(activity, serverExtras, new SigmobATInitManager.InitCallback() {
             @Override
             public void onFinish() {
                 CommonLogUtil.d(TAG, "load()...");
-                WindSplashAdRequest splashAdRequest = new WindSplashAdRequest(mPlacementId,"", null);
+                WindSplashAdRequest splashAdRequest = new WindSplashAdRequest(mPlacementId, "", null);
+                splashAdRequest.setDisableAutoHideAd(true);
 
                 //show ad
-                new WindSplashAD(activity, constainer ,splashAdRequest, SigmobATSplashAdapter.this);
+                new WindSplashAD(activity, constainer, splashAdRequest, new WindSplashADListener() {
+                    @Override
+                    public void onSplashAdSuccessPresentScreen() {
+                        if (mListener != null) {
+                            mListener.onSplashAdLoaded(SigmobATSplashAdapter.this);
+                            mListener.onSplashAdShow(SigmobATSplashAdapter.this);
+                        }
+
+                        if (skipView != null && activity != null) {
+                            activity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    skipView.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            if (mListener != null) {
+                                                mListener.onSplashAdDismiss(SigmobATSplashAdapter.this);
+                                            }
+                                        }
+                                    });
+
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onSplashAdFailToPresent(WindAdError windAdError, String s) {
+                        if (mListener != null) {
+                            mListener.onSplashAdFailed(SigmobATSplashAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + windAdError.getErrorCode(), windAdError.toString()));
+                        }
+                    }
+
+                    @Override
+                    public void onSplashAdClicked() {
+                        if (mListener != null) {
+                            mListener.onSplashAdClicked(SigmobATSplashAdapter.this);
+                        }
+                    }
+
+                    @Override
+                    public void onSplashClosed() {
+
+                    }
+                });
             }
         });
     }
@@ -82,30 +128,4 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter implements WindSp
         return SigmobATInitManager.getInstance().getNetworkName();
     }
 
-    @Override
-    public void onSplashAdSuccessPresentScreen() {
-        if(mListener != null) {
-            mListener.onSplashAdLoaded(this);
-            mListener.onSplashAdShow(this);
-        }
-    }
-
-    @Override
-    public void onSplashAdFailToPresent(WindAdError windAdError, String s) {
-        if(mListener != null) {
-            mListener.onSplashAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + windAdError.getErrorCode(), windAdError.toString()));
-        }
-    }
-
-    @Override
-    public void onSplashAdClicked() {
-        if(mListener != null) {
-            mListener.onSplashAdClicked(this);
-        }
-    }
-
-    @Override
-    public void onSplashClosed() {
-        CommonLogUtil.d(TAG, "onSplashClosed()");
-    }
 }
