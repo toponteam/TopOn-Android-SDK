@@ -55,8 +55,6 @@ dependencies {
     implementation project(':anythink:rewardvideo')
     implementation project('::anythink:splashad')
 
-    implementation project(':anythink:plugin')
-
 
 }
 
