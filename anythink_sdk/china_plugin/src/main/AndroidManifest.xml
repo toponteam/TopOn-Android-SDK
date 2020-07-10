@@ -1,0 +1,33 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.anythink.china">
+
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application>
+        <activity
+            android:name="com.anythink.china.activity.TransparentActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
+
+        <provider
+            android:name="com.anythink.china.common.ApkFileProvider"
+            android:authorities="${applicationId}.fileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/anythink_file_paths" />
+        </provider>
+
+        <receiver android:name="com.anythink.china.common.NotificationBroadcaseReceiver">
+            <intent-filter>
+                <action android:name="action_notification_click" />
+                <action android:name="action_notification_cancel" />
+            </intent-filter>
+        </receiver>
+        <service android:name="com.anythink.china.common.service.ApkDownloadService" />
+    </application>
+</manifest>

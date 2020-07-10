@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths >
+    <external-files-path name="at_external_download" path="anythink_myoffer_download" />
+    <root-path name="root" path="" />
+<!--    <files-path name="at_internal_download" path="download" />-->
+<!--    <cache-path name="at_internal_cache_download" path="" />-->
+<!--    <external-path name="external" path="" />-->
+<!--    <external-cache-path name="name" path="path" />-->
+</paths>
