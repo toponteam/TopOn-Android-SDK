@@ -1,0 +1,39 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            res.srcDirs += 'network_res/applovin'
+        }
+    }
+}
+
+
+
+dependencies {
+
+    compileOnly fileTree(include: ['*.jar'], dir: 'libs')
+    api project(project.path.replace(project.name,'') + ':network_nonchina_sdk')
+    implementation project(project.path.replace(project.name,'') + ':core')
+    implementation project(project.path.replace(project.name,'') + ':native')
+    implementation project(project.path.replace(project.name,'') + ':rewardvideo')
+    implementation project(project.path.replace(project.name,'') + ':Interstitial')
+    implementation project(project.path.replace(project.name,'') + ':banner')
+    implementation project(project.path.replace(project.name,'') + ':splashad')
+}

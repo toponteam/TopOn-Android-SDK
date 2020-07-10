@@ -1,0 +1,16 @@
+include ':anythink'
+project(':anythink').projectDir = new File('../anythink_sdk')
+include ':anythink:core'
+include ':anythink:banner'
+include ':anythink:headbidding'
+include ':anythink:Interstitial'
+include ':anythink:myoffer'
+include ':anythink:native'
+include ':anythink:network_nonchina_adapter'
+include ':anythink:network_nonchina_sdk'
+include ':anythink:rewardvideo'
+include ':anythink:splashad'
+
+include ':anythink:china_plugin'
+
+include ':app'

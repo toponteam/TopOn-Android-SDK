@@ -1,0 +1,12 @@
+############################################
+##           OneWaySDK 混淆配置             ##
+############################################
+
+-keepattributes *Annotation*
+-keep enum mobi.oneway.export.* {*;}
+-keep class mobi.oneway.export.** {*;}
+
+-keep class com.didi.virtualapk.** { *; }
+-dontwarn com.didi.virtualapk.**
+-dontwarn android.**
+-keep class android.** { *; }

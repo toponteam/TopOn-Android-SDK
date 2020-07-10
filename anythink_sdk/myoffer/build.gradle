@@ -1,0 +1,33 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 28
+
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(project.path.replace(project.name,'') + ':core')
+    implementation project(project.path.replace(project.name,'') + ':native')
+    implementation project(project.path.replace(project.name,'') + ':rewardvideo')
+    implementation project(project.path.replace(project.name,'') + ':Interstitial')
+    implementation project(project.path.replace(project.name,'') + ':banner')
+    implementation project(project.path.replace(project.name,'') + ':splashad')
+    compileOnly project(project.path.replace(project.name,'') + ':china_plugin')
+}

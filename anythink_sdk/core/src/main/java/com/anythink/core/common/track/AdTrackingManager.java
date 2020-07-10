@@ -1,0 +1,96 @@
+package com.anythink.core.common.track;
+
+import android.content.Context;
+import android.text.TextUtils;
+
+import com.anythink.core.cap.AdCapV2Manager;
+import com.anythink.core.common.InstantUpLoadManager;
+import com.anythink.core.common.MsgManager;
+import com.anythink.core.common.base.Const;
+import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.AdTrackingInfo;
+import com.anythink.core.common.entity.AdTrackingLogBean;
+import com.anythink.core.common.entity.PlacementImpressionInfo;
+import com.anythink.core.common.entity.TrackerInfo;
+import com.anythink.core.common.net.TrackingV2Loader;
+import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.strategy.AppStrategy;
+import com.anythink.core.strategy.AppStrategyManager;
+
+import java.util.List;
+import java.util.Map;
+
+public class AdTrackingManager extends InstantUpLoadManager<AdTrackingLogBean> {
+
+    private static AdTrackingManager sIntance;
+
+
+    private AdTrackingManager(Context context) {
+        super(context);
+    }
+
+    public synchronized static AdTrackingManager getInstance(Context context) {
+        if (sIntance == null) {
+            sIntance = new AdTrackingManager(context);
+        }
+        return sIntance;
+    }
+
+    public synchronized void addAdTrackingInfo(int businessType, TrackerInfo adTrackingInfo) {
+        this.addAdTrackingInfo(businessType, adTrackingInfo, -1);
+    }
+
+    public synchronized void addAdTrackingInfo(final int businessType, final TrackerInfo adTrackingInfo, final long timeStamp) {
+
+        TaskManager.getInstance().run_proxy(new Runnable() {
+            @Override
+            public void run() {
+                //Get tracking type in AppSetting
+                AppStrategy appStrategy = AppStrategyManager.getInstance(SDKContext.getInstance().getContext())
+                        .getAppStrategyByAppId(SDKContext.getInstance().getAppId());
+
+                AdTrackingLogBean logBean = new AdTrackingLogBean();
+                logBean.businessType = businessType;
+                logBean.adTrackingInfo = adTrackingInfo;
+                logBean.time = timeStamp > 0 ? timeStamp : System.currentTimeMillis();
+
+                MsgManager.getInstance(SDKContext.getInstance().getContext()).handleTK(businessType, logBean, appStrategy);
+
+                //check format
+                Map<String, String> tkNoTFtMap = appStrategy.getTkNoTFtMap();
+                if (tkNoTFtMap != null && tkNoTFtMap.containsKey(String.valueOf(businessType))) {
+                    String formatArrays = tkNoTFtMap.get(String.valueOf(businessType));
+
+                    if (!TextUtils.isEmpty(formatArrays) && formatArrays.contains(adTrackingInfo.getmAdType())) {
+                        //不上报
+                        return;
+                    }
+                }
+
+                if (Const.DEBUG) {
+                    SDKContext.getInstance().printJson("AnyThinkTracking", logBean.toJSONObject().toString());
+                }
+
+                AdTrackingManager.super.addLoggerInfo(logBean);
+            }
+        });
+
+    }
+
+
+    @Override
+    protected void sendLoggerToServer(List<AdTrackingLogBean> sendInfo) {
+        new TrackingV2Loader(mApplicationContext, sendInfo).start(0, null);
+    }
+
+    public void sendClickLoggerToServerDelay(final AdTrackingLogBean sendInfo, int delay) {
+        SDKContext.getInstance().runOnMainThreadDelayed(new Runnable() {
+            @Override
+            public void run() {
+                new TrackingV2Loader(mApplicationContext, sendInfo).start(0, null);
+            }
+        }, delay);
+    }
+
+
+}

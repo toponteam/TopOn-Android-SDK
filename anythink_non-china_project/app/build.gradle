@@ -1,0 +1,62 @@
+apply plugin: 'com.android.application'
+
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "com.superapp.filemanager"
+        minSdkVersion 19
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        multiDexEnabled = true
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+repositories{
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    api fileTree(include: ['*.jar'], dir: 'libs')
+
+
+    implementation ('com.facebook.fresco:fresco:2.1.0') {
+        exclude module: 'support-v4'
+    }
+    implementation ('com.facebook.stetho:stetho:1.5.1') {
+        exclude module: 'support-v4'
+    }
+
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.browser:browser:1.0.0'
+//    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+
+    implementation project(':anythink:core')
+    implementation project(':anythink:banner')
+    implementation project(':anythink:headbidding')
+    implementation project(':anythink:Interstitial')
+    implementation project(':anythink:myoffer')
+    implementation project(':anythink:native')
+    implementation project(':anythink:network_nonchina_adapter')
+    implementation project(':anythink:network_nonchina_sdk')
+    implementation project(':anythink:rewardvideo')
+    implementation project('::anythink:splashad')
+
+    implementation project(':anythink:plugin')
+
+
+}
+

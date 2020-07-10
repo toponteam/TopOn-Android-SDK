@@ -1,1 +1,0 @@
-include ':core', ':network', ':native', ':demo_os', ':packagemodule-os', ':rewardvideo', ':banner', ':Interstitial', ':splashad', ':hibid', 'network_base', ':myoffer'

@@ -1,0 +1,5 @@
+include ':core', ':native', ':packagemodule-os', ':rewardvideo', ':banner', ':Interstitial', ':splashad', ':headbidding', ':china_plugin', ':myoffer'
+include ':network_nonchina_adapter',':network_nonchina_sdk'
+include ':network_china_adapter',':network_china_sdk'
+
+

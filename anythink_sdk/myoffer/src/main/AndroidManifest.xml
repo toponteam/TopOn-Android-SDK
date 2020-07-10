@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.anythink.myoffer">
+
+    <application>
+        <activity
+            android:name="com.anythink.myoffer.ui.MyOfferLandscapeActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name="com.anythink.myoffer.ui.MyOfferPortraitActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:screenOrientation="sensorPortrait" />
+    </application>
+</manifest>
