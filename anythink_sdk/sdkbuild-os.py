@@ -7,6 +7,8 @@ import shutil
 import sys
 import subprocess
 import zipfile
+import platform
+
 
 
 # 获取脚本文件的当前路径
@@ -20,7 +22,7 @@ def cur_file_dir():
         return os.path.dirname(path)
 
 def cur_command():
-    cmd = COMMAND + ''
+    cmd = '../gradlew'
 
     cur_platform = platform.system().strip()
     if "Windows" == cur_platform:
@@ -38,10 +40,10 @@ def runcmd(cmd):
         sys.exit(0)
     print '\rstep %s success' % cmd
 
-
 # gradle
 ROOT_DIR = cur_file_dir()
 COMMAND = cur_command()
+
 
 def clean():
     os.chdir(ROOT_DIR)
@@ -72,9 +74,9 @@ def buildOnce(brand):
     os.chdir(ROOT_DIR + '/myoffer')
     runcmd(COMMAND + ' assembleRelease')
 
-    if os.path.exists(ROOT_DIR + "/hibid/build"):
-        shutil.rmtree(ROOT_DIR + '/hibid/build')
-    os.chdir(ROOT_DIR + '/hibid')
+    if os.path.exists(ROOT_DIR + "/headbidding/build"):
+        shutil.rmtree(ROOT_DIR + '/headbidding/build')
+    os.chdir(ROOT_DIR + '/headbidding')
     runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/native/build"):
@@ -102,10 +104,6 @@ def buildOnce(brand):
     os.chdir(ROOT_DIR + '/splashad')
     runcmd(COMMAND + ' assembleRelease')
 
-    if os.path.exists(ROOT_DIR + "/plugin/build"):
-        shutil.rmtree(ROOT_DIR + '/plugin/build')
-    os.chdir(ROOT_DIR + '/plugin')
-    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/network_china_adapter/build"):
         shutil.rmtree(ROOT_DIR + '/network_china_adapter/build')
