@@ -5,7 +5,6 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
 import com.unity3d.ads.metadata.MetaData;
@@ -159,24 +158,13 @@ public class UnityAdsATInitManager extends ATInitMediation {
         mAdapterMap.remove(placementId);
     }
 
-    protected void supportGDPR(Context context, Map<String, Object> serviceExtras) {
-        try {
 
-            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                //Whether to agree to collect data
-                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                //Whether to set the GDPR of the network
-                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-                if (need_set_gdpr) {
-                    MetaData gdprMetaData = new MetaData(context.getApplicationContext());
-                    gdprMetaData.set("gdpr.consent", gdp_consent);
-                    gdprMetaData.commit();
-                }
-            }
-            logGDPRSetting(UnityAdsATConst.NETWORK_FIRM_ID);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        MetaData gdprMetaData = new MetaData(context.getApplicationContext());
+        gdprMetaData.set("gdpr.consent", isConsent);
+        gdprMetaData.commit();
+        return true;
     }
 
     @Override
@@ -188,7 +176,6 @@ public class UnityAdsATInitManager extends ATInitMediation {
         String game_id = (String) serviceExtras.get("game_id");
         if (!TextUtils.isEmpty(game_id)) {
             if (TextUtils.isEmpty(mGameId) || !TextUtils.equals(mGameId, game_id)) {
-                supportGDPR(context.getApplicationContext(), serviceExtras);
                 UnityAds.addListener(mIUnityAdsExtendedListener);
                 UnityAds.initialize(((Activity) context), game_id);
                 mGameId = game_id;

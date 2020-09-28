@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.inmobi.ads.AdMetaInfo;
 import com.inmobi.ads.InMobiAdRequestStatus;
 import com.inmobi.ads.InMobiInterstitial;
@@ -23,7 +22,6 @@ public class InmobiATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private static final String TAG = InmobiATRewardedVideoAdapter.class.getSimpleName();
 
     InMobiInterstitial interstitialAd;
-    InmobiRewardedVideoSetting mInmobiMediationSetting;
     Long placeId;
 
     int mClickCallbackType;
@@ -36,56 +34,64 @@ public class InmobiATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         InmobiATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new InmobiATInitManager.OnInitCallback() {
             @Override
             public void onSuccess() {
-                startLoadAd(context);
+                try {
+                    startLoadAd(context);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
 
             @Override
             public void onError(String errorMsg) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(InmobiATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "Inmobi " + errorMsg));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "Inmobi " + errorMsg);
                 }
             }
         });
     }
 
     private void startLoadAd(Context context) {
-        interstitialAd = new InMobiInterstitial(context, placeId, new InterstitialAdEventListener() {
+        interstitialAd = new InMobiInterstitial(context.getApplicationContext(), placeId, new InterstitialAdEventListener() {
             @Override
             public void onAdLoadFailed(InMobiInterstitial inMobiInterstitial, InMobiAdRequestStatus inMobiAdRequestStatus) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(InmobiATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + inMobiAdRequestStatus.getStatusCode(), inMobiAdRequestStatus.getMessage()));
+                InmobiATInitManager.getInstance().removeInmobiAd(interstitialAd);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("" + inMobiAdRequestStatus.getStatusCode(), inMobiAdRequestStatus.getMessage());
                 }
             }
 
             @Override
             public void onAdFetchSuccessful(InMobiInterstitial inMobiInterstitial, AdMetaInfo adMetaInfo) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdDataLoaded(InmobiATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
                 }
             }
 
             @Override
             public void onAdLoadSucceeded(InMobiInterstitial inMobiInterstitial, AdMetaInfo adMetaInfo) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(InmobiATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onRewardsUnlocked(InMobiInterstitial inMobiInterstitial, Map<Object, Object> map) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(InmobiATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
 
                 if (mImpressionListener != null) {
-                    mImpressionListener.onReward(InmobiATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
 
             @Override
             public void onAdDisplayFailed(InMobiInterstitial inMobiInterstitial) {
+                InmobiATInitManager.getInstance().removeInmobiAd(interstitialAd);
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayFailed(InmobiATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", "AdDisplayFailed"));
+                    mImpressionListener.onRewardedVideoAdPlayFailed("", "AdDisplayFailed");
                 }
             }
 
@@ -96,61 +102,46 @@ public class InmobiATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onAdDisplayed(InMobiInterstitial inMobiInterstitial, AdMetaInfo adMetaInfo) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(InmobiATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
             @Override
             public void onAdClicked(InMobiInterstitial inMobiInterstitial, Map<Object, Object> map) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(InmobiATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
 
 
             @Override
             public void onAdDismissed(InMobiInterstitial inMobiInterstitial) {
+                InmobiATInitManager.getInstance().removeInmobiAd(interstitialAd);
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed(InmobiATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
             }
         });
+        InmobiATInitManager.getInstance().addInmobiAd(interstitialAd);
         interstitialAd.load();
     }
 
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+
+        String accountId = (String) serverExtras.get("app_id");
+        String unitId = (String) serverExtras.get("unit_id");
+
+        if (TextUtils.isEmpty(accountId) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "inmobi account_id or unit_id is empty!");
             }
             return;
         }
-        if (mediationSetting != null && mediationSetting instanceof InmobiRewardedVideoSetting) {
-            mInmobiMediationSetting = (InmobiRewardedVideoSetting) mediationSetting;
-        }
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "inmobi serverExtras is null!"));
-            }
-            return;
-        } else {
-
-            String accountId = (String) serverExtras.get("app_id");
-            String unitId = (String) serverExtras.get("unit_id");
-
-            if (TextUtils.isEmpty(accountId) || TextUtils.isEmpty(unitId)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "inmobi account_id or unit_id is empty!"));
-                }
-                return;
-            }
-            placeId = Long.parseLong(unitId);
-        }
+        placeId = Long.parseLong(unitId);
         mClickCallbackType = 0;
-        initAndLoad(activity, serverExtras);
+        initAndLoad(context, serverExtras);
     }
 
     @Override
@@ -162,34 +153,46 @@ public class InmobiATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return InmobiATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
     public void show(Activity activity) {
-        if (interstitialAd != null && isAdReady()) {
+        if (interstitialAd != null) {
             interstitialAd.show();
         }
     }
 
     @Override
-    public void clean() {
-
+    public void destory() {
+        if (interstitialAd != null) {
+            try {
+                interstitialAd.setListener(null);
+            } catch (Throwable e) {
+            }
+            interstitialAd = null;
+        }
     }
 
-    @Override
-    public void onResume(Activity activity) {
-
-    }
 
     @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return InmobiATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return InmobiATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        try {
+            return String.valueOf(placeId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

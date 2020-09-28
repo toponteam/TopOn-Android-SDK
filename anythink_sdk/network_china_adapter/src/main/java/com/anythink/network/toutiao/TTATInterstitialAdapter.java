@@ -5,10 +5,8 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
+import com.anythink.core.api.ATAdConst;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.bytedance.sdk.openadsdk.AdSlot;
 import com.bytedance.sdk.openadsdk.TTAdManager;
 import com.bytedance.sdk.openadsdk.TTAdNative;
@@ -35,16 +33,16 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
     TTAdNative.InteractionAdListener ttInterstitialAdListener = new TTAdNative.InteractionAdListener() {
         @Override
         public void onError(int code, String message) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(TTATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(code), message));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(String.valueOf(code), message);
             }
         }
 
         @Override
         public void onInteractionAdLoad(TTInteractionAd ttInteractionAd) {
             mttInterstitialAd = ttInteractionAd;
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(TTATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
 
@@ -56,21 +54,21 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         @Override
         public void onAdClicked() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClicked(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClicked();
             }
         }
 
         @Override
         public void onAdShow() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdShow(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdShow();
             }
         }
 
         @Override
         public void onAdDismiss() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClose(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClose();
             }
         }
 
@@ -80,8 +78,8 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
     TTAdNative.FullScreenVideoAdListener ttFullScrenAdListener = new TTAdNative.FullScreenVideoAdListener() {
         @Override
         public void onError(int code, String message) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(TTATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(code), message));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(String.valueOf(code), message);
             }
         }
 
@@ -89,15 +87,15 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         public void onFullScreenVideoAdLoad(TTFullScreenVideoAd ad) {
             mTTFullScreenVideoAd = ad;
 
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdDataLoaded(TTATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdDataLoaded();
             }
         }
 
         @Override
         public void onFullScreenVideoCached() {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(TTATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
             try {
                 TTATInitManager.getInstance().put(getTrackingInfo().getmUnitGroupUnitId(), mTTFullScreenVideoAd);
@@ -113,22 +111,22 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         @Override
         public void onAdShow() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdShow(TTATInterstitialAdapter.this);
-                mImpressListener.onInterstitialAdVideoStart(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdShow();
+                mImpressListener.onInterstitialAdVideoStart();
             }
         }
 
         @Override
         public void onAdVideoBarClick() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClicked(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClicked();
             }
         }
 
         @Override
         public void onAdClose() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClose(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClose();
             }
             try {
                 TTATInitManager.getInstance().remove(getTrackingInfo().getmUnitGroupUnitId());
@@ -140,7 +138,7 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         @Override
         public void onVideoComplete() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdVideoEnd(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdVideoEnd();
             }
         }
 
@@ -154,8 +152,8 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
     TTAdNative.NativeExpressAdListener expressAdListener = new TTAdNative.NativeExpressAdListener() {
         @Override
         public void onError(int i, String s) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(TTATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(i), s));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(String.valueOf(i), s);
             }
         }
 
@@ -163,8 +161,8 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         public void onNativeExpressAdLoad(List<TTNativeExpressAd> list) {
             mTTNativeExpressAd = list.get(0);
             mTTNativeExpressAd.render();
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(TTATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
             try {
                 TTATInitManager.getInstance().put(getTrackingInfo().getmUnitGroupUnitId(), mTTNativeExpressAd);
@@ -179,7 +177,7 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         @Override
         public void onAdDismiss() {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClose(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClose();
             }
             if (mTTNativeExpressAd != null) {
                 mTTNativeExpressAd.destroy();
@@ -194,14 +192,14 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         @Override
         public void onAdClicked(View view, int i) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClicked(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClicked();
             }
         }
 
         @Override
         public void onAdShow(View view, int i) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdShow(TTATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdShow();
             }
         }
 
@@ -215,68 +213,17 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         }
     };
 
-    @Override
-    public void loadInterstitialAd(final Context context, Map<String, Object> serverExtras, final ATMediationSetting mediationSetting, final CustomInterstitialListener customRewardVideoListener) {
-
-        mLoadResultListener = customRewardVideoListener;
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
-
-        String appId = (String) serverExtras.get("app_id");
-        slotId = (String) serverExtras.get("slot_id");
-
-        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id or slot_id is empty!"));
-            }
-            return;
-        }
-
-        if (serverExtras.containsKey("is_video")) {
-            if (serverExtras.get("is_video").toString().equals("1")) {
-                isVideo = true;
-            }
-        }
-
-        if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity"));
-            }
-            return;
-        }
-
-        int layoutType = 0;
-        if (serverExtras.containsKey("layout_type")) {
-            layoutType = Integer.parseInt(serverExtras.get("layout_type").toString());
-        }
-
-        final String personalized_template = (String) serverExtras.get("personalized_template");
-
-        final int finalLayoutType = layoutType;
-        TTATInitManager.getInstance().initSDK(context, serverExtras, new TTATInitManager.InitCallback() {
-            @Override
-            public void onFinish() {
-                startLoad(context, mediationSetting, finalLayoutType, personalized_template);
-            }
-        });
-    }
-
-    private void startLoad(Context context, ATMediationSetting mediationSetting, int layoutType, String personalized_template) {
+    private void startLoad(Context context, Map<String, Object> localExtra, int layoutType, String personalized_template) {
         TTAdManager ttAdManager = TTAdSdk.getAdManager();
 
         /**Get the width set by the developer**/
-        TTATInterstitialSetting setting;
         int developerSetExpressWidth = 0;
-        if (mediationSetting instanceof TTATInterstitialSetting) {
-            setting = (TTATInterstitialSetting) mediationSetting;
-            developerSetExpressWidth = setting.getInterstitialWidth();
+        try {
+            if (localExtra != null) {
+                developerSetExpressWidth = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_WIDTH).toString());
+            }
+        } catch (Exception e) {
         }
-
 
         TTAdNative mTTAdNative = ttAdManager.createAdNative(context);//baseContext is recommended for Activity
         AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
@@ -284,7 +231,6 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         int height = context.getResources().getDisplayMetrics().heightPixels;
         adSlotBuilder.setImageAcceptedSize(width, height); //must be set
         adSlotBuilder.setAdCount(1);
-
 
         if (isVideo) {
 
@@ -320,21 +266,21 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         try {
-            if (mttInterstitialAd != null && context instanceof Activity) {
+            if (mttInterstitialAd != null && activity != null) {
                 mttInterstitialAd.setAdInteractionListener(interactionListener);
-                mttInterstitialAd.showInteractionAd((Activity) context);
+                mttInterstitialAd.showInteractionAd(activity);
             }
 
-            if (mTTFullScreenVideoAd != null && context instanceof Activity) {
+            if (mTTFullScreenVideoAd != null && activity != null) {
                 mTTFullScreenVideoAd.setFullScreenVideoAdInteractionListener(ttFullScreenEventListener);
-                mTTFullScreenVideoAd.showFullScreenVideoAd((Activity) context);
+                mTTFullScreenVideoAd.showFullScreenVideoAd(activity);
             }
 
-            if (mTTNativeExpressAd != null && context instanceof Activity) {
+            if (mTTNativeExpressAd != null && activity != null) {
                 mTTNativeExpressAd.setExpressInteractionListener(adExpressInteractionListener);
-                mTTNativeExpressAd.showInteractionExpressAd((Activity) context);
+                mTTNativeExpressAd.showInteractionExpressAd(activity);
             }
 
         } catch (Exception e) {
@@ -344,26 +290,85 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void clean() {
-    }
-
-    @Override
-    public void onResume() {
-    }
-
-    @Override
-    public void onPause() {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return TTATConst.getNetworkVersion();
-    }
-
-    @Override
     public String getNetworkName() {
         return TTATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, final Map<String, Object> localExtra) {
+        String appId = (String) serverExtra.get("app_id");
+        slotId = (String) serverExtra.get("slot_id");
+
+        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id or slot_id is empty!");
+            }
+            return;
+        }
+
+        if (serverExtra.containsKey("is_video")) {
+            if (serverExtra.get("is_video").toString().equals("1")) {
+                isVideo = true;
+            }
+        }
+
+        int layoutType = 0;
+        if (serverExtra.containsKey("layout_type")) {
+            layoutType = Integer.parseInt(serverExtra.get("layout_type").toString());
+        }
+
+        final String personalized_template = (String) serverExtra.get("personalized_template");
+
+        final int finalLayoutType = layoutType;
+        TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                try {
+                    startLoad(context, localExtra, finalLayoutType, personalized_template);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void destory() {
+        if (mTTFullScreenVideoAd != null) {
+            mTTFullScreenVideoAd.setFullScreenVideoAdInteractionListener(null);
+            mTTFullScreenVideoAd = null;
+        }
+
+        if (mttInterstitialAd != null) {
+            mttInterstitialAd.setAdInteractionListener(null);
+            mttInterstitialAd.setDownloadListener(null);
+            mttInterstitialAd = null;
+        }
+
+        if (mTTNativeExpressAd != null) {
+            mTTNativeExpressAd.setExpressInteractionListener(null);
+            mTTNativeExpressAd.destroy();
+            mTTNativeExpressAd = null;
+        }
+
+        interactionListener = null;
+        ttInterstitialAdListener = null;
+        ttFullScreenEventListener = null;
+        ttFullScrenAdListener = null;
+        expressAdListener = null;
+        adExpressInteractionListener = null;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return slotId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return TTATConst.getNetworkVersion();
     }
 
     private static int px2dip(Context context, float pxValue) {

@@ -1,7 +1,6 @@
 package com.anythink.nativead.banner.util;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.util.TypedValue;
@@ -19,7 +18,6 @@ import com.anythink.core.common.utils.CommonUtil;
 import com.anythink.nativead.api.ATNativeAdRenderer;
 import com.anythink.nativead.banner.api.ATNativeBannerConfig;
 import com.anythink.nativead.banner.api.ATNativeBannerSize;
-import com.anythink.nativead.bussiness.CommonImageLoader;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.views.RoundImageView;
 
@@ -73,15 +71,15 @@ public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
 
     @Override
     public void renderAdView(final View view, CustomNativeAd ad) {
-        if(view instanceof ViewGroup) {
+        if (view instanceof ViewGroup) {
             ViewGroup develop = (ViewGroup) view;
 
             if (develop.getChildCount() > 5) {
-                for (int i = develop.getChildCount(); i >= 5; i++) {
+                for (int i = develop.getChildCount(); i >= 5; i--) {
                     develop.removeViewAt(i);
                 }
             }
-            if(ad.getAdMediaView() != null && ad.isNativeExpress()) {
+            if (ad.getAdMediaView() != null && ad.isNativeExpress()) {
                 for (int i = 0; i < 5; i++) {
                     develop.getChildAt(i).setVisibility(View.GONE);
                 }
@@ -102,19 +100,7 @@ public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
             TextView adFromTextView = (TextView) view.findViewById(CommonUtil.getResId(mContext, "plugin_320_banner_adfrom_view", "id"));
             final RoundImageView adChoiceImageView = (RoundImageView) view.findViewById(CommonUtil.getResId(mContext, "plugin_320_banner_adchoice_icon", "id"));
 
-
-            CommonImageLoader.getInstance().startLoadImage(ad.getIconImageUrl(), dip2px(mContext, 40), new CommonImageLoader.ImageCallback() {
-                @Override
-                public void onSuccess(Bitmap bitmap, String url) {
-                    roundImageView.setVisibility(View.VISIBLE);
-                    roundImageView.setImageBitmap(bitmap);
-                }
-
-                @Override
-                public void onFail() {
-                    roundImageView.setVisibility(View.GONE);
-                }
-            });
+            adChoiceImageView.setImage(ad.getIconImageUrl(), dip2px(mContext, 40), dip2px(mContext, 40));
 
             if (!TextUtils.isEmpty(ad.getAdFrom())) {
                 adFromTextView.setText(ad.getAdFrom());
@@ -156,18 +142,11 @@ public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
             ctaTextView.setTextColor(config.ctaColor);
             ctaTextView.setBackgroundDrawable(gradientDrawable);
 
-            CommonImageLoader.getInstance().startLoadImage(ad.getAdChoiceIconUrl(), dip2px(mContext, 10), new CommonImageLoader.ImageCallback() {
-                @Override
-                public void onSuccess(Bitmap bitmap, String url) {
-                    adChoiceImageView.setImageBitmap(bitmap);
-                    adChoiceImageView.setVisibility(View.VISIBLE);
-                }
-
-                @Override
-                public void onFail() {
-                    adChoiceImageView.setVisibility(View.GONE);
-                }
-            });
+            if (!TextUtils.isEmpty(ad.getAdChoiceIconUrl())) {
+                adChoiceImageView.setImage(ad.getIconImageUrl(), dip2px(mContext, 40), dip2px(mContext, 40));
+            } else {
+                adChoiceImageView.setVisibility(View.GONE);
+            }
 
         }
 
@@ -184,18 +163,13 @@ public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
                 final RoundImageView roundImageView = new RoundImageView(mContext);
                 roundImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
                 frameLayout.addView(roundImageView);
-                CommonImageLoader.getInstance().startLoadImage(ad.getMainImageUrl(), dip2px(mContext, 300), new CommonImageLoader.ImageCallback() {
-                    @Override
-                    public void onSuccess(Bitmap bitmap, String url) {
-                        frameLayout.setVisibility(View.VISIBLE);
-                        roundImageView.setImageBitmap(bitmap);
-                    }
+                if (!TextUtils.isEmpty(ad.getMainImageUrl())) {
+                    roundImageView.setImage(ad.getMainImageUrl(), dip2px(mContext, 300), dip2px(mContext, 300));
+                    frameLayout.setVisibility(View.VISIBLE);
+                } else {
+                    frameLayout.setVisibility(View.GONE);
+                }
 
-                    @Override
-                    public void onFail() {
-                        frameLayout.setVisibility(View.GONE);
-                    }
-                });
             }
 
             TextView ctaTextView = (TextView) view.findViewById(CommonUtil.getResId(mContext, "plugin_640_banner_cta", "id"));
@@ -241,18 +215,12 @@ public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
                 fromTextView.setVisibility(View.GONE);
             }
 
-            CommonImageLoader.getInstance().startLoadImage(ad.getAdChoiceIconUrl(), dip2px(mContext, 10), new CommonImageLoader.ImageCallback() {
-                @Override
-                public void onSuccess(Bitmap bitmap, String url) {
-                    adChoiceImageView.setImageBitmap(bitmap);
-                    adChoiceImageView.setVisibility(View.VISIBLE);
-                }
+            if (!TextUtils.isEmpty(ad.getAdChoiceIconUrl())) {
+                adChoiceImageView.setImage(ad.getIconImageUrl(), dip2px(mContext, 40), dip2px(mContext, 40));
+            } else {
+                adChoiceImageView.setVisibility(View.GONE);
+            }
 
-                @Override
-                public void onFail() {
-                    adChoiceImageView.setVisibility(View.GONE);
-                }
-            });
 
             titleTextView.setTextColor(config.titleColor);
             descTextView.setTextColor(config.descColor);
@@ -282,18 +250,11 @@ public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
             final int descSize = dip2px(mContext, 12);
             final int ctaSize = dip2px(mContext, 13);
 
-            CommonImageLoader.getInstance().startLoadImage(ad.getIconImageUrl(), dip2px(mContext, 40), new CommonImageLoader.ImageCallback() {
-                @Override
-                public void onSuccess(Bitmap bitmap, String url) {
-                    roundImageView.setVisibility(View.VISIBLE);
-                    roundImageView.setImageBitmap(bitmap);
-                }
-
-                @Override
-                public void onFail() {
-                    roundImageView.setVisibility(View.GONE);
-                }
-            });
+            if(!TextUtils.isEmpty(ad.getIconImageUrl())){
+                roundImageView.setImage(ad.getIconImageUrl(), dip2px(mContext, 40), dip2px(mContext, 40));
+            } else {
+                roundImageView.setVisibility(View.GONE);
+            }
 
             if (!TextUtils.isEmpty(ad.getCallToActionText()) && config.isCtaBtnShow) {
                 ctaTextView.setText(ad.getCallToActionText());
@@ -357,18 +318,11 @@ public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
 
             view.getViewTreeObserver().addOnGlobalLayoutListener(onGlobalLayoutListener);
 
-            CommonImageLoader.getInstance().startLoadImage(ad.getAdChoiceIconUrl(), dip2px(mContext, 10), new CommonImageLoader.ImageCallback() {
-                @Override
-                public void onSuccess(Bitmap bitmap, String url) {
-                    adChoiceImageView.setImageBitmap(bitmap);
-                    adChoiceImageView.setVisibility(View.VISIBLE);
-                }
-
-                @Override
-                public void onFail() {
-                    adChoiceImageView.setVisibility(View.GONE);
-                }
-            });
+            if (!TextUtils.isEmpty(ad.getAdChoiceIconUrl())) {
+                adChoiceImageView.setImage(ad.getIconImageUrl(), dip2px(mContext, 40), dip2px(mContext, 40));
+            } else {
+                adChoiceImageView.setVisibility(View.GONE);
+            }
 
         }
 

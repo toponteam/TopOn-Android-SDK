@@ -1,16 +1,19 @@
 package com.anythink.myoffer.ui;
 
 import android.graphics.Bitmap;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.res.ImageLoader;
+import com.anythink.core.common.res.ResourceEntry;
+import com.anythink.core.common.utils.BitmapUtil;
 import com.anythink.core.common.utils.CommonUtil;
-import com.anythink.myoffer.buiness.resource.MyOfferImageUtil;
-import com.anythink.myoffer.buiness.resource.MyOfferResourceUtil;
-import com.anythink.myoffer.entity.MyOfferAd;
+import com.anythink.myoffer.ui.component.RoundImageView;
 import com.anythink.myoffer.ui.util.ViewUtil;
 
 public class EndCardView extends RelativeLayout {
@@ -19,13 +22,11 @@ public class EndCardView extends RelativeLayout {
     private int mWidth;
     private int mHeight;
 
-    private Bitmap mEndCardBitmap;
-    private Bitmap mBlurBgBitmap;
-
     private int mBlurBgIndex = 0;
     private int mEndCardIndex = 1;
     private int mCloseButtonIndex = 2;
     private ImageView mEndCardIv;
+    private RoundImageView bgIv;
 
     public EndCardView(ViewGroup container, int width, int height, MyOfferAd myOfferAd, OnEndCardListener listener) {
         super(container.getContext());
@@ -33,21 +34,30 @@ public class EndCardView extends RelativeLayout {
 
         this.mWidth = width;
         this.mHeight = height;
-        loadBitmap(myOfferAd);
 
         init();
         attachTo(container);
+
+        loadBitmap(myOfferAd);
     }
 
-    private void loadBitmap(MyOfferAd myOfferAd) {
+    private void loadBitmap(final MyOfferAd myOfferAd) {
         try {
-            if(mEndCardBitmap == null) {
-                String endCardImageUrl = myOfferAd.getEndCardImageUrl();
-                mEndCardBitmap = MyOfferResourceUtil.getBitmap(endCardImageUrl, mWidth, mHeight);
-            }
-            if(mBlurBgBitmap == null && mEndCardBitmap != null) {
-                mBlurBgBitmap = MyOfferImageUtil.blurBitmap(getContext(), mEndCardBitmap);
-            }
+            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, myOfferAd.getEndCardImageUrl()), mWidth, mHeight, new ImageLoader.ImageLoaderListener() {
+                @Override
+                public void onSuccess(String url, Bitmap bitmap) {
+                    if (TextUtils.equals(url, myOfferAd.getEndCardImageUrl())) {
+                        mEndCardIv.setImageBitmap(bitmap);
+                        Bitmap blurBitmap = BitmapUtil.blurBitmap(getContext(), bitmap);
+                        bgIv.setImageBitmap(blurBitmap);
+                    }
+                }
+
+                @Override
+                public void onFail(String url, String errorMsg) {
+
+                }
+            });
         } catch (OutOfMemoryError oom) {
             oom.printStackTrace();
         } catch (Exception e) {
@@ -56,12 +66,10 @@ public class EndCardView extends RelativeLayout {
     }
 
     private void init() {
-        ImageView bgIv = new ImageView(getContext());
+        bgIv = new RoundImageView(getContext());
         bgIv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        bgIv.setImageBitmap(mBlurBgBitmap);
 
-        mEndCardIv = new ImageView(getContext());
-        mEndCardIv.setImageBitmap(mEndCardBitmap);
+        mEndCardIv = new RoundImageView(getContext());
 
         RelativeLayout.LayoutParams rl_bg = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -75,7 +83,7 @@ public class EndCardView extends RelativeLayout {
         setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mListener != null) {
+                if (mListener != null) {
                     mListener.onClickEndCard();
                 }
             }
@@ -86,7 +94,7 @@ public class EndCardView extends RelativeLayout {
 
     private void initCloseButton() {
 
-        if(getChildAt(mCloseButtonIndex) != null) {
+        if (getChildAt(mCloseButtonIndex) != null) {
             removeViewAt(mCloseButtonIndex);
         }
 
@@ -99,7 +107,7 @@ public class EndCardView extends RelativeLayout {
         RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(size, size);
         rl.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         rl.rightMargin = rightMargin;
-        rl.topMargin  = topMargin;
+        rl.topMargin = topMargin;
         addView(mCloseBtn, mCloseButtonIndex, rl);
 
         //扩大点击区域
@@ -108,7 +116,7 @@ public class EndCardView extends RelativeLayout {
         mCloseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mListener != null) {
+                if (mListener != null) {
                     mListener.onCloseEndCard();
                 }
             }
@@ -116,7 +124,7 @@ public class EndCardView extends RelativeLayout {
     }
 
     private void attachTo(ViewGroup container) {
-        if(container.getChildCount() == 2) {
+        if (container.getChildCount() == 2) {
             container.removeViewAt(0);
         }
 
@@ -127,16 +135,11 @@ public class EndCardView extends RelativeLayout {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if(mEndCardBitmap != null) {
-            mEndCardBitmap.recycle();
-        }
-        if(mBlurBgBitmap != null) {
-            mBlurBgBitmap.recycle();
-        }
     }
 
     public interface OnEndCardListener {
         void onClickEndCard();
+
         void onCloseEndCard();
     }
 }

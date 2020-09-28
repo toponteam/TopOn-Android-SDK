@@ -14,8 +14,10 @@ import com.anythink.banner.api.ATBannerListener;
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.AdError;
+import com.anythink.network.admob.AdmobATConst;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class BannerAdActivity extends Activity {
 
@@ -25,7 +27,6 @@ public class BannerAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_banner_admob
             , DemoApplicaion.mPlacementId_banner_facebook
             , DemoApplicaion.mPlacementId_banner_inmobi
-            , DemoApplicaion.mPlacementId_banner_flurry
             , DemoApplicaion.mPlacementId_banner_applovin
             , DemoApplicaion.mPlacementId_banner_mintegral
             , DemoApplicaion.mPlacementId_banner_mopub
@@ -36,6 +37,10 @@ public class BannerAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_banner_vungle
             , DemoApplicaion.mPlacementId_banner_adcolony
             , DemoApplicaion.mPlacementId_banner_chartboost
+            , DemoApplicaion.mPlacementId_banner_googleAdManager
+            , DemoApplicaion.mPlacementId_banner_myoffer
+            , DemoApplicaion.mPlacementId_banner_huawei
+
     };
 
     String unitGroupName[] = new String[]{
@@ -43,7 +48,6 @@ public class BannerAdActivity extends Activity {
             "Admob",
             "Facebook",
             "Inmobi",
-            "Flurry",
             "Applovin",
             "Mintegral",
             "Mopub",
@@ -53,7 +57,10 @@ public class BannerAdActivity extends Activity {
             "StartApp",
             "Vungle",
             "AdColony",
-            "Chartboost"
+            "Chartboost",
+            "Google Ad Manager",
+            "MyOffer",
+            "Huawei"
     };
 
     ATBannerView mBannerView;
@@ -70,6 +77,7 @@ public class BannerAdActivity extends Activity {
         Spinner spinner = (Spinner) findViewById(R.id.banner_spinner);
         final FrameLayout frameLayout = findViewById(R.id.adview_container);
         mBannerView = new ATBannerView(this);
+        mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
         frameLayout.addView(mBannerView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, dip2px(300)));
         mBannerView.setBannerAdListener(new ATBannerListener() {
             @Override
@@ -137,6 +145,8 @@ public class BannerAdActivity extends Activity {
                         parent.getItemAtPosition(position).toString(),
                         Toast.LENGTH_SHORT).show();
                 mCurrentSelectIndex = position;
+                mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+                mBannerView.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -149,7 +159,14 @@ public class BannerAdActivity extends Activity {
             @Override
             public void onClick(View view) {
                 HashMap<String, String> maps = new HashMap<>();
-                mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+                //since v5.6.5
+                Map<String, Object> localExtra = new HashMap<>();
+                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION, AdmobATConst.ORIENTATION_CURRENT);
+//                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION, AdmobATConst.ORIENTATION_PORTRAIT);
+//                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION, AdmobATConst.ORIENTATION_LANDSCAPE);
+                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_WIDTH, getResources().getDisplayMetrics().widthPixels);
+                mBannerView.setLocalExtra(localExtra);
+
                 mBannerView.loadAd();
             }
         });
@@ -159,6 +176,9 @@ public class BannerAdActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mBannerView != null) {
+            mBannerView.destroy();
+        }
     }
 
     public int dip2px(float dipValue) {

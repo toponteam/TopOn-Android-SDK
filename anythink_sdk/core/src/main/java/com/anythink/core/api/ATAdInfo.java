@@ -238,7 +238,7 @@ public class ATAdInfo {
     private static ATAdInfo fillData(ATAdInfo entity, AdTrackingInfo trackingInfo) {
         entity.mNetworkFirmId = trackingInfo.getmNetworkType();          // Mediation type
         entity.mAdsourceId = trackingInfo.getmUnitGroupUnitId();       // Adsource id
-        entity.mAdsourceIndex = trackingInfo.getmLevel();              //AdSource level
+        entity.mAdsourceIndex = trackingInfo.getImpressionLevel();              //AdSource impression Level
         entity.mEcpm = trackingInfo.getmBidPrice();                    //Adsource ecpm
         entity.mIsHBAdsource = trackingInfo.getmBidType();        //AdSource type, 1: headbidding, 0: non-headbidding
 

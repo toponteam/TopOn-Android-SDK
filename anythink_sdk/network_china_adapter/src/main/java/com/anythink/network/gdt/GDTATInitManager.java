@@ -1,9 +1,13 @@
 package com.anythink.network.gdt;
 
+import android.app.Activity;
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import com.androidquery.AQuery;
 import com.anythink.core.api.ATInitMediation;
+import com.qq.e.ads.cfg.VideoOption;
 import com.qq.e.comm.managers.GDTADManager;
 
 import java.util.ArrayList;
@@ -79,12 +83,12 @@ public class GDTATInitManager extends ATInitMediation {
     public Map<String, Boolean> getPluginClassStatus() {
         HashMap<String, Boolean> pluginMap = new HashMap<>();
 
-        pluginMap.put("ndroid-query-full.*.aar", false);
+        pluginMap.put("android-query-full.*.aar", false);
 
         Class clazz;
         try {
             clazz = AQuery.class;
-            pluginMap.put("ndroid-query-full.*.aar", true);
+            pluginMap.put("android-query-full.*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -122,6 +126,29 @@ public class GDTATInitManager extends ATInitMediation {
         void onSuccess();
 
         void onError();
+    }
+
+    protected int px2dip(Context context, float pxValue) {
+        final float scale = context.getResources().getDisplayMetrics().density;
+        return (int) (pxValue / (scale <= 0 ? 1 : scale) + 0.5f);
+    }
+
+     int getVideoPlayPolicy(Context context, int autoPlayPolicy) {
+        if (autoPlayPolicy == VideoOption.AutoPlayPolicy.ALWAYS) {
+            return VideoOption.VideoPlayPolicy.AUTO;
+        } else if (autoPlayPolicy == VideoOption.AutoPlayPolicy.WIFI) {
+            try {
+                ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo wifiNetworkInfo = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+                return wifiNetworkInfo != null && wifiNetworkInfo.isConnected() ? VideoOption.VideoPlayPolicy.AUTO
+                        : VideoOption.VideoPlayPolicy.MANUAL;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else if (autoPlayPolicy == VideoOption.AutoPlayPolicy.NEVER) {
+            return VideoOption.VideoPlayPolicy.MANUAL;
+        }
+        return VideoOption.VideoPlayPolicy.UNKNOWN;
     }
 
 }

@@ -47,26 +47,5 @@ public class MopubRewardedVideoSetting implements ATMediationSetting {
     }
 
 
-    public MoPubRewardedVideoManager.RequestParameters getRequestParameters(String userId) {
-        if (!TextUtils.isEmpty(requestParameters_keywords)) {
-            if (!TextUtils.isEmpty(requestParameters_userDataKeywords)) {
-                if (requestParameters_location != null) {
-                    if (!TextUtils.isEmpty(userId)) {
-                        return new MoPubRewardedVideoManager.RequestParameters(requestParameters_keywords, requestParameters_userDataKeywords, requestParameters_location, userId);
-                    } else {
-                        return new MoPubRewardedVideoManager.RequestParameters(requestParameters_keywords, requestParameters_userDataKeywords, requestParameters_location);
-                    }
-                } else {
-                    return new MoPubRewardedVideoManager.RequestParameters(requestParameters_keywords, requestParameters_userDataKeywords);
-                }
 
-            } else {
-                return new MoPubRewardedVideoManager.RequestParameters(requestParameters_keywords);
-            }
-        } else {
-            return null;
-        }
-
-
-    }
 }

@@ -16,7 +16,7 @@ import java.util.Map;
 public class NetTrafficCheckLoader extends AbsHttpLoader {
     @Override
     protected int onPrepareType() {
-        return GET;
+        return ApiRequestParam.GET;
     }
 
     @Override

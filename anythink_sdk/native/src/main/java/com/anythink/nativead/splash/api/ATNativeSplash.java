@@ -11,7 +11,6 @@ import com.anythink.core.common.entity.TemplateStrategy;
 import com.anythink.nativead.api.ATNative;
 import com.anythink.nativead.api.ATNativeNetworkListener;
 import com.anythink.nativead.api.NativeAd;
-import com.anythink.nativead.bussiness.utils.CommonSDCardUtil;
 import com.anythink.nativead.splash.ATNativeSplashView;
 
 import java.util.Map;
@@ -155,7 +154,6 @@ public class ATNativeSplash {
         }
 
         mIsOverLoad = false;
-        CommonSDCardUtil.init(activity.getApplicationContext());
         if (fetchDelay <= 3000L) {
             mFetchDelay = 3000L;
         } else if (fetchDelay >= 7000L) {

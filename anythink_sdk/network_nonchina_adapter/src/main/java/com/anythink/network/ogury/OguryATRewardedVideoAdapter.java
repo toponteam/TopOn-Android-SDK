@@ -8,7 +8,6 @@ import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 
 import java.util.Map;
 
@@ -25,38 +24,29 @@ public class OguryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private PresageOptinVideo mPresageOptinVideo;
 
     @Override
-    public void loadRewardVideoAd(final Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String assetKey = "";
         String unitId = "";
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "service params is empty."));
+        if (serverExtras.containsKey("key")) {
+            assetKey = serverExtras.get("key").toString();
+        }
+        if (serverExtras.containsKey("unit_id")) {
+            unitId = serverExtras.get("unit_id").toString();
+        }
+
+        if (TextUtils.isEmpty(assetKey) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "asset_key、unit_id could not be null.");
             }
             return;
-        } else {
-            if (serverExtras.containsKey("key")) {
-                assetKey = serverExtras.get("key").toString();
-            }
-            if (serverExtras.containsKey("unit_id")) {
-                unitId = serverExtras.get("unit_id").toString();
-            }
-
-            if (TextUtils.isEmpty(assetKey) || TextUtils.isEmpty(unitId)) {
-                if (mLoadResultListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "asset_key、unit_id could not be null.");
-                    mLoadResultListener.onRewardedVideoAdFailed(this, adError);
-                }
-                return;
-            }
         }
         mUnitId = unitId;
 
-        OguryATInitManager.getInstance().initSDK(activity, serverExtras, new OguryATInitManager.Callback() {
+        OguryATInitManager.getInstance().initSDK(context, serverExtras, new OguryATInitManager.Callback() {
             @Override
             public void onSuccess() {
-                init(activity);
+                init(context);
             }
         });
     }
@@ -64,50 +54,50 @@ public class OguryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private void init(Context context) {
         AdConfig adConfig = new AdConfig(mUnitId);
         mPresageOptinVideo = new PresageOptinVideo(context.getApplicationContext(), adConfig);
-        if(!TextUtils.isEmpty(mUserId)) {
+        if (!TextUtils.isEmpty(mUserId)) {
             mPresageOptinVideo.setUserId(mUserId);
         }
         mPresageOptinVideo.setOptinVideoCallback(new PresageOptinVideoCallback() {
             @Override
             public void onAdAvailable() {
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdDataLoaded(OguryATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
                 }
             }
 
             @Override
             public void onAdNotAvailable() {
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(OguryATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "no ad available"));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "onAdNotAvailable");
                 }
             }
 
             @Override
             public void onAdLoaded() {
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(OguryATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
-            public void onAdNotLoaded () {
+            public void onAdNotLoaded() {
             }
 
             @Override
             public void onAdDisplayed() {
-                if(mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(OguryATRewardedVideoAdapter.this);
+                if (mImpressionListener != null) {
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
             @Override
             public void onAdClosed() {
-                if(mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(OguryATRewardedVideoAdapter.this);
-                    if(mIsReward) {
-                        mImpressionListener.onReward(OguryATRewardedVideoAdapter.this);
+                if (mImpressionListener != null) {
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
+                    if (mIsReward) {
+                        mImpressionListener.onReward();
                     }
-                    mImpressionListener.onRewardedVideoAdClosed(OguryATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
             }
 
@@ -121,8 +111,8 @@ public class OguryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 code 4: ad expires in 4 hours if it was not shown
                 code 5: start method not called
                 */
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(OguryATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + code, OguryATInitManager.getErrorMsg(code)));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("" + code, OguryATInitManager.getErrorMsg(code));
                 }
             }
 
@@ -142,15 +132,6 @@ public class OguryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
     }
 
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
 
     @Override
     public boolean isAdReady() {
@@ -158,17 +139,30 @@ public class OguryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return OguryATConst.getSDKVersion();
     }
 
     @Override
-    public void clean() {
-
+    public void destory() {
+        if (mPresageOptinVideo != null) {
+            mPresageOptinVideo.setOptinVideoCallback(null);
+            mPresageOptinVideo = null;
+        }
     }
 
     @Override
     public String getNetworkName() {
         return OguryATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mUnitId;
     }
 }

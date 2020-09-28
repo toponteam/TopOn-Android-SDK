@@ -5,18 +5,16 @@ import android.content.Context;
 import com.anythink.core.api.AdError;
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.core.common.CommonAdManager;
+import com.anythink.core.common.CommonMediationManager;
+import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.AdTrackingInfo;
-import com.anythink.core.strategy.PlaceStrategy;
 
-import java.util.List;
-import java.util.Map;
 
 /**
  * Ad request manager
  */
 
-public class AdLoadManager extends CommonAdManager {
+public class AdLoadManager extends CommonAdManager<BannerLoadParams> {
 
 
     public static final String TAG = "Banner" + AdLoadManager.class.getSimpleName();
@@ -29,10 +27,10 @@ public class AdLoadManager extends CommonAdManager {
 
     public static AdLoadManager getInstance(Context context, String placementId) {
 
-        CommonAdManager adLoadManager = CommonAdManager.getInstance(placementId);
+        CommonAdManager adLoadManager = PlacementAdManager.getInstance().getAdManager(placementId);
         if (adLoadManager == null || !(adLoadManager instanceof AdLoadManager)) {
             adLoadManager = new AdLoadManager(context, placementId);
-            CommonAdManager.addAdManager(placementId, adLoadManager);
+            PlacementAdManager.getInstance().addAdManager(placementId, adLoadManager);
         }
         adLoadManager.refreshContext(context);
         return (AdLoadManager) adLoadManager;
@@ -43,42 +41,42 @@ public class AdLoadManager extends CommonAdManager {
      *
      * @param listener
      */
-    public void startLoadAd(final ATBannerView bannerView, final boolean isRefresh, final InnerBannerListener listener) {
+    public void startLoadAd(Context context, final ATBannerView bannerView, final boolean isRefresh, final InnerBannerListener listener) {
 
-        loadStragety(mApplicationContext, Const.FORMAT.BANNER_FORMAT, mPlacementId, isRefresh, new PlacementCallback() {
-            @Override
-            public void onSuccess(String placementId, String requestId, PlaceStrategy placeStrategy, List<PlaceStrategy.UnitGroupInfo> unitGroupInfoList) {
-                MediationGroupManager mediaionGroupManager = new MediationGroupManager(mActivityRef.get());
-                mediaionGroupManager.setCallbackListener(listener);
-                mediaionGroupManager.setRefresh(isRefresh);
-                mediaionGroupManager.loadBannerAd(bannerView, mPlacementId, requestId, placeStrategy, unitGroupInfoList);
-                mHistoryMediationManager.put(requestId, mediaionGroupManager);
+        BannerLoadParams bannerLoadParams = new BannerLoadParams();
+        bannerLoadParams.bannerView = bannerView;
+        bannerLoadParams.listener = listener;
+        bannerLoadParams.context = context;
+        bannerLoadParams.isRefresh = isRefresh;
 
-                mCurrentManager = mediaionGroupManager;
-            }
-
-            @Override
-            public void onAdLoaded(String placementId, String requestId) {
-                if (listener != null) {
-                    listener.onBannerLoaded(isRefresh);
-                }
-            }
-
-            @Override
-            public void onLoadError(String placementId, String requestId, AdError adError) {
-                if (listener != null) {
-                    listener.onBannerFailed(isRefresh, adError);
-                }
-            }
-
-
-        });
+        super.startLoadAd(mApplicationContext, Const.FORMAT.BANNER_FORMAT, mPlacementId, bannerLoadParams);
 
     }
 
 
     @Override
-    public void startCountdown(PlaceStrategy.UnitGroupInfo unitGroupInfo, AdTrackingInfo adTrackingInfo) {
-        /**banner no need to do thie**/
+    public CommonMediationManager createFormatMediationManager(BannerLoadParams bannerLoadParams) {
+        MediationGroupManager mediaionGroupManager = new MediationGroupManager(bannerLoadParams.context);
+        mediaionGroupManager.setCallbackListener(bannerLoadParams.listener);
+        mediaionGroupManager.setRefresh(bannerLoadParams.isRefresh);
+        mediaionGroupManager.setATBannerView(bannerLoadParams.bannerView);
+        return mediaionGroupManager;
     }
+
+    @Override
+    public void onCallbackOfferHasExist(BannerLoadParams bannerLoadParams, String placementId, String requestId) {
+        if (bannerLoadParams.listener != null) {
+            bannerLoadParams.listener.onBannerLoaded(bannerLoadParams.isRefresh);
+        }
+    }
+
+    @Override
+    public void onCallbacInternalError(BannerLoadParams bannerLoadParams, String placementId, String requestId, AdError adError) {
+        if (bannerLoadParams.listener != null) {
+            bannerLoadParams.listener.onBannerFailed(bannerLoadParams.isRefresh, adError);
+        }
+
+    }
+
+
 }

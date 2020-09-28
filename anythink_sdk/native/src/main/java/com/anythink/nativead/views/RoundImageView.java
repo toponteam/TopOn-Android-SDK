@@ -4,29 +4,29 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.widget.ImageView;
 
-import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.common.utils.CommonUtil;
+import com.anythink.nativead.api.ATNativeImageView;
 
 
-public class RoundImageView extends ImageView {
+public class RoundImageView extends ATNativeImageView {
 
     int mRadiu;
     boolean mIsRadiu;
 
     public RoundImageView(Context context) {
         super(context);
-        mRadiu = dip2px(getContext(), 5);
+        mRadiu = CommonUtil.dip2px(getContext(), 5);
     }
 
     public RoundImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        mRadiu = dip2px(getContext(), 5);
+        mRadiu = CommonUtil.dip2px(getContext(), 5);
     }
 
     public RoundImageView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        mRadiu = dip2px(getContext(), 5);
+        mRadiu = CommonUtil.dip2px(getContext(), 5);
     }
 
     public void setNeedRadiu(boolean isRadiu) {
@@ -91,18 +91,5 @@ public class RoundImageView extends ImageView {
         }
     }
 
-    public static int dip2px(Context context, float dipValue) {
-        float scale = context.getResources().getDisplayMetrics().density;
-        return (int) (dipValue * scale + 0.5f);
-    }
 
-
-    public void startLoadImage(String url, int size) {
-        TaskManager.getInstance().run_proxy(new Runnable() {
-            @Override
-            public void run() {
-
-            }
-        });
-    }
 }

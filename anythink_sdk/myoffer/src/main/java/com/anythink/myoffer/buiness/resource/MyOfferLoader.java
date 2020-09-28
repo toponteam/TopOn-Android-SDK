@@ -4,8 +4,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.utils.CommonLogUtil;
-import com.anythink.myoffer.entity.MyOfferAd;
 import com.anythink.network.myoffer.MyOfferError;
 import com.anythink.network.myoffer.MyOfferErrorCode;
 
@@ -41,6 +42,7 @@ public class MyOfferLoader implements MyOfferUrlLoadManager.ResourceLoadResult {
          * MyOffer load success
          */
         void onSuccess();
+
         /**
          * MyOffer load failed
          */
@@ -50,15 +52,20 @@ public class MyOfferLoader implements MyOfferUrlLoadManager.ResourceLoadResult {
     /**
      * load MyOffer
      */
-    public void load(MyOfferAd myOfferAd, MyOfferLoaderListener listener) {
+    public void load(MyOfferAd myOfferAd, MyOfferSetting settings, MyOfferLoaderListener listener) {
         this.mOfferId = myOfferAd.getOfferId();
 
         mListener = listener;
 
-        List<String> urlList = myOfferAd.getUrlList();
+        List<String> urlList = myOfferAd.getUrlList(settings);
+        if (urlList == null) {
+            notifyFailed(MyOfferErrorCode.get(MyOfferErrorCode.incompleteResourceError, MyOfferErrorCode.fail_incomplete_resource));
+            return;
+        }
+
         int size = urlList.size();
         String url;
-        if(size == 0) {
+        if (size == 0) {
             notifySuccess();
             return;
         }
@@ -73,7 +80,7 @@ public class MyOfferLoader implements MyOfferUrlLoadManager.ResourceLoadResult {
         }
 
         int url_size = mUrlList.size();
-        if(url_size == 0) {
+        if (url_size == 0) {
             CommonLogUtil.d(TAG, "Offer(" + mOfferId + "), all files have already exist");
             notifySuccess();
             return;
@@ -87,13 +94,12 @@ public class MyOfferLoader implements MyOfferUrlLoadManager.ResourceLoadResult {
             for (int i = 0; i < url_size; i++) {
                 url = mUrlList.get(i);
 
-                if(TextUtils.isEmpty(url)) {
+                if (TextUtils.isEmpty(url)) {
                     continue;
-                } else if(MyOfferResourceState.isLoading(url)) {
+                } else if (MyOfferResourceState.isLoading(url)) {
                     CommonLogUtil.d(TAG, "file is loading -> " + url);
                     continue;
-                }
-                else if (MyOfferResourceState.isExist(url)) {
+                } else if (MyOfferResourceState.isExist(url)) {
                     CommonLogUtil.d(TAG, "file exist -> " + url);
                     MyOfferResourceState.setState(url, MyOfferResourceState.NORMAL);
                     MyOfferUrlLoadManager.getInstance().notifyDownloadSuccess(url);
@@ -130,30 +136,32 @@ public class MyOfferLoader implements MyOfferUrlLoadManager.ResourceLoadResult {
 
     private void notifySuccess() {
         mHasCallback.set(true);
-        if(mListener != null) {
+        if (mListener != null) {
             CommonLogUtil.d(TAG, "Offer load success, OfferId -> " + mOfferId);
             mListener.onSuccess();
         }
         this.release();
     }
+
     private void notifyFailed(MyOfferError error) {
         mHasCallback.set(true);
-        if(mListener != null) {
+        if (mListener != null) {
             CommonLogUtil.d(TAG, "Offer load failed, OfferId -> " + mOfferId);
             mListener.onFailed(error);
         }
         this.release();
     }
+
     private void release() {
         MyOfferUrlLoadManager.getInstance().unRegister(this);
-        if(mMainHandler != null) {
+        if (mMainHandler != null) {
             mMainHandler.removeCallbacksAndMessages(null);
             mMainHandler = null;
         }
     }
 
     private void startLoadTimer() {
-        if(mMainHandler == null) {
+        if (mMainHandler == null) {
             mMainHandler = new Handler(Looper.getMainLooper());
             mMainHandler.postDelayed(new Runnable() {
                 @Override

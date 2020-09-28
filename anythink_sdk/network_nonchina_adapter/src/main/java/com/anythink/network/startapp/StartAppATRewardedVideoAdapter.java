@@ -1,13 +1,13 @@
 package com.anythink.network.startapp;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.startapp.sdk.adsbase.Ad;
 import com.startapp.sdk.adsbase.StartAppAd;
 import com.startapp.sdk.adsbase.VideoListener;
@@ -23,7 +23,7 @@ public class StartAppATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     String adTag = "";
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String appId = "";
 
@@ -38,38 +38,36 @@ public class StartAppATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             adTag = "";
         }
 
-        mLoadResultListener = customRewardVideoListener;
 
         if (TextUtils.isEmpty(appId)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id could not be null.");
-                mLoadResultListener.onRewardedVideoAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id could not be null.");
             }
             return;
         }
 
-        StartAppATInitManager.getInstance().initSDK(activity, serverExtras);
+        StartAppATInitManager.getInstance().initSDK(context, serverExtras);
         AdPreferences adPreferences = new AdPreferences();
         if (!TextUtils.isEmpty(adTag)) {
             adPreferences.setAdTag(adTag);
         }
 
-        startAppAd = new StartAppAd(activity);
+        startAppAd = new StartAppAd(context);
         startAppAd.loadAd(StartAppAd.AdMode.REWARDED_VIDEO, adPreferences, new AdEventListener() {
             @Override
             public void onReceiveAd(Ad ad) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(StartAppATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onFailedToReceiveAd(Ad ad) {
-                if (mLoadResultListener != null) {
+                if (mLoadListener != null) {
                     if (ad != null) {
-                        mLoadResultListener.onRewardedVideoAdFailed(StartAppATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", ad.getErrorMessage()));
+                        mLoadListener.onAdLoadError("", ad.getErrorMessage());
                     } else {
-                        mLoadResultListener.onRewardedVideoAdFailed(StartAppATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "StartApp has not error msg."));
+                        mLoadListener.onAdLoadError("", "StartApp has not error msg.");
                     }
                 }
             }
@@ -80,16 +78,16 @@ public class StartAppATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public void show(Activity activity) {
-        if (startAppAd.isReady()) {
+        if (startAppAd != null && startAppAd.isReady()) {
             startAppAd.setVideoListener(new VideoListener() {
                 @Override
                 public void onVideoCompleted() {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayEnd(StartAppATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdPlayEnd();
                     }
 
                     if (mImpressionListener != null) {
-                        mImpressionListener.onReward(StartAppATRewardedVideoAdapter.this);
+                        mImpressionListener.onReward();
                     }
 
                 }
@@ -98,28 +96,28 @@ public class StartAppATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 @Override
                 public void adHidden(Ad ad) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdClosed(StartAppATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdClosed();
                     }
                 }
 
                 @Override
                 public void adDisplayed(Ad ad) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayStart(StartAppATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdPlayStart();
                     }
                 }
 
                 @Override
                 public void adClicked(Ad ad) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayClicked(StartAppATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdPlayClicked();
                     }
                 }
 
                 @Override
                 public void adNotDisplayed(Ad ad) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayFailed(StartAppATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", ad.getErrorMessage()));
+                        mImpressionListener.onRewardedVideoAdPlayFailed("", ad.getErrorMessage());
                     }
                 }
             };
@@ -133,15 +131,6 @@ public class StartAppATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
     }
 
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
 
     @Override
     public boolean isAdReady() {
@@ -149,17 +138,30 @@ public class StartAppATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return StartAppATConst.getSDKVersion();
     }
 
     @Override
-    public void clean() {
-
+    public void destory() {
+        if (startAppAd != null) {
+            startAppAd.setVideoListener(null);
+            startAppAd = null;
+        }
     }
 
     @Override
     public String getNetworkName() {
         return StartAppATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return adTag;
     }
 }

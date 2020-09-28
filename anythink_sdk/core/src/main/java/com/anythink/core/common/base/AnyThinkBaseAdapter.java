@@ -22,45 +22,40 @@ public abstract class AnyThinkBaseAdapter {
     boolean isRefresh;
     protected WeakReference<Activity> mActivityRef;
 
-    public void setTrackingInfo(AdTrackingInfo adTrackingInfo) {
+    final public void setTrackingInfo(AdTrackingInfo adTrackingInfo) {
         mTrackingInfo = adTrackingInfo;
     }
 
-    public AdTrackingInfo getTrackingInfo() {
+    final public AdTrackingInfo getTrackingInfo() {
         return mTrackingInfo;
     }
 
-    public PlaceStrategy.UnitGroupInfo getmUnitgroupInfo() {
+    final public PlaceStrategy.UnitGroupInfo getmUnitgroupInfo() {
         return mUnitgroupInfo;
     }
 
-    public void setmUnitgroupInfo(PlaceStrategy.UnitGroupInfo mUnitgroupInfo) {
+    final public void setmUnitgroupInfo(PlaceStrategy.UnitGroupInfo mUnitgroupInfo) {
         this.mUnitgroupInfo = mUnitgroupInfo;
     }
 
-    public void setRefresh(boolean isRefresh) {
+    final public void setRefresh(boolean isRefresh) {
         this.isRefresh = isRefresh;
     }
 
-    public boolean isRefresh() {
+    final public boolean isRefresh() {
         return this.isRefresh;
     }
 
-    public void refreshActivityContext(Activity activity) {
+    final public void refreshActivityContext(Activity activity) {
         mActivityRef = new WeakReference<>(activity);
     }
 
-    @Deprecated
-    protected void log(String tag, String msg) {
+
+    final public void postOnMainThread(Runnable runnable) {
+        SDKContext.getInstance().runOnMainThread(runnable);
     }
 
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
-        return false;
-    }
-
-    public abstract boolean isAdReady();
-
-    public void log(String action, String status, String extraMsg) {
+    final public void log(String action, String status, String extraMsg) {
         if (ATSDK.isNetworkLogDebug()) {
             if (mTrackingInfo != null) {
                 try {
@@ -68,12 +63,12 @@ public abstract class AnyThinkBaseAdapter {
                     if (mTrackingInfo.ismIsDefaultNetwork()) {
                         jsonObject.put("isDefault", true);
                     }
-                    jsonObject.put("placemengId", mTrackingInfo.getmPlacementId());
+                    jsonObject.put("placementId", mTrackingInfo.getmPlacementId());
                     jsonObject.put("adType", mTrackingInfo.getAdTypeString());
                     jsonObject.put("action", action);
                     jsonObject.put("refresh", mTrackingInfo.getmRefresh());
                     jsonObject.put("result", status);
-                    jsonObject.put("position", mTrackingInfo.getmLevel());
+                    jsonObject.put("position", mTrackingInfo.getRequestLevel());
                     jsonObject.put("networkType", mTrackingInfo.getmNetworkType());
                     jsonObject.put("networkName", mTrackingInfo.getNetworkName());
                     jsonObject.put("networkVersion", mTrackingInfo.getmNetworkVersion());
@@ -94,11 +89,5 @@ public abstract class AnyThinkBaseAdapter {
             }
         }
     }
-
-    public abstract String getSDKVersion();
-
-    public abstract void clean();
-
-    public abstract String getNetworkName();
 
 }

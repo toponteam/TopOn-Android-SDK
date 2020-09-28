@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.flurry.android.FlurryAgent;
 import com.flurry.android.ads.FlurryAdErrorType;
 import com.flurry.android.ads.FlurryAdInterstitial;
@@ -31,20 +30,20 @@ public class FlurryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     /***
      * load ad
      */
-    private void startLoad(Activity activity) {
+    private void startLoad(Context context) {
 
-        final Context applicationContext = activity.getApplicationContext();
+        final Context applicationContext = context.getApplicationContext();
         mIsShow = false;
 
-        mFlurryAdInterstitial = new FlurryAdInterstitial(activity, placeid);
+        mFlurryAdInterstitial = new FlurryAdInterstitial(context, placeid);
         mFlurryAdInterstitial.setListener(new FlurryAdInterstitialListener() {
             @Override
             public void onFetched(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (applicationContext != null) {
                     FlurryAgent.onEndSession(applicationContext);
                 }
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(FlurryATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
@@ -56,7 +55,7 @@ public class FlurryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onDisplay(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(FlurryATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
 
             }
@@ -65,7 +64,7 @@ public class FlurryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             public void onClose(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressionListener != null && mIsShow) {
                     mIsShow = false;
-                    mImpressionListener.onRewardedVideoAdClosed(FlurryATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
             }
 
@@ -76,18 +75,18 @@ public class FlurryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onClicked(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(FlurryATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
 
             @Override
             public void onVideoCompleted(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(FlurryATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
 
                 if (mImpressionListener != null) {
-                    mImpressionListener.onReward(FlurryATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
 
@@ -96,81 +95,56 @@ public class FlurryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 if (applicationContext != null) {
                     FlurryAgent.onEndSession(applicationContext);
                 }
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(FlurryATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, pI + "", pFlurryAdErrorType.toString()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(pI + "", pFlurryAdErrorType.toString());
                 }
 
             }
         });
 
-        if (activity != null) {
-            FlurryAgent.onStartSession(activity.getApplicationContext());
+        if (context != null) {
+            FlurryAgent.onStartSession(context.getApplicationContext());
         }
-        if (check()) {
-            mFlurryAdInterstitial.fetchAd();
-        }
+        mFlurryAdInterstitial.fetchAd();
     }
 
     @Override
-    public void clean() {
-        if (check()) {
+    public void destory() {
+        if (mFlurryAdInterstitial != null) {
+            mFlurryAdInterstitial.setListener(null);
             mFlurryAdInterstitial.destroy();
+            mFlurryAdInterstitial = null;
         }
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
+        mFlurryMediationSetting = null;
     }
 
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
-        if (mediationSetting != null && mediationSetting instanceof FlurryRewardedVideoSetting) {
-            mFlurryMediationSetting = (FlurryRewardedVideoSetting) mediationSetting;
-
-        }
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String sdkKey = "";
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid or unitid  is empty."));
+
+        sdkKey = ((String) serverExtras.get("sdk_key"));
+        placeid = ((String) serverExtras.get("ad_space"));
+
+        if (TextUtils.isEmpty(sdkKey) || TextUtils.isEmpty(placeid)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "flurry sdkkey is empty.");
             }
             return;
-        } else {
-
-            sdkKey = ((String) serverExtras.get("sdk_key"));
-            placeid = ((String) serverExtras.get("ad_space"));
-
-            if (TextUtils.isEmpty(sdkKey) || TextUtils.isEmpty(placeid)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "flurry sdkkey is empty."));
-                }
-                return;
-            }
         }
-        FlurryATInitManager.getInstance().initSDK(activity, serverExtras);
-        startLoad(activity);
+        FlurryATInitManager.getInstance().initSDK(context, serverExtras);
+        startLoad(context);
     }
 
     @Override
     public boolean isAdReady() {
-        if (check()) {
-            return mFlurryAdInterstitial.isReady();
-        }
-        return false;
+        return mFlurryAdInterstitial != null && mFlurryAdInterstitial.isReady();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return FlurryATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
     }
 
     /***
@@ -180,24 +154,23 @@ public class FlurryATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public void show(Activity activity) {
-        if (check() && isAdReady()) {
-            mIsShow = true;
-            mFlurryAdInterstitial.displayAd();
-        }
+        mIsShow = true;
+        mFlurryAdInterstitial.displayAd();
     }
 
-
-    private boolean check() {
-        return mFlurryAdInterstitial != null;
-    }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return FlurryATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return FlurryATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return placeid;
     }
 }

@@ -41,7 +41,6 @@ public class ApplovinATNativeAd extends CustomNativeAd {
         if (view == null) {
             return;
         }
-        log(TAG, "on prepare");
         registerView(view, new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -110,27 +109,22 @@ public class ApplovinATNativeAd extends CustomNativeAd {
 
     @Override
     public void clear(final View view) {
-        log(TAG, "clear");
-        if (mPlayerView != null) {
-            mPlayerView.release();
-            mPlayerView = null;
-        }
-        if (view != null) {
-            unregisterView(view);
-        }
+
     }
 
     @Override
     public void destroy() {
-        log(TAG, "destoy");
         if (mPlayerView != null) {
+            mPlayerView.setListener(null);
             mPlayerView.release();
             mPlayerView = null;
         }
+        mApplovinSdk = null;
         mNativeAd = null;
+        mContext = null;
     }
 
-    public void setAdData(AppLovinNativeAd nativeAd) {
+    private void setAdData(AppLovinNativeAd nativeAd) {
         mNativeAd = nativeAd;
         setTitle(nativeAd.getTitle());
         setDescriptionText(nativeAd.getDescriptionText());
@@ -161,6 +155,7 @@ public class ApplovinATNativeAd extends CustomNativeAd {
                 return null;
             } else {
                 if (mPlayerView != null) {
+                    mPlayerView.setListener(null);
                     mPlayerView.release();
                     mPlayerView = null;
                 }

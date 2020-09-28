@@ -22,8 +22,11 @@ public class AgentEventManager {
     public static final int PLACEMENT_PACCING_REASON = 3;
     public static final int PLACEMENT_STRATEGY_NULL_REASON = 4;
 
+    public static final int REQUEST_HTTP_TYPE = 0;
+    public static final int REQUEST_TCP_TYPE = 1;
 
-    public static void onAgentForATToAppLoadFail(AdTrackingInfo adTrackingInfo, String allReason) {
+
+    public static void onAgentForATToAppLoadFail(AdTrackingInfo adTrackingInfo, AdError adError) {
         try {
             AgentInfoBean agentInfoBean = new AgentInfoBean();
             agentInfoBean.key = "1004630";
@@ -37,7 +40,10 @@ public class AgentEventManager {
 
             PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(SDKContext.getInstance().getContext()).getPlaceStrategyByAppIdAndPlaceId(adTrackingInfo.getmPlacementId());
             agentInfoBean.asid = placeStrategy != null ? placeStrategy.getAsid() : "";
-            agentInfoBean.msg = allReason;
+            if (adError != null) {
+                agentInfoBean.msg = adError.printStackTrace();
+                agentInfoBean.msg1 = adError.getCode();
+            }
 
             agentInfoBean.format = adTrackingInfo.getmAdType();
 
@@ -115,7 +121,7 @@ public class AgentEventManager {
                     adTrackingInfo.getmNetworkType(),
                     adTrackingInfo.getmUnitGroupUnitId(),
                     adTrackingInfo.getmAdType(),
-                    adTrackingInfo.getmLevel(),
+                    adTrackingInfo.getRequestLevel(),
                     reason,
                     adError,
                     adTrackingInfo.getmBidType(),
@@ -180,7 +186,7 @@ public class AgentEventManager {
         agentInfoBean.trafficGroupId = String.valueOf(adTrackingInfo.getmTrafficGroupId());
         agentInfoBean.msg = String.valueOf(adTrackingInfo.getmNetworkType());
         agentInfoBean.msg1 = adTrackingInfo.getmUnitGroupUnitId();
-        agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getmLevel());
+        agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getImpressionLevel());
         agentInfoBean.msg3 = isReward ? "1" : "0";
         agentInfoBean.msg4 = String.valueOf(adTrackingInfo.getMyOfferShowType());
 
@@ -260,7 +266,7 @@ public class AgentEventManager {
         agentInfoBean.trafficGroupId = String.valueOf(adTrackingInfo.getmTrafficGroupId());
         agentInfoBean.msg = String.valueOf(adTrackingInfo.getmNetworkType());
         agentInfoBean.msg1 = adTrackingInfo.getmUnitGroupUnitId();
-        agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getmLevel());
+        agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getImpressionLevel());
         agentInfoBean.msg3 = adError.getCode();
         agentInfoBean.msg4 = adError.getPlatformCode();
         agentInfoBean.msg5 = adError.getPlatformMSG();
@@ -274,7 +280,7 @@ public class AgentEventManager {
     }
 
 
-    public static void sendErrorAgent(String type, String errorCode, String errorMsg, String address, String placementId, String failCount) {
+    public static void sendErrorAgent(String type, String errorCode, String errorMsg, String address, String placementId, String failCount, String uploadType) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004616";
         agentInfoBean.unitId = placementId;
@@ -283,6 +289,7 @@ public class AgentEventManager {
         agentInfoBean.msg2 = errorMsg;
         agentInfoBean.msg3 = address;
         agentInfoBean.msg4 = failCount;
+        agentInfoBean.msg5 = uploadType;
 //        agentInfoBean.psid = psid;
 //        agentInfoBean.sessionId = sessionId;
         agentInfoBean.unitId = placementId;
@@ -345,7 +352,7 @@ public class AgentEventManager {
             agentInfoBean.unitId = adTrackingInfo.getmPlacementId();
             agentInfoBean.msg = String.valueOf(adTrackingInfo.getmNetworkType());
             agentInfoBean.msg1 = adTrackingInfo.getmUnitGroupUnitId();
-            agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getmLevel());
+            agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getRequestLevel());
             agentInfoBean.msg3 = String.valueOf(adTrackingInfo.getDataFillTime());
             agentInfoBean.msg4 = String.valueOf(adTrackingInfo.getFillTime());
 
@@ -372,7 +379,7 @@ public class AgentEventManager {
 
             agentInfoBean.msg = String.valueOf(adTrackingInfo.getmNetworkType());
             agentInfoBean.msg1 = adTrackingInfo.getmUnitGroupUnitId();
-            agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getmLevel());
+            agentInfoBean.msg2 = String.valueOf(adTrackingInfo.getRequestLevel());
             agentInfoBean.msg3 = originRequestId;
 
             agentInfoBean.format = adTrackingInfo.getmAdType();
@@ -385,13 +392,13 @@ public class AgentEventManager {
         }
     }
 
-    public static void appSettingGDPRUpdate(int uploadLevel, int userUploadLevel, int appSettingGDPR_ia) {
+    public static void appSettingGDPRUpdate(int uploadLevel, int userUploadLevel, int appSettingGDPR_ia, int netowrkFirmId) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004641";
         agentInfoBean.msg = String.valueOf(uploadLevel);
         agentInfoBean.msg1 = String.valueOf(userUploadLevel);
         agentInfoBean.msg2 = String.valueOf(appSettingGDPR_ia);
-
+        agentInfoBean.msg3 = String.valueOf(netowrkFirmId);
         handleEventSend(agentInfoBean);
     }
 
@@ -453,7 +460,7 @@ public class AgentEventManager {
             agentInfoBean.msg3 = String.valueOf(endTime - startTime);
             agentInfoBean.msg4 = String.valueOf(adTrackingInfo.getmNetworkType());
             agentInfoBean.msg5 = adTrackingInfo.getmUnitGroupUnitId();
-            agentInfoBean.msg6 = String.valueOf(adTrackingInfo.getmLevel());
+            agentInfoBean.msg6 = String.valueOf(adTrackingInfo.getImpressionLevel());
             agentInfoBean.msg7 = String.valueOf(adTrackingInfo.getMyOfferShowType());
             agentInfoBean.msg8 = isReward ? "1" : "0";
 
@@ -468,6 +475,107 @@ public class AgentEventManager {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * HeadBidding Result Callback Handle Event
+     *
+     * @param requestId
+     * @param placementId
+     * @param placeStrategy
+     * @param networkFirmId
+     * @param adsourceId
+     * @param ecpm
+     * @param hbGetResultTime
+     * @param loadStatus
+     * @param compareEcpm
+     * @param handleHBResult
+     */
+    public static void headBiddingAddToRequestPoolAgent(String requestId, String placementId, PlaceStrategy placeStrategy, int networkFirmId, String adsourceId, double ecpm, long hbGetResultTime, int loadStatus, double compareEcpm, int handleHBResult) {
+        AgentInfoBean agentInfoBean = new AgentInfoBean();
+        agentInfoBean.key = "1004646";
+        agentInfoBean.requestId = requestId;
+        agentInfoBean.unitId = placementId;
+        agentInfoBean.groupId = String.valueOf(placeStrategy.getGroupId());
+        agentInfoBean.trafficGroupId = String.valueOf(placeStrategy.getTracfficGroupId());
+        agentInfoBean.asid = placeStrategy.getAsid();
+
+        agentInfoBean.msg = String.valueOf(networkFirmId);
+        agentInfoBean.msg1 = adsourceId;
+        agentInfoBean.msg2 = String.valueOf(ecpm);
+        agentInfoBean.msg3 = String.valueOf(hbGetResultTime);
+        agentInfoBean.msg4 = String.valueOf(loadStatus);
+        agentInfoBean.msg5 = String.valueOf(compareEcpm);
+        agentInfoBean.msg6 = String.valueOf(handleHBResult);
+
+        handleEventSend(agentInfoBean);
+    }
+
+    /**
+     * S2S
+     *
+     * @param requestId
+     * @param placementId
+     * @param placeStrategy
+     * @param handleHBResult
+     */
+    public static void headBiddingS2SAddToRequestPoolAgent(String requestId, String placementId, PlaceStrategy placeStrategy, String handleHBResult) {
+        AgentInfoBean agentInfoBean = new AgentInfoBean();
+        agentInfoBean.key = "1004646";
+        agentInfoBean.requestId = requestId;
+        agentInfoBean.unitId = placementId;
+        agentInfoBean.groupId = String.valueOf(placeStrategy.getGroupId());
+        agentInfoBean.trafficGroupId = String.valueOf(placeStrategy.getTracfficGroupId());
+        agentInfoBean.asid = placeStrategy.getAsid();
+
+        agentInfoBean.msg7 = String.valueOf(handleHBResult);
+
+        handleEventSend(agentInfoBean);
+    }
+
+    /**
+     * Crash
+     */
+    public static void sendCrashAgent(String crashType, String crashMsg, String psid) {
+        AgentInfoBean agentInfoBean = new AgentInfoBean();
+        agentInfoBean.key = "1004647";
+        agentInfoBean.psid = psid;
+        agentInfoBean.msg = crashMsg;
+        agentInfoBean.msg1 = crashType;
+
+        handleEventSend(agentInfoBean);
+    }
+
+    /**
+     * Click error agent
+     */
+    public static void sendClickFailAgent(String placementId, String offerId, String offerType, String clickUrl, String clickFailUrl, String errorCode, String errorMsg) {
+        AgentInfoBean agentInfoBean = new AgentInfoBean();
+        agentInfoBean.key = "1004648";
+        agentInfoBean.unitId = placementId;
+        agentInfoBean.msg = offerId;
+        agentInfoBean.msg1 = offerType;
+        agentInfoBean.msg2 = clickUrl;
+        agentInfoBean.msg3 = clickFailUrl;
+        agentInfoBean.msg4 = errorCode;
+        agentInfoBean.msg5 = errorMsg;
+
+        handleEventSend(agentInfoBean);
+    }
+
+    /**
+     * DeepLink Agent
+     */
+    public static void sendDeepLinkAgent(String placementId, String offerId, String offerType, String deepLinkUrl, String result) {
+        AgentInfoBean agentInfoBean = new AgentInfoBean();
+        agentInfoBean.key = "1004650";
+        agentInfoBean.unitId = placementId;
+        agentInfoBean.msg = offerId;
+        agentInfoBean.msg1 = offerType;
+        agentInfoBean.msg2 = deepLinkUrl;
+        agentInfoBean.msg3 = result;
+
+        handleEventSend(agentInfoBean);
     }
 
 
@@ -527,7 +635,7 @@ public class AgentEventManager {
                     }
                 }
 
-                Agent.onEvent(agentInfoBean);
+                Agent.getInstance().onEvent(agentInfoBean);
             }
         });
     }

@@ -11,8 +11,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdListener;
@@ -87,58 +85,55 @@ public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.O
 
     public void loadAd(final Context context, final Bundle gdprBundle) {
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                VideoOptions videoOptions = new VideoOptions.Builder()
-                        .setStartMuted(true)
-                        .build();
+        VideoOptions videoOptions = new VideoOptions.Builder()
+                .setStartMuted(true)
+                .build();
 
-                NativeAdOptions adOptions = new NativeAdOptions.Builder()
-                        .setVideoOptions(videoOptions)
-                        .setMediaAspectRatio(mediaRatio)
-                        .build();
+        NativeAdOptions adOptions = new NativeAdOptions.Builder()
+                .setVideoOptions(videoOptions)
+                .setMediaAspectRatio(mediaRatio)
+                .build();
 
 
-                AdLoader adLoader = new AdLoader.Builder(context, mUnitId)
-                        .forUnifiedNativeAd(AdmobATNativeAd.this)
-                        .withAdListener(new AdListener() {
-                            @Override
-                            public void onAdFailedToLoad(int errorCode) {
-                                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, errorCode + "", "");
-                                mCustomNativeListener.onFail(adError);
-                            }
+        AdLoader adLoader = new AdLoader.Builder(context, mUnitId)
+                .forUnifiedNativeAd(AdmobATNativeAd.this)
+                .withAdListener(new AdListener() {
+                    @Override
+                    public void onAdFailedToLoad(int errorCode) {
+                        if (mCustomNativeListener != null) {
+                            mCustomNativeListener.onFail(String.valueOf(errorCode), "");
+                        }
+                        mCustomNativeListener = null;
+                    }
 
-                            @Override
-                            public void onAdClicked() {
-                                if (clickType == 0) {
-                                    clickType = 1;
-                                }
-                                if (clickType == 1) {
-                                    notifyAdClicked();
-                                }
-                            }
+                    @Override
+                    public void onAdClicked() {
+                        if (clickType == 0) {
+                            clickType = 1;
+                        }
+                        if (clickType == 1) {
+                            notifyAdClicked();
+                        }
+                    }
 
-                            @Override
-                            public void onAdImpression() {
-                            }
+                    @Override
+                    public void onAdImpression() {
+                    }
 
-                            @Override
-                            public void onAdLeftApplication() {
-                                if (clickType == 0) {
-                                    clickType = 2;
-                                }
-                                if (clickType == 2) {
-                                    notifyAdClicked();
-                                }
-                            }
-                        })
-                        .withNativeAdOptions(adOptions).build();
+                    @Override
+                    public void onAdLeftApplication() {
+                        if (clickType == 0) {
+                            clickType = 2;
+                        }
+                        if (clickType == 2) {
+                            notifyAdClicked();
+                        }
+                    }
+                })
+                .withNativeAdOptions(adOptions).build();
 
 
-                adLoader.loadAd(new AdRequest.Builder().addNetworkExtrasBundle(AdMobAdapter.class, gdprBundle).build());
-            }
-        }).start();
+        adLoader.loadAd(new AdRequest.Builder().addNetworkExtrasBundle(AdMobAdapter.class, gdprBundle).build());
 
     }
 
@@ -164,8 +159,10 @@ public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.O
         } else {
             mAdSourceType = IMAGE_TYPE;
         }
-
-        mCustomNativeListener.onSuccess(AdmobATNativeAd.this);
+        if (mCustomNativeListener != null) {
+            mCustomNativeListener.onSuccess(AdmobATNativeAd.this);
+        }
+        mCustomNativeListener = null;
 
     }
 
@@ -203,11 +200,7 @@ public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.O
 
                 }
             });
-
-            mMediaView = new MediaView(mContext);
-            unifiedNativeAdView.setMediaView(mMediaView);
         }
-
         unifiedNativeAdView.setNativeAd(mNativeAd);
         return unifiedNativeAdView;
 
@@ -223,6 +216,13 @@ public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.O
 
     @Override
     public View getAdMediaView(Object... object) {
+        mMediaView = new MediaView(mContext);
+        if (mNativeAdView != null) {
+            mNativeAdView.setMediaView(mMediaView);
+            if (mNativeAd != null) {
+                mNativeAdView.setNativeAd(mNativeAd);
+            }
+        }
         return mMediaView;
     }
 
@@ -322,7 +322,12 @@ public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.O
             mNativeAdView = null;
         }
         mMediaView = null;
-        super.destroy();
+        mCustomNativeListener = null;
+        mContext = null;
+        if (mNativeAd != null) {
+            mNativeAd.destroy();
+            mNativeAd = null;
+        }
     }
 
     boolean mIsAutoPlay;
@@ -331,10 +336,10 @@ public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.O
         mIsAutoPlay = isAutoPlay;
     }
 
-    interface LoadCallbackListener {
-        public void onSuccess(CustomNativeAd customNativeAd);
+    protected interface LoadCallbackListener {
+        void onSuccess(CustomNativeAd customNativeAd);
 
-        public void onFail(AdError adError);
+        void onFail(String errorCode, String errorMsg);
     }
 
 }

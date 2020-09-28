@@ -1,6 +1,7 @@
 package com.anythink.core.common.net;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.MyOfferAPIProxy;
@@ -10,6 +11,7 @@ import com.anythink.core.common.base.UploadDataLevelManager;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonDeviceUtil;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -59,7 +61,7 @@ public class PlaceStrategyLoader extends AbsHttpLoader {
 
     @Override
     protected int onPrepareType() {
-        return AbsHttpLoader.POST;
+        return ApiRequestParam.POST;
     }
 
     @Override
@@ -122,9 +124,36 @@ public class PlaceStrategyLoader extends AbsHttpLoader {
             pObject.put("app_id", appid);
             pObject.put("pl_id", placeId);
             pObject.put("session_id", sessionId);
-            pObject.put(JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
+            pObject.put(ApiRequestParam.JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
             pObject.put("exclude_myofferid", MyOfferAPIProxy.getIntance().getOutOfCapOfferIds(mContext));
-            pObject.put(JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
+            pObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
+
+            try {
+                List<String> packageList = SDKContext.getInstance().getExcludeMyOfferPkgList();
+                if (packageList != null && !packageList.isEmpty()) {
+                    JSONArray jsonArray = new JSONArray(packageList);
+                    pObject.put("ecpoffer", jsonArray);
+                }
+            } catch (Exception e) {
+                if (Const.DEBUG) {
+                    e.printStackTrace();
+                }
+            }
+
+            /**Sy id**/
+            String sysId = SDKContext.getInstance().getSysId();
+            if (!TextUtils.isEmpty(sysId)) {
+                pObject.put("sy_id", sysId);
+            }
+
+            String bkId = SDKContext.getInstance().getBkId();
+            if (!TextUtils.isEmpty(bkId)) {
+                pObject.put("bk_id", bkId);
+            } else {
+                SDKContext.getInstance().saveBkId(SDKContext.getInstance().getUpId());
+                pObject.put("bk_id", SDKContext.getInstance().getUpId());
+            }
+
 
             if (customMap != null) {
                 JSONObject customObject = new JSONObject();
@@ -178,7 +207,7 @@ public class PlaceStrategyLoader extends AbsHttpLoader {
     @Override
     protected void onErrorAgent(String msg, AdError adError) {
 
-        AgentEventManager.sendErrorAgent("placement", adError.getPlatformCode(), adError.getPlatformMSG(), null, placeId, "");
+        AgentEventManager.sendErrorAgent("placement", adError.getPlatformCode(), adError.getPlatformMSG(), null, placeId, "", "");
     }
 
 }

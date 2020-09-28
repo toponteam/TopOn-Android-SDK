@@ -5,19 +5,10 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
-import com.mintegral.msdk.base.entity.CampaignEx;
-import com.mintegral.msdk.nativex.view.MTGMediaView;
-import com.mintegral.msdk.out.Campaign;
-import com.mintegral.msdk.out.Frame;
 import com.mintegral.msdk.out.MTGNativeAdvancedHandler;
-import com.mintegral.msdk.out.MtgBidNativeHandler;
-import com.mintegral.msdk.out.MtgNativeHandler;
 import com.mintegral.msdk.out.NativeAdvancedAdListener;
-import com.mintegral.msdk.out.NativeListener;
-import com.mintegral.msdk.out.OnMTGMediaViewListener;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by zhou on 2018/1/17.
@@ -25,55 +16,51 @@ import java.util.Map;
 
 public class MintegralATExpressNativeAd extends CustomNativeAd {
     private final String TAG = MintegralATExpressNativeAd.class.getSimpleName();
-    Context mContext;
     MTGNativeAdvancedHandler mtgNativeAdvancedHandler;
 
-    NativeAdvancedAdListener listener = new NativeAdvancedAdListener() {
-        @Override
-        public void onLoadFailed(String s) {
-
-        }
-
-        @Override
-        public void onLoadSuccessed() {
-
-        }
-
-        @Override
-        public void onLogImpression() {
-
-        }
-
-        @Override
-        public void onClick() {
-            notifyAdClicked();
-        }
-
-        @Override
-        public void onLeaveApp() {
-
-        }
-
-        @Override
-        public void showFullScreen() {
-
-        }
-
-        @Override
-        public void closeFullScreen() {
-
-        }
-
-        @Override
-        public void onClose() {
-            notifyAdDislikeClick();
-        }
-    };
-
     public MintegralATExpressNativeAd(Context context, MTGNativeAdvancedHandler mtgNativeAdvancedHandler, boolean isHB) {
-        mContext = context.getApplicationContext();
         this.mtgNativeAdvancedHandler = mtgNativeAdvancedHandler;
-        mtgNativeAdvancedHandler.setAdListener(listener);
+        mtgNativeAdvancedHandler.setAdListener(new NativeAdvancedAdListener() {
+            @Override
+            public void onLoadFailed(String s) {
+
+            }
+
+            @Override
+            public void onLoadSuccessed() {
+
+            }
+
+            @Override
+            public void onLogImpression() {
+
+            }
+
+            @Override
+            public void onClick() {
+                notifyAdClicked();
+            }
+
+            @Override
+            public void onLeaveApp() {
+
+            }
+
+            @Override
+            public void showFullScreen() {
+
+            }
+
+            @Override
+            public void closeFullScreen() {
+
+            }
+
+            @Override
+            public void onClose() {
+                notifyAdDislikeClick();
+            }
+        });
     }
 
 
@@ -113,10 +100,9 @@ public class MintegralATExpressNativeAd extends CustomNativeAd {
     @Override
     public void destroy() {
         if (mtgNativeAdvancedHandler != null) {
-            mtgNativeAdvancedHandler.release();
+            mtgNativeAdvancedHandler.setAdListener(null);
             mtgNativeAdvancedHandler = null;
         }
-
     }
 
     @Override

@@ -5,6 +5,8 @@ import com.anythink.core.api.AdError;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.db.CommonSDKDBHelper;
 import com.anythink.core.common.net.OnHttpLoaderListener;
+import com.anythink.core.common.net.socket.SocketUploadData;
+import com.anythink.core.common.net.socket.TrackingSocketData;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.CommonMD5;
 import com.anythink.core.common.db.FailRequestInfoDao;
@@ -62,36 +64,55 @@ public class OffLineTkManager {
             if (failRequestInfos != null && failRequestInfos.size() > 0) {
                 mRequestCount = failRequestInfos.size();
                 CommonLogUtil.e(TAG, "neet to send request count:" + mRequestCount);
-                for (FailRequestInfo failRequestInfo : failRequestInfos) {
+                for (final FailRequestInfo failRequestInfo : failRequestInfos) {
                     /**Remove the log after 7 day**/
                     if (System.currentTimeMillis() - failRequestInfo.time >= 7 * 24 * 60 * 60 * 1000L) {
                         mRequestCount--;
                         FailRequestInfoDao.getInstance(CommonSDKDBHelper.getInstance(SDKContext.getInstance().getContext())).delete(failRequestInfo);
                         continue;
                     }
-                    final ReSendRequestLoader reSendRequestLoader = new ReSendRequestLoader(failRequestInfo);
-                    reSendRequestLoader.start(0, new OnHttpLoaderListener() {
-                        @Override
-                        public void onLoadStart(int reqCode) {
 
-                        }
+                    if (failRequestInfo.requestType == 3) { //TCP
+                        TrackingSocketData trackingSocketData = new TrackingSocketData(failRequestInfo.content);
+                        trackingSocketData.startToUpload(new SocketUploadData.SocketListener() {
+                            @Override
+                            public void onSuccess(Object result) {
+                                FailRequestInfoDao.getInstance(CommonSDKDBHelper.getInstance(SDKContext.getInstance().getContext())).delete(failRequestInfo);
+                                mRequestCount--;
+                            }
 
-                        @Override
-                        public void onLoadFinish(int reqCode, Object result) {
-                            FailRequestInfoDao.getInstance(CommonSDKDBHelper.getInstance(SDKContext.getInstance().getContext())).delete(reSendRequestLoader.getRequestInfo());
-                            mRequestCount--;
-                        }
+                            @Override
+                            public void onError(Throwable throwable) {
+                                mRequestCount--;
+                            }
+                        });
 
-                        @Override
-                        public void onLoadError(int reqCode, String msg, AdError errorCode) {
-                            mRequestCount--;
-                        }
+                    } else {
+                        final ReSendRequestLoader reSendRequestLoader = new ReSendRequestLoader(failRequestInfo);
+                        reSendRequestLoader.start(0, new OnHttpLoaderListener() {
+                            @Override
+                            public void onLoadStart(int reqCode) {
 
-                        @Override
-                        public void onLoadCanceled(int reqCode) {
-                            mRequestCount--;
-                        }
-                    });
+                            }
+
+                            @Override
+                            public void onLoadFinish(int reqCode, Object result) {
+                                FailRequestInfoDao.getInstance(CommonSDKDBHelper.getInstance(SDKContext.getInstance().getContext())).delete(reSendRequestLoader.getRequestInfo());
+                                mRequestCount--;
+                            }
+
+                            @Override
+                            public void onLoadError(int reqCode, String msg, AdError errorCode) {
+                                mRequestCount--;
+                            }
+
+                            @Override
+                            public void onLoadCanceled(int reqCode) {
+                                mRequestCount--;
+                            }
+                        });
+                    }
+
                 }
             } else {
                 CommonLogUtil.e(TAG, "neet to send request count:" + 0);

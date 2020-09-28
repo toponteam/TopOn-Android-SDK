@@ -14,8 +14,7 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" /> <!-- Required permissions - Internet access -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" /> <!-- If there is a video ad and it is played with textureView, please be sure to add this, otherwise a black screen will appear -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
 
     <application>
 
@@ -33,23 +32,7 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
         <activity
             android:name="com.flurry.android.FlurryBrowserActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
-        <activity
-            android:name="com.mintegral.msdk.activity.MTGCommonActivity"
-            android:configChanges="keyboard|orientation"
-            android:exported="true"
-            android:screenOrientation="portrait"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <activity
-            android:name="com.mintegral.msdk.reward.player.MTGRewardVideoActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-        <activity
-            android:name="com.mintegral.msdk.interstitial.view.MTGInterstitialActivity"
-            android:configChanges="orientation|screenSize"
-            android:exported="false"
-            android:screenOrientation="portrait" /> <!-- MoPub's consent dialog -->
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" /> <!-- MoPub's consent dialog -->
         <activity
             android:name="com.mopub.common.privacy.ConsentDialogActivity"
             android:configChanges="keyboardHidden|orientation|screenSize" /> <!-- All ad formats -->
@@ -125,15 +108,18 @@
         <activity
             android:name="com.tapjoy.TJContentActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" /> <!-- Vungle Activities -->
+            android:hardwareAccelerated="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <receiver android:name="com.tapjoy.TapjoyReceiver" /> <!-- Vungle Activities -->
         <activity
             android:name="com.vungle.warren.ui.VungleActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
             android:launchMode="singleTop"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
         <activity
             android:name="com.vungle.warren.ui.VungleFlexViewActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
@@ -148,6 +134,10 @@
             </intent-filter>
         </receiver>
 
+        <provider
+            android:name="com.vungle.warren.utility.VungleProvider"
+            android:authorities="${applicationId}.vungle-provider"
+            android:exported="false" />
         <provider
             android:name="com.bytedance.sdk.openadsdk.multipro.TTMultiProvider"
             android:authorities="${applicationId}.TTMultiProvider"

@@ -7,7 +7,6 @@ import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,15 +19,12 @@ import java.util.Map;
 public class MopubATAdapter extends CustomNativeAdapter {
     private final String TAG = MopubATAdapter.class.getSimpleName();
 
-    int mCallbackCount;
     private String unitId;
     private int requestNum = 1;
     private boolean isAutoPlay = false;
 
-    List<CustomNativeAd> adList = new ArrayList<>();
     @Override
-    public void loadNativeAd(final Context context, final CustomNativeListener customNativeListener
-            , final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
 
         unitId = "";
         try {
@@ -40,9 +36,8 @@ public class MopubATAdapter extends CustomNativeAdapter {
         }
 
         if (TextUtils.isEmpty(unitId)) {
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "mopub unitId is empty.");
-                customNativeListener.onNativeAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "mopub unitId is empty.");
             }
             return;
         }
@@ -66,84 +61,90 @@ public class MopubATAdapter extends CustomNativeAdapter {
         }
 
 
-        MopubATInitManager.getInstance().initSDK(context, serverExtras, new MopubATInitManager.InitListener() {
-
+        postOnMainThread(new Runnable() {
             @Override
-            public void initSuccess() {
-                startLoad(context, customNativeListener, localExtras, unitId, requestNum, isAutoPlay);
+            public void run() {
+                try {
+                    MopubATInitManager.getInstance().initSDK(context, serverExtras, new MopubATInitManager.InitListener() {
+
+                        @Override
+                        public void initSuccess() {
+                            try {
+                                startLoad(context, localExtras, unitId, requestNum, isAutoPlay);
+                            } catch (Throwable e) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError("", e.getMessage());
+                                }
+                            }
+                        }
+                    });
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
         });
 
 
     }
 
-    private void startLoad(Context context, final CustomNativeListener customNativeListener, Map<String, Object> localExtras, String unitId, int requestNum, boolean isAutoPlay) {
+    private void startLoad(Context context, Map<String, Object> localExtras, String unitId, int requestNum, boolean isAutoPlay) {
         final int finalRequestNum = requestNum;
 
         MopubATNativeAd.LoadCallbackListener selfListener = new MopubATNativeAd.LoadCallbackListener() {
             @Override
             public void onSuccess(CustomNativeAd nativeAd) {
-                synchronized (MopubATAdapter.this) {
-                    mCallbackCount++;
-                    adList.add(nativeAd);
-                    finishLoad(null);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded(nativeAd);
                 }
 
             }
 
             @Override
-            public void onFail(AdError error) {
-                synchronized (MopubATAdapter.this) {
-                    mCallbackCount++;
-                    finishLoad(error);
+            public void onFail(String errorCode, String errorMsg) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
                 }
+
             }
 
-            private void finishLoad(AdError adError) {
-                if (mCallbackCount >= finalRequestNum) {
-                    if (adList.size() > 0) {
-                        if (customNativeListener != null) {
-                            customNativeListener.onNativeAdLoaded(MopubATAdapter.this, adList);
-                        }
-                    } else {
-                        if (mCallbackCount >= finalRequestNum) {
-                            if (adError == null) {
-                                adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "");
-                            }
-                            customNativeListener.onNativeAdFailed(MopubATAdapter.this, adError);
-                        }
-                    }
-                }
-            }
         };
 
         try {
-            for (int i = 0; i < requestNum; i++) {
-                MopubATNativeAd mopubNativeAd = new MopubATNativeAd(context, selfListener, unitId, localExtras);
-                mopubNativeAd.setIsAutoPlay(isAutoPlay);
-                mopubNativeAd.loadAd();
-            }
+            MopubATNativeAd mopubNativeAd = new MopubATNativeAd(context, selfListener, unitId, localExtras);
+            mopubNativeAd.setIsAutoPlay(isAutoPlay);
+            mopubNativeAd.loadAd();
         } catch (Exception e) {
             e.printStackTrace();
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                customNativeListener.onNativeAdFailed(MopubATAdapter.this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", e.getMessage());
             }
         }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MopubATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
     @Override
     public String getNetworkName() {
         return MopubATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MopubATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
     }
 }

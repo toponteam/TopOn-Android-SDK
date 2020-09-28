@@ -5,11 +5,7 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 
 import java.util.Map;
 
@@ -29,22 +25,22 @@ public class OnewayATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     OWRewardedAdListener mListener = new OWRewardedAdListener() {
         @Override
         public void onAdReady() {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(OnewayATRewardedVideoAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
 
         @Override
         public void onAdShow(String s) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayStart(OnewayATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayStart();
             }
         }
 
         @Override
         public void onAdClick(String s) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayClicked(OnewayATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayClicked();
             }
         }
 
@@ -53,70 +49,32 @@ public class OnewayATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
             if (mImpressionListener != null) {
                 if (onewayAdCloseType == OnewayAdCloseType.COMPLETED) {
-                    mImpressionListener.onReward(OnewayATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
-                mImpressionListener.onRewardedVideoAdClosed(OnewayATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdClosed();
             }
         }
 
         @Override
         public void onAdFinish(String s, OnewayAdCloseType onewayAdCloseType, String s1) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayEnd(OnewayATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayEnd();
             }
         }
 
         @Override
-        public void onSdkError(OnewaySdkError onewaySdkError, String s) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(OnewayATRewardedVideoAdapter.this
-                        , ErrorCode.getErrorCode(ErrorCode.noADError, "", s));
+        public void onSdkError(OnewaySdkError error, String s) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(error.name(), s);
             }
         }
     };
 
     @Override
-    public void loadRewardVideoAd(Activity pActivity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        String publishId = "";
-        String slotId = "";
-
-        if (serverExtras.containsKey("publisher_id")) {
-            publishId = serverExtras.get("publisher_id").toString();
-        }
-        if (serverExtras.containsKey("slot_id")) {
-            slotId = serverExtras.get("slot_id").toString();
-        }
-
-        mLoadResultListener = customRewardVideoListener;
-        if (TextUtils.isEmpty(publishId) || TextUtils.isEmpty(slotId)) {
-            Log.e(TAG, "publishId or placementId is empty, place check once more....");
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", " publishId or slotId is empty.");
-                mLoadResultListener.onRewardedVideoAdFailed(this, adError);
-
-            }
-            return;
-        }
-
-        mPublishId = publishId;
-        mSlotId = slotId;
-        OnewayATInitManager.getInstance().initSDK(pActivity, serverExtras);
-        owRewardedAd = new OWRewardedAd(pActivity, mSlotId, mListener);
-        if (owRewardedAd.isReady()) {
-            Log.i(TAG, "loadRewardVideoAd: ready...");
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(OnewayATRewardedVideoAdapter.this);
-            }
-        } else {
-            owRewardedAd.loadAd();
-        }
-    }
-
-    @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
-        if (serverExtras.containsKey("publisher_id") && serverExtras.containsKey("slot_id")) {
-            mPublishId = serverExtras.get("publisher_id").toString();
-            mSlotId = serverExtras.get("slot_id").toString();
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        if (serverExtra.containsKey("publisher_id") && serverExtra.containsKey("slot_id")) {
+            mPublishId = serverExtra.get("publisher_id").toString();
+            mSlotId = serverExtra.get("slot_id").toString();
             return true;
         }
         return false;
@@ -129,32 +87,81 @@ public class OnewayATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public void show(Activity activity) {
-        if (isAdReady()) {
-            owRewardedAd.show(activity);
+        try {
+            if (activity != null) {
+                if (isAdReady()) {
+                    owRewardedAd.setListener(mListener);
+                    owRewardedAd.show(activity);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    }
-
-    @Override
-    public void clean() {
-
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return OnewayATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return OnewayATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        String publishId = "";
+        String slotId = "";
+
+        if (serverExtra.containsKey("publisher_id")) {
+            publishId = serverExtra.get("publisher_id").toString();
+        }
+        if (serverExtra.containsKey("slot_id")) {
+            slotId = serverExtra.get("slot_id").toString();
+        }
+
+        if (TextUtils.isEmpty(publishId) || TextUtils.isEmpty(slotId)) {
+            Log.e(TAG, "publishId or placementId is empty, place check once more....");
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " publishId or slotId is empty.");
+            }
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Oneway context must be activity.");
+            }
+            return;
+        }
+
+        mPublishId = publishId;
+        mSlotId = slotId;
+        OnewayATInitManager.getInstance().initSDK(context, serverExtra);
+        owRewardedAd = new OWRewardedAd(((Activity) context), mSlotId, mListener);
+        if (owRewardedAd.isReady()) {
+            Log.i(TAG, "loadRewardVideoAd: ready...");
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
+            }
+        } else {
+            owRewardedAd.loadAd();
+        }
+    }
+
+    @Override
+    public void destory() {
+        if (owRewardedAd != null) {
+            owRewardedAd.setListener(null);
+            owRewardedAd.destory();
+            owRewardedAd = null;
+        }
+        mListener = null;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mSlotId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return OnewayATConst.getNetworkVersion();
     }
 }

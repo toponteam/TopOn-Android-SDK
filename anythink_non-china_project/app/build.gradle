@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
 
+
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -33,9 +34,6 @@ dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
 
 
-    implementation ('com.facebook.fresco:fresco:2.1.0') {
-        exclude module: 'support-v4'
-    }
     implementation ('com.facebook.stetho:stetho:1.5.1') {
         exclude module: 'support-v4'
     }
@@ -54,6 +52,10 @@ dependencies {
     implementation project(':anythink:network_nonchina_sdk')
     implementation project(':anythink:rewardvideo')
     implementation project('::anythink:splashad')
+
+    
+
+    
 
 
 }

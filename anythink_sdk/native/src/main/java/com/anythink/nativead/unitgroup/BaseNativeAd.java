@@ -8,7 +8,7 @@ import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdTrackingInfo;
-import com.anythink.core.common.entity.BaseAd;
+import com.anythink.core.api.BaseAd;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.nativead.api.NativeAd;
 
@@ -63,21 +63,23 @@ public abstract class BaseNativeAd extends BaseAd {
     /**
      * Tracking Info
      */
+    @Override
     public final void setTrackingInfo(AdTrackingInfo adTrackingInfo) {
         mAdTrackingInfo = adTrackingInfo;
     }
 
+    @Override
     public final AdTrackingInfo getDetail() {
         return mAdTrackingInfo;
     }
 
-    public final void setAdCacheId(String cacheAdId) {
-        mAdCacheId = cacheAdId;
-    }
-
-    public final String getAdCacheId() {
-        return mAdCacheId;
-    }
+//    public final void setAdCacheId(String cacheAdId) {
+//        mAdCacheId = cacheAdId;
+//    }
+//
+//    public final String getAdCacheId() {
+//        return mAdCacheId;
+//    }
 
     // Lifecycle Handlers
 
@@ -181,19 +183,6 @@ public abstract class BaseNativeAd extends BaseAd {
         return mAdSourceType;
     }
 
-    /**
-     * 获取network类型
-     *
-     * @return
-     */
-    public final int getNetworkType() {
-        return mNetworkType;
-    }
-
-    public final void setNetworkType(int networkType) {
-        mNetworkType = networkType;
-    }
-
 
     public abstract void onPause();
 
@@ -213,12 +202,12 @@ public abstract class BaseNativeAd extends BaseAd {
                     if (mAdTrackingInfo.ismIsDefaultNetwork()) {
                         jsonObject.put("isDefault", true);
                     }
-                    jsonObject.put("placemengId", mAdTrackingInfo.getmPlacementId());
+                    jsonObject.put("placementId", mAdTrackingInfo.getmPlacementId());
                     jsonObject.put("adType", mAdTrackingInfo.getAdTypeString());
                     jsonObject.put("action", action);
                     jsonObject.put("refresh", mAdTrackingInfo.getmRefresh());
                     jsonObject.put("result", status);
-                    jsonObject.put("position", mAdTrackingInfo.getmLevel());
+                    jsonObject.put("position", mAdTrackingInfo.getRequestLevel());
                     jsonObject.put("networkType", mAdTrackingInfo.getmNetworkType());
                     jsonObject.put("networkName", mAdTrackingInfo.getNetworkName());
                     jsonObject.put("networkVersion", mAdTrackingInfo.getmNetworkVersion());

@@ -17,8 +17,6 @@ public class AdCapV2Manager {
 
     private static AdCapV2Manager sIntance;
 
-//    ConcurrentHashMap<String, PlacementImpressionInfo> map = new ConcurrentHashMap<>();
-
     PlacementImpressionDao dbDao;
 
     SimpleDateFormat mDateFormat;
@@ -90,7 +88,7 @@ public class AdCapV2Manager {
      * @return
      */
     public boolean isUnitgroupOutOfCap(String placementId, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
-
+        
         if (unitGroupInfo.capsByHour == -1 && unitGroupInfo.capsByDay == -1) {
             return false;
         }
@@ -100,6 +98,9 @@ public class AdCapV2Manager {
         String hourFormat = mHourFormat.format(new Date(currentTime));
 
         PlacementImpressionInfo.AdSourceImpressionInfo adSourceImpressionInfo = dbDao.queryAdsourceImpressionInfo(placementId, unitGroupInfo.unitId, dateFormat, hourFormat);
+
+
+
         if (adSourceImpressionInfo == null) {
             adSourceImpressionInfo = new PlacementImpressionInfo.AdSourceImpressionInfo();
         }
@@ -165,6 +166,8 @@ public class AdCapV2Manager {
         final int formatType = Integer.parseInt(formatString);
 
         PlacementImpressionInfo.AdSourceImpressionInfo adSourceImpressionInfo = getUnitGroupImpressionInfo(placementId, adsourceId);
+
+
         if (adSourceImpressionInfo == null) {
             adSourceImpressionInfo = new PlacementImpressionInfo.AdSourceImpressionInfo();
             adSourceImpressionInfo.unitId = adsourceId;
@@ -187,8 +190,6 @@ public class AdCapV2Manager {
         adSourceImpressionInfo.showTime = currentTime;
 
         dbDao.insertOrUpdate(formatType, placementId, adSourceImpressionInfo);
-
-
 
     }
 }

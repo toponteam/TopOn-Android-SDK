@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
+import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
@@ -25,6 +26,12 @@ public class ATNative {
     AdLoadManager mAdLoadManager;
 
     ATNativeOpenSetting mOpenSetting = new ATNativeOpenSetting();
+
+    @Deprecated
+    public static final String KEY_WIDTH = "key_width";
+    @Deprecated
+    public static final String KEY_HEIGHT = "key_height";
+
 
     /**
      * Init
@@ -60,6 +67,9 @@ public class ATNative {
 
         @Override
         public void onNativeAdLoadFail(final AdError error) {
+            if (mAdLoadManager != null) {
+                mAdLoadManager.setLoadFail(error);
+            }
             SDKContext.getInstance().runOnMainThread(new Runnable() {
                 @Override
                 public void run() {
@@ -77,7 +87,7 @@ public class ATNative {
 
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_NATIVE, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
 
-        mAdLoadManager.startLoadAd(mLocalMap, mSelfListener);
+        mAdLoadManager.startLoadAd(mContext, mSelfListener);
     }
 
     /**
@@ -86,7 +96,7 @@ public class ATNative {
     public void makeAdRequest() {
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_NATIVE, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
 
-        mAdLoadManager.startLoadAd(mLocalMap, mSelfListener);
+        mAdLoadManager.startLoadAd(mContext, mSelfListener);
     }
 
     /**
@@ -95,7 +105,7 @@ public class ATNative {
      * @param map
      */
     public void setLocalExtra(Map<String, Object> map) {
-        mLocalMap = map;
+        PlacementAdManager.getInstance().putPlacementLocalSettingMap(mPlacementId, map);
     }
 
     /**

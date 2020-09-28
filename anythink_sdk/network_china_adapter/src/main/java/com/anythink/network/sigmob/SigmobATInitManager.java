@@ -1,15 +1,15 @@
 package com.anythink.network.sigmob;
 
 import android.content.Context;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 
+import com.androidquery.AQuery;
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.base.AnyThinkBaseAdapter;
 import com.sigmob.windad.WindAdError;
 import com.sigmob.windad.WindAdOptions;
 import com.sigmob.windad.WindAds;
-import com.sigmob.windad.WindConsentStatus;
 import com.sigmob.windad.fullscreenvideo.WindFullScreenAdRequest;
 import com.sigmob.windad.fullscreenvideo.WindFullScreenVideoAd;
 import com.sigmob.windad.fullscreenvideo.WindFullScreenVideoAdListener;
@@ -19,6 +19,7 @@ import com.sigmob.windad.rewardedVideo.WindRewardedVideoAd;
 import com.sigmob.windad.rewardedVideo.WindRewardedVideoAdListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -380,26 +381,8 @@ public class SigmobATInitManager extends ATInitMediation {
             //enable or disable debug log ouput
 //            ads.setDebugEnable(ATSDK.isNetworkLogDebug());
 
-            /*   GDPR
-             **  WindConsentStatus :
-             **     UNKNOW("0"),  //Unknown, the default value, based on the server to determine whether it is in the European Union, if it is in the European Union, it is judged to deny GDPR authorization
-             **     ACCEPT("1"),  //User agrees to GDPR authorization
-             **     DENIED("2");  //User rejects GDPR authorization
-             */
-            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                //Whether to agree to collect data
-                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                //Whether to set the GDPR of the network
-                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-                if (need_set_gdpr) {
-                    ads.setUserGDPRConsentStatus(gdp_consent ? WindConsentStatus.ACCEPT : WindConsentStatus.UNKNOW);
-                }
-            }
-
-            logGDPRSetting(SigmobATConst.NETWORK_FIRM_ID);
-
             // start SDK Init with Options
-            if (ads.startWithOptions(context, new WindAdOptions(app_id, app_key))) {
+            if (ads.startWithOptions(context.getApplicationContext(), new WindAdOptions(app_id, app_key))) {
                 mAppId = app_id;
                 mAppKey = app_key;
             }
@@ -458,6 +441,22 @@ public class SigmobATInitManager extends ATInitMediation {
         return "Sigmob";
     }
 
+    @Override
+    public Map<String, Boolean> getPluginClassStatus() {
+        HashMap<String, Boolean> pluginMap = new HashMap<>();
+
+        pluginMap.put("implementation 'com.android.support:localbroadcastmanager:+'", false);
+
+        Class clazz;
+        try {
+            clazz = LocalBroadcastManager.class;
+            pluginMap.put("implementation 'com.android.support:localbroadcastmanager:+'", true);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return pluginMap;
+    }
     @Override
     public String getNetworkSDKClass() {
         return "com.sigmob.windad.WindAds";

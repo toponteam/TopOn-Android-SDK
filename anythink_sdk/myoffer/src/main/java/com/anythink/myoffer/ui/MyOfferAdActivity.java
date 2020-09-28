@@ -7,23 +7,19 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
-import com.anythink.china.common.ApkDownloadManager;
-import com.anythink.china.common.download.ApkRequest;
-import com.anythink.china.common.resource.ApkResource;
+import com.anythink.core.common.base.Const;
+import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.CommonUtil;
+import com.anythink.myoffer.buiness.MyOfferAdManager;
 import com.anythink.myoffer.buiness.OfferClickController;
-import com.anythink.myoffer.buiness.resource.MyOfferResourceUtil;
-import com.anythink.myoffer.entity.MyOfferAd;
-import com.anythink.myoffer.entity.MyOfferSetting;
 import com.anythink.myoffer.net.MyOfferTkLoader;
-import com.anythink.myoffer.net.NoticeUrlLoader;
 import com.anythink.myoffer.network.base.MyOfferAdMessager;
 import com.anythink.network.myoffer.MyOfferError;
 import com.anythink.network.myoffer.MyOfferErrorCode;
@@ -61,7 +57,6 @@ public class MyOfferAdActivity extends Activity {
 
     private RelativeLayout mRoot;
     private PlayerView mPlayerView;
-    private MainImageView mMainImageView;
     private BannerView mBannerView;
     private EndCardView mEndCardView;
     private LoadingView mLoadingView;//Loading
@@ -143,6 +138,11 @@ public class MyOfferAdActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         parseExtra();
+
+        if (mMyOfferAd == null) {
+            Log.e(Const.RESOURCE_HEAD, TAG + " onCreate: mMyofferAd = null");
+            finish();
+        }
         readSaveInstance(savedInstanceState);
         setContentView(getLayoutIdByAdFormat());
 
@@ -244,7 +244,7 @@ public class MyOfferAdActivity extends Activity {
             @Override
             public void onVideoPlayCompletion() {
                 CommonLogUtil.d(TAG, "onVideoPlayCompletion...");
-                sendTk(mMyOfferAd.getVideoFinishTrackUrl());
+                MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.VIDEO_FINISH_TYPE, mScenario);
 
                 if (mListener != null) {
                     mListener.onVideoPlayEnd();
@@ -267,15 +267,15 @@ public class MyOfferAdActivity extends Activity {
                 switch (progressArea) {
                     case 25:
                         CommonLogUtil.d(TAG, "onVideoProgress25.......");
-                        sendTk(mMyOfferAd.getVideoProgress25TrackUrl());
+                        MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.VIDEO_PROGRESS25_TYPE, mScenario);
                         break;
                     case 50:
                         CommonLogUtil.d(TAG, "onVideoProgress50.......");
-                        sendTk(mMyOfferAd.getVideoProgress50TrackUrl());
+                        MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.VIDEO_PROGRESS50_TYPE, mScenario);
                         break;
                     case 75:
                         CommonLogUtil.d(TAG, "onVideoProgress75.......");
-                        sendTk(mMyOfferAd.getVideoProgress75TrackUrl());
+                        MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.VIDEO_PROGRESS75_TYPE, mScenario);
                         break;
                 }
             }
@@ -307,15 +307,14 @@ public class MyOfferAdActivity extends Activity {
         if (mListener != null) {
             mListener.onVideoPlayStart();
         }
-        sendTk(mMyOfferAd.getVideoStartTrackUrl());
+        MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.VIDEO_START_TYPE, mScenario);
     }
 
     private void notifyShow() {
         if (mListener != null) {
             mListener.onShow();
         }
-        new NoticeUrlLoader(mMyOfferAd.getNoticeUrl(), mRequestId).start(0, null);
-        sendTk(mMyOfferAd.getImpressionTrackUrl());
+        MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.IMPRESSION_TYPE, mScenario);
     }
 
     private void notifyShowFailedAndFinish(MyOfferError error) {
@@ -325,22 +324,6 @@ public class MyOfferAdActivity extends Activity {
         finish();
     }
 
-    private void showMainImage() {
-        if (mMainImageView == null) {
-            mMainImageView = new MainImageView(mRoot, mScreenWidth, mScreenHeight, mMyOfferAd, new MainImageView.OnMainImgListener() {
-                @Override
-                public void onClickMainImage() {
-
-                }
-
-                @Override
-                public void onCloseMainImage() {
-                    showEndCard();
-                }
-            });
-        }
-        showBannerView();
-    }
 
     private void showEndCard() {
         CommonLogUtil.d(TAG, "showEndCard.......");
@@ -358,7 +341,7 @@ public class MyOfferAdActivity extends Activity {
             @Override
             public void onCloseEndCard() {
                 CommonLogUtil.d(TAG, "onCloseEndCard.......");
-                sendTk(mMyOfferAd.getEndCardCloseTrackUrl());
+                MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.ENDCARD_CLOSE_TYPE, mScenario);
                 finish();
                 if (mListener != null) {
                     mListener.onClose();
@@ -372,12 +355,8 @@ public class MyOfferAdActivity extends Activity {
             mRoot.removeView(mPlayerView);
             mPlayerView = null;
         }
-        if (mMainImageView != null) {
-            mRoot.removeView(mMainImageView);
-            mMainImageView = null;
-        }
 
-        sendTk(mMyOfferAd.getEndCardShowTrackUrl());
+        MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.ENDCARD_SHOW_TYPE, mScenario);
     }
 
     private void showBannerView() {
@@ -398,9 +377,9 @@ public class MyOfferAdActivity extends Activity {
         if (mListener != null) {
             mListener.onClick();
         }
-        sendTk(mMyOfferAd.getClickTrackUrl());
+        MyOfferAdManager.getInstance(getApplicationContext()).sendAdTracking(mRequestId, mMyOfferAd, MyOfferTkLoader.CLICK_TYPE, mScenario);
 
-        mOfferClickController = new OfferClickController(this, mMyOfferAd);
+        mOfferClickController = new OfferClickController(this, mPlacementId, mMyOfferAd);
         mOfferClickController.startClick(mRequestId, new OfferClickController.ClickStatusCallback() {
             @Override
             public void clickStart() {
@@ -426,27 +405,7 @@ public class MyOfferAdActivity extends Activity {
                     @Override
                     public void run() {
                         hideLoading();
-                        if (ApkResource.isApkInstalled(getApplicationContext(), mMyOfferAd.getPkgName())) {
-                            //App was installed， open it
-                            Log.i(TAG, "openApp -> " + mMyOfferAd.getTitle());
-                            ApkResource.openApp(getApplicationContext(), mMyOfferAd.getPkgName());
-                        } else {
-                            //App not exist, download it
-                            Log.i(TAG, "downloadApp:  -> " + mMyOfferAd.getTitle());
-                            ApkRequest apkRequest = new ApkRequest();
-                            apkRequest.requestId = mRequestId;
-                            apkRequest.offerId = mMyOfferAd.getOfferId();
-                            apkRequest.url = url;
-                            apkRequest.pkgName = mMyOfferAd.getPkgName();
-                            apkRequest.title = mMyOfferAd.getTitle();
-                            int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50, getResources().getDisplayMetrics());
-                            apkRequest.icon = MyOfferResourceUtil.getBitmap(mMyOfferAd.getIconUrl(), size, size);
-
-
-                            ApkDownloadManager.getInstance(MyOfferAdActivity.this).setOfferCacheTime(mMyOfferSetting.getOfferCacheTime());
-                            ApkDownloadManager.getInstance(MyOfferAdActivity.this).checkAndCleanApk();
-                            ApkDownloadManager.getInstance(MyOfferAdActivity.this).handleClick(apkRequest);
-                        }
+                        MyOfferAdManager.getInstance(getApplicationContext()).startDownloadApp(mRequestId, mMyOfferSetting, mMyOfferAd, url);
                     }
                 });
             }
@@ -467,12 +426,6 @@ public class MyOfferAdActivity extends Activity {
         }
     }
 
-    protected void sendTk(String tk_url) {
-        CommonLogUtil.d(TAG, "sendTk --> " + tk_url);
-        MyOfferTkLoader myOfferTkLoader = new MyOfferTkLoader(tk_url, mRequestId);
-        myOfferTkLoader.setScenario(mScenario);
-        myOfferTkLoader.start(0, null);
-    }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {

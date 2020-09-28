@@ -5,11 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.uniplay.adsdk.AdBannerListener;
 import com.uniplay.adsdk.AdSize;
 import com.uniplay.adsdk.AdView;
@@ -20,41 +16,40 @@ public class UniplayATBannerAdapter extends CustomBannerAdapter {
 
     private final String TAG = UniplayATBannerAdapter.class.getSimpleName();
     String mAppId;
-    CustomBannerListener mListener;
-    View mBannerView;
+    AdView mBannerView;
     int mRefreshTime;
 
     @Override
-    public void loadBannerAd(final ATBannerView anyThinkBannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
+    public View getBannerView() {
+        return mBannerView;
+    }
 
-        mListener = customBannerListener;
+    @Override
+    public String getNetworkName() {
+        return UniplayATInitManager.getInstance().getNetworkName();
+    }
 
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
-
-        if (serverExtras.containsKey("app_id")) {
-            mAppId = (String) serverExtras.get("app_id");
+    @Override
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        if (serverExtra.containsKey("app_id")) {
+            mAppId = (String) serverExtra.get("app_id");
 
         } else {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id is empty!");
             }
             return;
         }
 
         String size = "";
-        if (serverExtras.containsKey("size")) {
-            size = serverExtras.get("size").toString();
+        if (serverExtra.containsKey("size")) {
+            size = serverExtra.get("size").toString();
         }
 
         mRefreshTime = 0;
         try {
-            if (serverExtras.containsKey("nw_rft")) {
-                mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
+            if (serverExtra.containsKey("nw_rft")) {
+                mRefreshTime = Integer.valueOf((String) serverExtra.get("nw_rft"));
                 mRefreshTime /= 1000f;
             }
         } catch (Throwable e) {
@@ -65,55 +60,56 @@ public class UniplayATBannerAdapter extends CustomBannerAdapter {
 
         switch (size) {// unit: px
             case "320x50":
-                adView = new AdView(activity, AdSize.Size_320X50, mAppId);
+                adView = new AdView(context, AdSize.Size_320X50, mAppId);
                 break;
             case "640x100":
-                adView = new AdView(activity, AdSize.Size_640X100, mAppId);
+                adView = new AdView(context, AdSize.Size_640X100, mAppId);
                 break;
             case "960x150":
-                adView = new AdView(activity, AdSize.Size_960X150, mAppId);
+                adView = new AdView(context, AdSize.Size_960X150, mAppId);
                 break;
             case "480x75":
-                adView = new AdView(activity, AdSize.Size_480X75, mAppId);
+                adView = new AdView(context, AdSize.Size_480X75, mAppId);
                 break;
             case "728x90":
-                adView = new AdView(activity, AdSize.Size_728X90, mAppId);
+                adView = new AdView(context, AdSize.Size_728X90, mAppId);
                 break;
             default:
-                adView = new AdView(activity, AdSize.Size_320X50, mAppId);
+                adView = new AdView(context, AdSize.Size_320X50, mAppId);
                 break;
         }
 
         adView.setAdListener(new AdBannerListener() {
             @Override
             public void onAdShow(Object o) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(UniplayATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onAdClick() {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(UniplayATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
             @Override
             public void onAdError(String s) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(UniplayATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", s));
+                if (mATBannerView != null) {
+                    mATBannerView.removeView(mBannerView);
                 }
-                if (anyThinkBannerView != null) {
-                    anyThinkBannerView.removeView(mBannerView);
+
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", s);
                 }
             }
         });
 
         mBannerView = adView;
 
-        if (anyThinkBannerView != null) {
-            anyThinkBannerView.addView(mBannerView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        if (mATBannerView != null) {
+            mATBannerView.addView(mBannerView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
 
 
@@ -125,23 +121,21 @@ public class UniplayATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public View getBannerView() {
-        return mBannerView;
+    public void destory() {
+        if (mBannerView != null) {
+            mBannerView.setAdListener(null);
+            mBannerView = null;
+        }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkPlacementId() {
+        return mAppId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return "";
-    }
-
-    @Override
-    public void clean() {
-        mBannerView = null;
-    }
-
-    @Override
-    public String getNetworkName() {
-        return UniplayATInitManager.getInstance().getNetworkName();
     }
 
 }

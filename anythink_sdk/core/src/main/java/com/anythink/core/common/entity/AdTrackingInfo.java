@@ -20,6 +20,8 @@ public class AdTrackingInfo extends TrackerInfo {
     public static final int AUTO_REQUEST = 1;
     public static final int HANDLE_REQUEST = 2;
     public static final int READY_CHECK = 3;
+    public static final int UPSTATUS_REQUEST = 4;
+    public static final int CACHE_NUM_REQUEST = 5;
 
     public static final int NORMAL_CALLBACK = 0;
     public static final int SHORT_OVERTIME_CALLBACK = 1;
@@ -40,7 +42,8 @@ public class AdTrackingInfo extends TrackerInfo {
     private String mNetworkList; //Waterfall list
     private int mRequestNetworkNum; //The number of requesting AdSource
     private int mRefresh; //Refresh type, 0：non-refresh，1：refresh
-    private int mLevel; //level
+    private int mLevel; //requestLevel
+    private int mImpressionLevel; //impression Level
     private boolean mIsDefaultNetwork;
     private long mDataFillTime; //Ad data fill time
     private long mFillTime; //Fill time
@@ -84,6 +87,25 @@ public class AdTrackingInfo extends TrackerInfo {
     protected int adTypeHourShowTime; //format hour show time
     protected int placementDayShowTime; //placement day show time
     protected int placementHourShowTime; //placement hour show time
+
+    private long mHBWaitingToRequestTime;
+    private long mHBBidTimeout;
+
+    public long getmHBWaitingToRequestTime() {
+        return mHBWaitingToRequestTime;
+    }
+
+    public void setmHBWaitingToRequestTime(long mHBWaitingToRequestTime) {
+        this.mHBWaitingToRequestTime = mHBWaitingToRequestTime;
+    }
+
+    public long getmHBBidTimeout() {
+        return mHBBidTimeout;
+    }
+
+    public void setmHBBidTimeout(long mHBBidTimeout) {
+        this.mHBBidTimeout = mHBBidTimeout;
+    }
 
     public void setAdTypeDayShowTime(int adTypeDayShowTime) {
         this.adTypeDayShowTime = adTypeDayShowTime;
@@ -246,12 +268,20 @@ public class AdTrackingInfo extends TrackerInfo {
         this.mIsDefaultNetwork = mIsDefaultNetwork;
     }
 
-    public int getmLevel() {
+    public int getRequestLevel() {
         return mLevel;
     }
 
-    public void setmLevel(int mLevel) {
+    public void setRequestLevel(int mLevel) {
         this.mLevel = mLevel;
+    }
+
+    public int getImpressionLevel() {
+        return mImpressionLevel;
+    }
+
+    public void setImpressionLevel(int impressionLevel) {
+        this.mImpressionLevel = impressionLevel;
     }
 
     public int getmHourlyFrequency() {

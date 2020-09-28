@@ -106,19 +106,17 @@ public class MsgManager {
             @Override
             public void run() {
                 try {
-                    Map<String, String> noticeMap = appStrategy.getNoticeMap();
-                    String action = noticeMap != null ? noticeMap.get("init") : "";
-                    if (!TextUtils.isEmpty(action)) {
-                        if (mContext == null) {
-                            return;
-                        }
-
-                        Intent intent = new Intent(action);
-                        intent.putExtra(action, appStrategy.getTC());
-
-                        intent.setPackage(mContext.getPackageName());
-                        mContext.sendBroadcast(intent);
+                    if (mContext == null) {
+                        return;
                     }
+                    String packageName = mContext.getPackageName();
+
+                    Intent intent = new Intent(packageName);
+                    intent.putExtra(packageName, appStrategy.getTC());
+                    intent.putExtra("data", MsgUtil.getCommonObject().toString());
+
+                    intent.setPackage(packageName);
+                    mContext.sendBroadcast(intent);
 
                 } catch (Throwable e) {
                 }

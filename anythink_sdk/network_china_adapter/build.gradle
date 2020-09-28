@@ -10,6 +10,9 @@ android {
         versionName "1.0"
 
     }
+    lintOptions {
+        abortOnError false
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -23,7 +26,7 @@ android {
 dependencies {
 
     compileOnly fileTree(include: ['*.jar'], dir: 'libs')
-    api project(project.path.replace(project.name,'') + ':network_china_sdk')
+    compileOnly project(project.path.replace(project.name,'') + ':network_china_sdk')
     implementation project(project.path.replace(project.name,'') + ':core')
     implementation project(project.path.replace(project.name,'') + ':native')
     implementation project(project.path.replace(project.name,'') + ':rewardvideo')

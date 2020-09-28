@@ -12,4 +12,6 @@ public class ATCustomRuleKeys {
     public static final String IAP_TIME = "iap_time";
 
     public static final String SEGMENT_ID = "segment_id";
+
+    public static final String USER_ID = "user_id";
 }

@@ -7,10 +7,8 @@ import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,16 +18,12 @@ import java.util.Map;
 
 public class InmobiATAdapter extends CustomNativeAdapter {
 
-    private final String TAG = InmobiATAdapter.class.getSimpleName();
-    int mCallbackCount;
-
-    HashMap<String, InmobiATNativeAd> mNativeAdMap;
-    List<CustomNativeAd> adList = new ArrayList<>();
+    private String unitId;
 
     @Override
-    public void loadNativeAd(final Context context, final CustomNativeListener customNativeListener, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
         String accountId = "";
-        String unitId = "";
+        unitId = "";
         try {
             if (serverExtras.containsKey("app_id")) {
                 accountId = serverExtras.get("app_id").toString();//inmob account id
@@ -42,20 +36,10 @@ public class InmobiATAdapter extends CustomNativeAdapter {
         }
 
         if (TextUtils.isEmpty(accountId) || TextUtils.isEmpty(unitId)) {
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "inmobi accountId or unitid is empty");
-                customNativeListener.onNativeAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "inmobi accountId or unitid is empty");
             }
             return;
-        }
-
-        int requestNum = 1;
-        try {
-            if (serverExtras != null) {
-                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
         boolean isAutoPlay = false;
@@ -68,96 +52,77 @@ public class InmobiATAdapter extends CustomNativeAdapter {
         }
 
 
-        mNativeAdMap = new HashMap<>();
-
         final boolean finalIsAutoPlay = isAutoPlay;
 
-        final int finalRequestNum = requestNum;
 
         final InmobiATNativeAd.LoadCallbackListener selfListener = new InmobiATNativeAd.LoadCallbackListener() {
             @Override
             public void onSuccess(CustomNativeAd nativeAd) {
-                synchronized (InmobiATAdapter.this) {
-                    mCallbackCount++;
-                    adList.add(nativeAd);
-                    finishLoad(null);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded(nativeAd);
                 }
 
             }
 
             @Override
-            public void onFail(AdError error) {
-                synchronized (InmobiATAdapter.this) {
-                    mCallbackCount++;
-                    finishLoad(error);
+            public void onFail(String errorCode, String errorMsg) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
                 }
             }
 
-            private void finishLoad(AdError adError) {
-                if (mCallbackCount >= finalRequestNum) {
-                    if (adList.size() > 0) {
-                        if (customNativeListener != null) {
-                            customNativeListener.onNativeAdLoaded(InmobiATAdapter.this, adList);
-                        }
-                    } else {
-                        if (mCallbackCount >= finalRequestNum) {
-                            if (adError == null) {
-                                adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "");
-                            }
-                            customNativeListener.onNativeAdFailed(InmobiATAdapter.this, adError);
-                        }
-                    }
-                }
-
-            }
         };
 
-        try {
 
-            final String tempUnitId = unitId;
-            InmobiATInitManager.getInstance().initSDK(context, serverExtras, new InmobiATInitManager.OnInitCallback() {
-                @Override
-                public void onSuccess() {
-                    for (int i = 0; i < finalRequestNum; i++) {
-                        InmobiATNativeAd inmobiNativeAd = new InmobiATNativeAd(context, selfListener, tempUnitId, localExtras);
-                        mNativeAdMap.put(tempUnitId, inmobiNativeAd);
-                        inmobiNativeAd.setIsAutoPlay(finalIsAutoPlay);
-                        inmobiNativeAd.loadAd();
+        InmobiATInitManager.getInstance().initSDK(context, serverExtras, new InmobiATInitManager.OnInitCallback() {
+            @Override
+            public void onSuccess() {
+                try {
+                    InmobiATNativeAd inmobiNativeAd = new InmobiATNativeAd(context, selfListener, unitId, localExtras);
+                    inmobiNativeAd.setIsAutoPlay(finalIsAutoPlay);
+                    inmobiNativeAd.loadAd();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
                     }
                 }
-
-                @Override
-                public void onError(String errorMsg) {
-                    if (customNativeListener != null) {
-                        customNativeListener.onNativeAdFailed(InmobiATAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", errorMsg));
-                    }
-                }
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                customNativeListener.onNativeAdFailed(this, adError);
             }
-        }
+
+            @Override
+            public void onError(String errorMsg) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", errorMsg);
+                }
+            }
+        });
 
 
     }
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return InmobiATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
     @Override
     public String getNetworkName() {
         return InmobiATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return InmobiATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
     }
 }

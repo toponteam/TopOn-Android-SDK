@@ -46,16 +46,25 @@ public class FailRequestInfoDao extends BaseDao<FailRequestInfo> {
         if (getWritableDatabase() == null) {
             return -1;
         }
-
+        Cursor c = null;
         try {
             String sql = "SELECT * FROM " + Table.TABLE_NAME;
-            Cursor c = getReadableDatabase().rawQuery(sql, null);
+            c = getReadableDatabase().rawQuery(sql, null);
             if (c.getCount() >= MAX_SIZE) {
-                c.close();
                 //直接清除以前的数据
                 clean();
             }
         } catch (Exception e) {
+
+        } finally {
+            try {
+                if (c != null) {
+                    c.close();
+                    c = null;
+                }
+            } catch (Exception e) {
+
+            }
 
         }
 

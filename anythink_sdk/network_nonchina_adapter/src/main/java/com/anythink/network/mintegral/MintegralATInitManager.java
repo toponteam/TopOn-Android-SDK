@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
-import com.alphab.receiver.AlphabReceiver;
 import com.anythink.core.api.ATInitMediation;
 import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.MIntegralSDK;
@@ -23,7 +22,6 @@ import com.mintegral.msdk.reward.player.MTGRewardVideoActivity;
 import com.mintegral.msdk.splash.view.MTGSplashView;
 import com.mintegral.msdk.video.js.bridge.BaseVideoBridge;
 import com.mintegral.msdk.video.js.bridge.RewardJs;
-import com.mintegral.msdk.videofeeds.vfplayer.VideoFeedsActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,21 +77,6 @@ public class MintegralATInitManager extends ATInitMediation {
                             Map<String, String> map = sdk.getMTGConfigurationMap(appid, appkey);
 //                            MIntegralConstans.DEBUG = ATSDK.isNetworkLogDebug();
 
-                            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                                //Whether to agree to collect data
-                                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                                //Whether to set the GDPR of the network
-                                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                                if (need_set_gdpr) {
-                                    int open = gdp_consent ? MIntegralConstans.IS_SWITCH_ON : MIntegralConstans.IS_SWITCH_OFF;
-                                    String level = MIntegralConstans.AUTHORITY_ALL_INFO;
-                                    sdk.setUserPrivateInfoType(context, level, open);
-                                }
-                            }
-
-                            logGDPRSetting(MintegralATConst.NETWORK_FIRM_ID);
-
                             sdk.init(map, context.getApplicationContext());
                             mAppId = appid;
                             mAppKey = appkey;
@@ -119,6 +102,17 @@ public class MintegralATInitManager extends ATInitMediation {
                 }
             }
         });
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
+
+        int open = isConsent ? MIntegralConstans.IS_SWITCH_ON : MIntegralConstans.IS_SWITCH_OFF;
+        String level = MIntegralConstans.AUTHORITY_ALL_INFO;
+        sdk.setUserPrivateInfoType(context, level, open);
+
+        return true;
     }
 
     public interface InitCallback {
@@ -151,19 +145,12 @@ public class MintegralATInitManager extends ATInitMediation {
         pluginMap.put("mintegral_playercommon.aar", false);
         pluginMap.put("mintegral_reward.aar", false);
         pluginMap.put("mintegral_videocommon.aar", false);
-        pluginMap.put("mintegral_videofeeds.aar", false);
         pluginMap.put("mintegral_videojs.aar", false);
         pluginMap.put("mintegral_mtgnativeadvanced.aar", false);
         pluginMap.put("mintegral_mtgsplash.aar", false);
 
 
         Class clazz;
-        try {
-            clazz = AlphabReceiver.class;
-            pluginMap.put("mintegral_alphab.aar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
 
         try {
             clazz = MTGInterstitialActivity.class;
@@ -231,13 +218,6 @@ public class MintegralATInitManager extends ATInitMediation {
         try {
             clazz = RewardJs.class;
             pluginMap.put("mintegral_videocommon.aar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        try {
-            clazz = VideoFeedsActivity.class;
-            pluginMap.put("mintegral_videofeeds.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }

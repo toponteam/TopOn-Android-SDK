@@ -1,6 +1,7 @@
 package com.anythink.network.adcolony;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
 import com.adcolony.sdk.AdColony;
@@ -14,7 +15,6 @@ import com.adcolony.sdk.AdColonyZone;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 
 import org.json.JSONArray;
 
@@ -27,7 +27,7 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     AdColonyInterstitial mAd;
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         String mAppId = "";
         if (serverExtras != null) {
             mAppId = (String) serverExtras.get("app_id");
@@ -44,45 +44,23 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             }
         }
 
-        mLoadResultListener = customRewardVideoListener;
-
         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mZoneId)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid & mZoneId is empty."));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " appid & mZoneId is empty.");
             }
             return;
         }
-
-        /**Extra setting**/
-        AdColonyRewardedVideoSetting setting = null;
-        if (mediationSetting instanceof AdColonyRewardedVideoSetting) {
-            setting = (AdColonyRewardedVideoSetting) mediationSetting;
-        }
-
 
 
         /**
          * Configure AdColony in your launching Activity's onCreate() method so that cached ads can
          * be available as soon as possible.
          */
-        AdColonyATInitManager.getInstance().initSDK(activity, serverExtras);
+        AdColonyATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras);
 
-        AdColonyAppOptions app_options = AdColony.getAppOptions();
-        if (setting != null) {
-            /** Construct optional app options object to be sent with configure */
-            app_options.setUserID(mUserId);
-        }
-
-
-        AdColonyAdOptions adOptions = new AdColonyAdOptions();
-        if (setting != null) {
-            /** Ad specific options to be sent with request */
-            adOptions.enableConfirmationDialog(setting.isEnableConfirmationDialog())
-                    .enableResultsDialog(setting.isEnableResultsDialog());
-        } else {
-            adOptions.enableConfirmationDialog(false)
-                    .enableResultsDialog(false);
-        }
+        AdColonyAppOptions appOptions = AdColony.getAppOptions();
+        /** Construct optional app options object to be sent with configure */
+        appOptions.setUserID(mUserId);
 
         /** Create and set a reward listener */
         AdColony.setRewardListener(new AdColonyRewardListener() {
@@ -90,7 +68,9 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             public void onReward(AdColonyReward reward) {
                 /** Query reward object for info here */
                 if (reward.success()) {
-                    mImpressionListener.onReward(AdColonyATRewardedVideoAdapter.this);
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onReward();
+                    }
                 }
             }
         });
@@ -105,16 +85,16 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onRequestFilled(AdColonyInterstitial ad) {
                 mAd = ad;
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(AdColonyATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             /** Ad request was not filled */
             @Override
             public void onRequestNotFilled(AdColonyZone zone) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(AdColonyATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "No Fill!"));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "onRequestNotFilled!");
                 }
             }
 
@@ -122,7 +102,7 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onOpened(AdColonyInterstitial ad) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(AdColonyATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
@@ -135,15 +115,15 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onClicked(AdColonyInterstitial ad) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(AdColonyATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
 
             @Override
             public void onClosed(AdColonyInterstitial ad) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(AdColonyATRewardedVideoAdapter.this);
-                    mImpressionListener.onRewardedVideoAdClosed(AdColonyATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
             }
 
@@ -158,12 +138,17 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             }
         };
 
-        AdColony.requestInterstitial(mZoneId, listener, adOptions);
+        AdColony.requestInterstitial(mZoneId, listener, new AdColonyAdOptions());
     }
 
     @Override
     public boolean isAdReady() {
         return mAd != null && !mAd.isExpired();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AdColonyATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
     }
 
     @Override
@@ -174,29 +159,34 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
-        AdColony.clearCustomMessageListeners();
-
+    public void destory() {
+        try {
+            AdColony.clearCustomMessageListeners();
+            if (mAd != null) {
+                try {
+                    mAd.setListener(null);
+                } catch (Throwable e) {
+                }
+                mAd.destroy();
+                mAd = null;
+            }
+        } catch (Exception e) {
+        }
     }
 
-    @Override
-    public void onResume(Activity activity) {
-
-    }
 
     @Override
-    public void onPause(Activity activity) {
-
-    }
-
-
-    @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return AdColonyATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return AdColonyATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mZoneId;
     }
 }

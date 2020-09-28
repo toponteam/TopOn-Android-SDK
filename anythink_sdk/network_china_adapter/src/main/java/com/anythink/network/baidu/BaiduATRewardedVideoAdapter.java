@@ -1,12 +1,10 @@
 package com.anythink.network.baidu;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.baidu.mobads.rewardvideo.RewardVideoAd;
 
 import java.util.Map;
@@ -18,85 +16,40 @@ public class BaiduATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     RewardVideoAd mRewardVideoAd;
     private String mAdPlaceId = "";
 
-
-    @Override
-    public void loadRewardVideoAd(final Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardedVideoListener) {
-        mLoadResultListener = customRewardedVideoListener;
-
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
-
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid or unitid  is empty."));
-            }
-            return;
-        } else {
-
-            String mAppId = (String) serverExtras.get("app_id");
-            mAdPlaceId = (String) serverExtras.get("ad_place_id");
-            if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mAdPlaceId)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " app_id ,ad_place_id is empty."));
-                }
-                return;
-            }
-        }
-
-        BaiduATInitManager.getInstance().initSDK(activity, serverExtras, new BaiduATInitManager.InitCallback() {
-            @Override
-            public void onSuccess() {
-                startLoadAd(activity);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(BaiduATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage()));
-                }
-            }
-        });
-    }
-
-    private void startLoadAd(Activity activity) {
-        mRewardVideoAd = new RewardVideoAd(activity.getApplicationContext(), mAdPlaceId, new RewardVideoAd.RewardVideoAdListener() {
+    private void startLoadAd(Context context) {
+        mRewardVideoAd = new RewardVideoAd(context.getApplicationContext(), mAdPlaceId, new RewardVideoAd.RewardVideoAdListener() {
             @Override
             public void onAdShow() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(BaiduATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
             @Override
             public void onAdClick() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(BaiduATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
 
             @Override
             public void onAdClose(float v) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed(BaiduATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
             }
 
             @Override
             public void onAdFailed(String s) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(BaiduATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", s));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", s);
                 }
             }
 
             @Override
             public void onVideoDownloadSuccess() {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(BaiduATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
@@ -108,11 +61,11 @@ public class BaiduATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void playCompletion() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(BaiduATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
 
                 if (mImpressionListener != null) {
-                    mImpressionListener.onReward(BaiduATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
         });
@@ -138,31 +91,50 @@ public class BaiduATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-        if (mRewardVideoAd != null) {
-            mRewardVideoAd.resume();
-        }
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-        if (mRewardVideoAd != null) {
-            mRewardVideoAd.pause();
-        }
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return BaiduATConst.getNetworkVersion();
-    }
-
-    @Override
     public String getNetworkName() {
         return BaiduATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+
+        String mAppId = (String) serverExtra.get("app_id");
+        mAdPlaceId = (String) serverExtra.get("ad_place_id");
+        if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mAdPlaceId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " app_id ,ad_place_id is empty.");
+            }
+            return;
+        }
+
+        BaiduATInitManager.getInstance().initSDK(context, serverExtra, new BaiduATInitManager.InitCallback() {
+            @Override
+            public void onSuccess() {
+                startLoadAd(context);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.getMessage());
+                }
+            }
+        });
+    }
+
+    @Override
+    public void destory() {
+        mRewardVideoAd = null;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mAdPlaceId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return BaiduATConst.getNetworkVersion();
     }
 
 }

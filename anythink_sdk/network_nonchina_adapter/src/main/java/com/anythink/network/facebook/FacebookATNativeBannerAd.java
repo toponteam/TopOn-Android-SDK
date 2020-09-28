@@ -2,27 +2,15 @@ package com.anythink.network.facebook;
 
 import android.content.Context;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
-import com.facebook.ads.AdIconView;
-import com.facebook.ads.AdOptionsView;
-import com.facebook.ads.MediaView;
-import com.facebook.ads.MediaViewListener;
-import com.facebook.ads.NativeAd;
-import com.facebook.ads.NativeAdLayout;
 import com.facebook.ads.NativeAdListener;
 import com.facebook.ads.NativeBannerAd;
 import com.facebook.ads.NativeBannerAdView;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Z on 2018/1/12.
@@ -99,9 +87,13 @@ public class FacebookATNativeBannerAd extends CustomNativeAd implements NativeAd
     @Override
     public void destroy() {
         if (mFacebookNativeAd != null) {
+            mFacebookNativeAd.unregisterView();
+            mFacebookNativeAd.setAdListener(null);
             mFacebookNativeAd.destroy();
             mFacebookNativeAd = null;
         }
+
+        mContext = null;
     }
 
     /**
@@ -132,9 +124,4 @@ public class FacebookATNativeBannerAd extends CustomNativeAd implements NativeAd
 
     }
 
-    interface LoadCallbackListener {
-        public void onSuccess(CustomNativeAd customNativeAd);
-
-        public void onFail(com.anythink.core.api.AdError adError);
-    }
 }

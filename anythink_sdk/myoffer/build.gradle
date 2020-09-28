@@ -11,7 +11,9 @@ android {
         versionName "1.0"
 
     }
-
+    lintOptions {
+        abortOnError false
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -30,4 +32,6 @@ dependencies {
     implementation project(project.path.replace(project.name,'') + ':banner')
     implementation project(project.path.replace(project.name,'') + ':splashad')
     compileOnly project(project.path.replace(project.name,'') + ':china_plugin')
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
 }

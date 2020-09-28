@@ -210,8 +210,12 @@ public class TTATNativeExpressAd extends CustomNativeAd {
         Log.i(TAG, "destroy()");
         mMediaView = null;
         if (mTTNativeExpressAd != null) {
+            mTTNativeExpressAd.setExpressInteractionListener(null);
             mTTNativeExpressAd.destroy();
             mTTNativeExpressAd = null;
         }
+        mContext = null;
+        adapterSelfListener = null;
+
     }
 }

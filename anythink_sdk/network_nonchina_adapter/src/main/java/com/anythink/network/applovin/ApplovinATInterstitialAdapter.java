@@ -1,11 +1,11 @@
 package com.anythink.network.applovin;
 
+import android.app.Activity;
 import android.content.Context;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.applovin.adview.AppLovinInterstitialAd;
 import com.applovin.adview.AppLovinInterstitialAdDialog;
 import com.applovin.sdk.AppLovinAd;
@@ -39,14 +39,14 @@ public class ApplovinATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void adDisplayed(AppLovinAd appLovinAd) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(ApplovinATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdShow();
                 }
             }
 
             @Override
             public void adHidden(AppLovinAd appLovinAd) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose(ApplovinATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
         });
@@ -54,7 +54,7 @@ public class ApplovinATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void adClicked(AppLovinAd appLovinAd) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked(ApplovinATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClicked();
                 }
             }
         });
@@ -62,14 +62,14 @@ public class ApplovinATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void videoPlaybackBegan(AppLovinAd appLovinAd) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoStart(ApplovinATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdVideoStart();
                 }
             }
 
             @Override
             public void videoPlaybackEnded(AppLovinAd appLovinAd, double v, boolean b) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoEnd(ApplovinATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdVideoEnd();
                 }
             }
         });
@@ -78,15 +78,15 @@ public class ApplovinATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void adReceived(AppLovinAd appLovinAd) {
                 mAppLovinAd = appLovinAd;
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(ApplovinATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void failedToReceiveAd(int i) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(ApplovinATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", ""));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(i + "", "");
                 }
             }
         });
@@ -94,11 +94,13 @@ public class ApplovinATInterstitialAdapter extends CustomInterstitialAdapter {
 
 
     @Override
-    public void clean() {
+    public void destory() {
         try {
             mAppLovinAd = null;
             if (mInterstitialAd != null) {
-                mInterstitialAd.dismiss();
+                mInterstitialAd.setAdClickListener(null);
+                mInterstitialAd.setAdDisplayListener(null);
+                mInterstitialAd.setAdVideoPlaybackListener(null);
                 mInterstitialAd = null;
             }
         } catch (Exception e) {
@@ -106,40 +108,17 @@ public class ApplovinATInterstitialAdapter extends CustomInterstitialAdapter {
         }
     }
 
-    @Override
-    public void onResume() {
-    }
 
     @Override
-    public void onPause() {
-    }
-
-
-    @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "service info  is empty."));
-            }
-            return;
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+        if (serverExtras.containsKey("sdkkey") && serverExtras.containsKey("zone_id")) {
+            sdkkey = (String) serverExtras.get("sdkkey");
+            zoneid = (String) serverExtras.get("zone_id");
         } else {
-            if (serverExtras.containsKey("sdkkey") && serverExtras.containsKey("zone_id")) {
-                sdkkey = (String) serverExtras.get("sdkkey");
-                zoneid = (String) serverExtras.get("zone_id");
-            } else {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "",  "sdkkey or zone_id is empty!"));
-                }
-                return;
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "sdkkey or zone_id is empty!");
             }
+            return;
         }
 
         initAndLoad(context, serverExtras);
@@ -151,19 +130,29 @@ public class ApplovinATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return ApplovinATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public void show(Activity activity) {
         if (mAppLovinAd != null) {
             mInterstitialAd.showAndRender(mAppLovinAd);
         }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return ApplovinATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return ApplovinATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return zoneid;
     }
 }

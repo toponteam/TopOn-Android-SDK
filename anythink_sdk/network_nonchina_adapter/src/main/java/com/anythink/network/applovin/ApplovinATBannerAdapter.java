@@ -5,7 +5,6 @@ import android.view.View;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.applovin.adview.AppLovinAdView;
@@ -30,7 +29,6 @@ public class ApplovinATBannerAdapter extends CustomBannerAdapter {
 
     String size = "";
 
-    CustomBannerListener mListener;
 
     AppLovinAdView mBannerView;
 
@@ -58,12 +56,11 @@ public class ApplovinATBannerAdapter extends CustomBannerAdapter {
         final AppLovinAdView finalAdView = appLovinAdView;
 
 
-
         finalAdView.setAdDisplayListener(new AppLovinAdDisplayListener() {
             @Override
             public void adDisplayed(AppLovinAd appLovinAd) {
-                if (mListener != null) {
-                    mListener.onBannerAdShow(ApplovinATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
                 }
 
             }
@@ -76,8 +73,8 @@ public class ApplovinATBannerAdapter extends CustomBannerAdapter {
         finalAdView.setAdClickListener(new AppLovinAdClickListener() {
             @Override
             public void adClicked(AppLovinAd appLovinAd) {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(ApplovinATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
         });
@@ -87,15 +84,15 @@ public class ApplovinATBannerAdapter extends CustomBannerAdapter {
             public void adReceived(final AppLovinAd ad) {
                 finalAdView.renderAd(ad);
                 mBannerView = finalAdView;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(ApplovinATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void failedToReceiveAd(int i) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(ApplovinATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", ""));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(i + "", "");
                 }
             }
         };
@@ -111,38 +108,28 @@ public class ApplovinATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mBannerView != null) {
+            mBannerView.setAdLoadListener(null);
+            mBannerView.setAdClickListener(null);
+            mBannerView.setAdDisplayListener(null);
             mBannerView.destroy();
+            mBannerView = null;
         }
     }
 
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        mListener = customBannerListener;
-        if (activity == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "service info is empty."));
+        if (serverExtras.containsKey("sdkkey") && serverExtras.containsKey("zone_id")) {
+            sdkkey = (String) serverExtras.get("sdkkey");
+            zoneid = (String) serverExtras.get("zone_id");
+        } else {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "sdkkey or zone_id is empty!");
             }
             return;
-        } else {
-            if (serverExtras.containsKey("sdkkey") && serverExtras.containsKey("zone_id")) {
-                sdkkey = (String) serverExtras.get("sdkkey");
-                zoneid = (String) serverExtras.get("zone_id");
-            } else {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "sdkkey or zone_id is empty!"));
-                }
-                return;
-            }
         }
 
         if (serverExtras.containsKey("size")) {
@@ -155,12 +142,22 @@ public class ApplovinATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return ApplovinATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return ApplovinATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return ApplovinATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return zoneid;
     }
 }

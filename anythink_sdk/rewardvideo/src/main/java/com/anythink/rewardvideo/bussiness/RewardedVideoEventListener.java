@@ -2,6 +2,7 @@ package com.anythink.rewardvideo.bussiness;
 
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.AdError;
+import com.anythink.core.api.ErrorCode;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdTrackingInfo;
@@ -9,27 +10,30 @@ import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
+import com.anythink.core.common.MonitoringPlatformManager;
 import com.anythink.rewardvideo.api.ATRewardVideoListener;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardedVideoEventListener;
 
 public class RewardedVideoEventListener implements CustomRewardedVideoEventListener {
     private ATRewardVideoListener mCallbackListener;
+    private CustomRewardVideoAdapter mRewardVideoAdapter;
     long impressionTime;
 
     boolean isReward;
 
-    public RewardedVideoEventListener(ATRewardVideoListener rewardVideoListener) {
+    public RewardedVideoEventListener(CustomRewardVideoAdapter rewardVideoAdapter, ATRewardVideoListener rewardVideoListener) {
         impressionTime = 0;
         mCallbackListener = rewardVideoListener;
+        mRewardVideoAdapter = rewardVideoAdapter;
     }
 
     @Override
-    public void onRewardedVideoAdPlayStart(CustomRewardVideoAdapter customRewardVideoAd) {
+    public void onRewardedVideoAdPlayStart() {
 
         impressionTime = System.currentTimeMillis();
-        if (customRewardVideoAd != null) {
-            AdTrackingInfo adTrackingInfo = customRewardVideoAd.getTrackingInfo();
+        if (mRewardVideoAdapter != null) {
+            AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
             long timestamp = System.currentTimeMillis();
             adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
 
@@ -37,56 +41,65 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
 
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
 
-            customRewardVideoAd.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+            mRewardVideoAdapter.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
 
         }
         if (mCallbackListener != null) {
-            mCallbackListener.onRewardedVideoAdPlayStart(ATAdInfo.fromAdapter(customRewardVideoAd));
+            mCallbackListener.onRewardedVideoAdPlayStart(ATAdInfo.fromAdapter(mRewardVideoAdapter));
         }
 
 
     }
 
     @Override
-    public void onRewardedVideoAdPlayEnd(CustomRewardVideoAdapter customRewardVideoAd) {
+    public void onRewardedVideoAdPlayEnd() {
 
-        if (customRewardVideoAd != null) {
-            AdTrackingInfo adTrackingInfo = customRewardVideoAd.getTrackingInfo();
+        if (mRewardVideoAdapter != null) {
+            AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
 
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_RV_CLOSE_TYPE, adTrackingInfo);
         }
 
         if (mCallbackListener != null) {
-            mCallbackListener.onRewardedVideoAdPlayEnd(ATAdInfo.fromAdapter(customRewardVideoAd));
+            mCallbackListener.onRewardedVideoAdPlayEnd(ATAdInfo.fromAdapter(mRewardVideoAdapter));
         }
 
 
     }
 
     @Override
-    public void onRewardedVideoAdPlayFailed(CustomRewardVideoAdapter customRewardVideoAd, final AdError errorCode) {
-        if (customRewardVideoAd != null) {
-            AdTrackingInfo adTrackingInfo = customRewardVideoAd.getTrackingInfo();
+    public void onRewardedVideoAdPlayFailed(String errorCode, String errorMsg) {
+        AdError adError = ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, errorCode, errorMsg);
+        if (mRewardVideoAdapter != null) {
+            AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
 
 
-            customRewardVideoAd.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.FAIL, errorCode.printStackTrace());
+            mRewardVideoAdapter.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.FAIL, adError.printStackTrace());
 
-            AgentEventManager.rewardedVideoPlayFail(adTrackingInfo, errorCode);
+            AgentEventManager.rewardedVideoPlayFail(adTrackingInfo, adError);
         }
         if (mCallbackListener != null) {
-            mCallbackListener.onRewardedVideoAdPlayFailed(errorCode, ATAdInfo.fromAdapter(customRewardVideoAd));
+            mCallbackListener.onRewardedVideoAdPlayFailed(adError, ATAdInfo.fromAdapter(mRewardVideoAdapter));
         }
+
+        SDKContext.getInstance().runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                mRewardVideoAdapter.clearImpressionListener();
+                mRewardVideoAdapter.destory();
+            }
+        });
 
     }
 
     @Override
-    public void onRewardedVideoAdClosed(CustomRewardVideoAdapter customRewardVideoAd) {
-        if (customRewardVideoAd != null) {
-            AdTrackingInfo adTrackingInfo = customRewardVideoAd.getTrackingInfo();
+    public void onRewardedVideoAdClosed() {
+        if (mRewardVideoAdapter != null) {
+            AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
 
 
-            customRewardVideoAd.log(Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
+            mRewardVideoAdapter.log(Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
 
             if (impressionTime != 0) {
                 AgentEventManager.onAdImpressionTimeAgent(adTrackingInfo, isReward, impressionTime, System.currentTimeMillis());
@@ -94,38 +107,58 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
 
             AgentEventManager.onAdCloseAgent(adTrackingInfo, isReward);
 
-        }
+            if (isReward) {
+                try {
+                    mRewardVideoAdapter.clearImpressionListener();
+                    mRewardVideoAdapter.destory();
+                } catch (Throwable e) {
 
-        if (mCallbackListener != null) {
-            mCallbackListener.onRewardedVideoAdClosed(ATAdInfo.fromAdapter(customRewardVideoAd));
-        }
+                }
 
+            } else {
+                SDKContext.getInstance().runOnMainThreadDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            mRewardVideoAdapter.clearImpressionListener();
+                            mRewardVideoAdapter.destory();
+                        } catch (Throwable e) {
+
+                        }
+                    }
+                }, 5000);
+            }
+
+            if (mCallbackListener != null) {
+                mCallbackListener.onRewardedVideoAdClosed(ATAdInfo.fromAdapter(mRewardVideoAdapter));
+            }
+        }
 
     }
 
     @Override
-    public void onRewardedVideoAdPlayClicked(CustomRewardVideoAdapter customRewardVideoAd) {
+    public void onRewardedVideoAdPlayClicked() {
 
-        if (customRewardVideoAd != null) {
-            AdTrackingInfo adTrackingInfo = customRewardVideoAd.getTrackingInfo();
+        if (mRewardVideoAdapter != null) {
+            AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
 
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_CLICK_TYPE, adTrackingInfo);
 
-            customRewardVideoAd.log(Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
+            mRewardVideoAdapter.log(Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
 
 
         }
         if (mCallbackListener != null) {
-            mCallbackListener.onRewardedVideoAdPlayClicked(ATAdInfo.fromAdapter(customRewardVideoAd));
+            mCallbackListener.onRewardedVideoAdPlayClicked(ATAdInfo.fromAdapter(mRewardVideoAdapter));
         }
 
     }
 
     @Override
-    public void onReward(CustomRewardVideoAdapter customRewardVideoAd) {
+    public void onReward() {
         isReward = true;
         if (mCallbackListener != null) {
-            mCallbackListener.onReward(ATAdInfo.fromAdapter(customRewardVideoAd));
+            mCallbackListener.onReward(ATAdInfo.fromAdapter(mRewardVideoAdapter));
         }
     }
 }

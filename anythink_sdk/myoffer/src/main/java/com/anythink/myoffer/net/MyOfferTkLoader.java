@@ -3,10 +3,13 @@ package com.anythink.myoffer.net;
 import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.widget.Switch;
 
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.OffLineTkManager;
+import com.anythink.core.common.entity.MyOfferAd;
 import com.anythink.core.common.net.AbsHttpLoader;
+import com.anythink.core.common.net.ApiRequestParam;
 import com.anythink.core.common.track.AgentEventManager;
 
 import org.json.JSONObject;
@@ -21,8 +24,52 @@ public class MyOfferTkLoader extends AbsHttpLoader {
     String hostUrl;
     JSONObject paramsObject;
 
-    public MyOfferTkLoader(String myOfferTkUrl, String requestId) {
+    public static final int VIDEO_START_TYPE = 1;
+    public static final int VIDEO_PROGRESS25_TYPE = 2;
+    public static final int VIDEO_PROGRESS50_TYPE = 3;
+    public static final int VIDEO_PROGRESS75_TYPE = 4;
+    public static final int VIDEO_FINISH_TYPE = 5;
+    public static final int ENDCARD_SHOW_TYPE = 6;
+    public static final int ENDCARD_CLOSE_TYPE = 7;
+    public static final int IMPRESSION_TYPE = 8;
+    public static final int CLICK_TYPE = 9;
+
+
+    public MyOfferTkLoader(int tkType, MyOfferAd myOfferAd, String requestId) {
         try {
+            String myOfferTkUrl = "";
+            switch (tkType){
+                case VIDEO_START_TYPE:
+                    myOfferTkUrl = myOfferAd.getVideoStartTrackUrl();
+                    break;
+                case VIDEO_PROGRESS25_TYPE:
+                    myOfferTkUrl = myOfferAd.getVideoProgress25TrackUrl();
+                    break;
+                case VIDEO_PROGRESS50_TYPE:
+                    myOfferTkUrl = myOfferAd.getVideoProgress50TrackUrl();
+                    break;
+                case VIDEO_PROGRESS75_TYPE:
+                    myOfferTkUrl = myOfferAd.getVideoProgress75TrackUrl();
+                    break;
+                case VIDEO_FINISH_TYPE:
+                    myOfferTkUrl = myOfferAd.getVideoFinishTrackUrl();
+                    break;
+                case ENDCARD_SHOW_TYPE:
+                    myOfferTkUrl = myOfferAd.getEndCardShowTrackUrl();
+                    break;
+                case ENDCARD_CLOSE_TYPE:
+                    myOfferTkUrl = myOfferAd.getEndCardCloseTrackUrl();
+                    break;
+                case IMPRESSION_TYPE:
+                    myOfferTkUrl = myOfferAd.getImpressionTrackUrl();
+                    break;
+                case CLICK_TYPE:
+                    myOfferTkUrl = myOfferAd.getClickTrackUrl();
+                    break;
+            }
+
+            myOfferTkUrl = myOfferAd.handleTKUrlReplace(myOfferTkUrl);
+
             Uri uri = Uri.parse(myOfferTkUrl);
             hostUrl = uri.getScheme() + "://" + uri.getAuthority() + uri.getPath();
             paramsObject = new JSONObject();
@@ -49,7 +96,7 @@ public class MyOfferTkLoader extends AbsHttpLoader {
 
     @Override
     protected int onPrepareType() {
-        return AbsHttpLoader.POST;
+        return ApiRequestParam.POST;
     }
 
     @Override
@@ -144,6 +191,6 @@ public class MyOfferTkLoader extends AbsHttpLoader {
         int requestType = onPrepareType();
 
         OffLineTkManager.getInstance().saveRequestFailInfo(requestType, requestUrl, headJsonString, content);
-        AgentEventManager.sendErrorAgent("tk", adError.getPlatformCode(), adError.getPlatformMSG(), hostUrl, "", "1");
+        AgentEventManager.sendErrorAgent("tk", adError.getPlatformCode(), adError.getPlatformMSG(), hostUrl, "", "1", "");
     }
 }

@@ -5,7 +5,6 @@ import android.view.View;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 
@@ -16,30 +15,21 @@ import java.util.Map;
 
 public class NendATBannerAdapter extends CustomBannerAdapter {
 
-    CustomBannerListener mListener;
-    View mBannerView;
+    NendAdView mBannerView;
     String mApiKey;
     int mSpotId;
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
+    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
-        mListener = customBannerListener;
-
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
 
         if (serverExtras.containsKey("api_key") && serverExtras.containsKey("spot_id")) {
             mApiKey = (String) serverExtras.get("api_key");
             mSpotId = Integer.parseInt((String) serverExtras.get("spot_id"));
 
         } else {
-            if (customBannerListener != null) {
-                customBannerListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id or slot_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id or slot_id is empty!");
             }
             return;
         }
@@ -57,23 +47,23 @@ public class NendATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onReceiveAd(NendAdView nendAdView) {
                 mBannerView = nendAdView;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(NendATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
 
             }
 
             @Override
             public void onFailedToReceiveAd(NendAdView nendAdView) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(NendATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", ""));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "onFailedToReceiveAd");
                 }
             }
 
             @Override
             public void onClick(NendAdView nendAdView) {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(NendATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
@@ -85,7 +75,7 @@ public class NendATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 
@@ -95,12 +85,30 @@ public class NendATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void clean() {
-        mBannerView = null;
+    public void destory() {
+        if (mBannerView != null) {
+            mBannerView.setListener(null);
+            mBannerView = null;
+        }
     }
 
     @Override
     public String getNetworkName() {
         return NendATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        try {
+            return String.valueOf(mSpotId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

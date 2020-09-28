@@ -9,13 +9,13 @@ public abstract class Worker implements Runnable  {
     protected boolean mRunning = true;
     protected WorkerListener mWorkerStatus;
     protected int mType = TYPE_NORMAL;
-    private int mWorkID = 0;
+    private long mWorkID = 0;
 
-    void setID(int id){
+    public void setID(long id){
         mWorkID = id;
     }
 
-    public int getID(){
+    public long getID(){
         return mWorkID;
     }
 

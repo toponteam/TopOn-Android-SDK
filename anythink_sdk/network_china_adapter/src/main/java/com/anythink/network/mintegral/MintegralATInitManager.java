@@ -7,8 +7,6 @@ import android.text.TextUtils;
 
 import com.alphab.receiver.AlphabReceiver;
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
-import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.MIntegralSDK;
 import com.mintegral.msdk.advanced.view.MTGNativeAdvancedView;
 import com.mintegral.msdk.interstitial.view.MTGInterstitialActivity;
@@ -24,7 +22,6 @@ import com.mintegral.msdk.reward.player.MTGRewardVideoActivity;
 import com.mintegral.msdk.splash.view.MTGSplashView;
 import com.mintegral.msdk.video.js.bridge.BaseVideoBridge;
 import com.mintegral.msdk.video.js.bridge.RewardJs;
-import com.mintegral.msdk.videofeeds.vfplayer.VideoFeedsActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,21 +69,6 @@ public class MintegralATInitManager extends ATInitMediation {
                             Map<String, String> map = sdk.getMTGConfigurationMap(appid, appkey);
 
 //                            MIntegralConstans.DEBUG = ATSDK.isNetworkLogDebug();
-
-                            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                                //Whether to agree to collect data
-                                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                                //Whether to set the GDPR of the network
-                                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                                if (need_set_gdpr) {
-                                    int open = gdp_consent ? MIntegralConstans.IS_SWITCH_ON : MIntegralConstans.IS_SWITCH_OFF;
-                                    String level = MIntegralConstans.AUTHORITY_ALL_INFO;
-                                    sdk.setUserPrivateInfoType(context, level, open);
-                                }
-                            }
-
-                            logGDPRSetting(MintegralATConst.NETWORK_FIRM_ID);
 
                             sdk.init(map, context.getApplicationContext());
                             mAppId = appid;
@@ -153,7 +135,6 @@ public class MintegralATInitManager extends ATInitMediation {
         pluginMap.put("mintegral_playercommon.aar", false);
         pluginMap.put("mintegral_reward.aar", false);
         pluginMap.put("mintegral_videocommon.aar", false);
-        pluginMap.put("mintegral_videofeeds.aar", false);
         pluginMap.put("mintegral_videojs.aar", false);
         pluginMap.put("mintegral_mtgnativeadvanced.aar", false);
         pluginMap.put("mintegral_mtgsplash.aar", false);
@@ -224,23 +205,16 @@ public class MintegralATInitManager extends ATInitMediation {
             e.printStackTrace();
         }
 
-         try {
+        try {
             clazz = MTGRewardVideoActivity.class;
             pluginMap.put("mintegral_reward.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
-         try {
+        try {
             clazz = RewardJs.class;
             pluginMap.put("mintegral_videocommon.aar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        try {
-            clazz = VideoFeedsActivity.class;
-            pluginMap.put("mintegral_videofeeds.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -288,7 +262,7 @@ public class MintegralATInitManager extends ATInitMediation {
 
     @Override
     public List getServiceStatus() {
-        if(MintegralATConst.isChinaSdk()) {
+        if (MintegralATConst.isChinaSdk()) {
             ArrayList<String> list = new ArrayList<>();
             list.add("com.mintegral.msdk.shell.MTGService");
             return list;
@@ -298,7 +272,7 @@ public class MintegralATInitManager extends ATInitMediation {
 
     @Override
     public List getProviderStatus() {
-        if(MintegralATConst.isChinaSdk()) {
+        if (MintegralATConst.isChinaSdk()) {
             //国内版
             ArrayList<String> list = new ArrayList<>();
             list.add("com.mintegral.msdk.base.utils.MTGFileProvider");

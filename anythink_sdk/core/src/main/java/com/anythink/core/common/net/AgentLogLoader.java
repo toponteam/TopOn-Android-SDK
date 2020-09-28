@@ -32,20 +32,22 @@ public class AgentLogLoader extends AbsHttpLoader {
     String mAppID;
     String mAppKey;
     List<String> mDataList;
+    int reportType;
 
-    public AgentLogLoader(Context c, List<String> dataList) {
+    public AgentLogLoader(Context c, int reportType, List<String> dataList) {
         super();
         mContext = c;
         mAppID = SDKContext.getInstance().getAppId();
         mAppKey = SDKContext.getInstance().getAppKey();
         mDataList = dataList;
         mCount = dataList.size();
+        this.reportType = reportType;
     }
 
 
     @Override
     protected int onPrepareType() {
-        return AbsHttpLoader.POST;
+        return ApiRequestParam.POST;
     }
 
     // URL
@@ -107,8 +109,8 @@ public class AgentLogLoader extends AbsHttpLoader {
         JSONObject jsonObject = super.getBaseInfoObject();
         if (jsonObject != null) {
             try {
-                jsonObject.put("app_id", mAppID);
-                jsonObject.put(JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
+                jsonObject.put(ApiRequestParam.JSON_REQUEST_APPID, mAppID);
+                jsonObject.put(ApiRequestParam.JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
 
                 JSONArray jsonArray = new JSONArray();
                 if (mDataList != null && mDataList.size() > 0) {
@@ -119,7 +121,7 @@ public class AgentLogLoader extends AbsHttpLoader {
                         }
                     }
                 }
-                jsonObject.put("data", jsonArray);
+                jsonObject.put(ApiRequestParam.JSON_REQUEST_DATA_LIST, jsonArray);
 
             } catch (Exception e) {
                 if (Const.DEBUG) {
@@ -131,6 +133,20 @@ public class AgentLogLoader extends AbsHttpLoader {
         return jsonObject;
     }
 
+    @Override
+    protected JSONObject getMainInfoObject() {
+        JSONObject jsonObject = super.getMainInfoObject();
+        if (jsonObject != null) {
+            try {
+                jsonObject.put(ApiRequestParam.JSON_REQUEST_TKDA_REPORT_TYPE, reportType);
+            } catch (Exception e) {
+                if (Const.DEBUG) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return jsonObject;
+    }
 
     @Override
     protected Object onParseResponse(Map<String, List<String>> headers, String jsonString) throws IOException {

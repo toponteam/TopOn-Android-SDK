@@ -36,6 +36,7 @@ public class ApplicationLifecycleListener implements Application.ActivityLifecyc
 
     Handler handler = new Handler(Looper.getMainLooper());
 
+
     Runnable recordPlayTimeRunnable = new Runnable() {
         @Override
         public void run() {
@@ -48,9 +49,10 @@ public class ApplicationLifecycleListener implements Application.ActivityLifecyc
                 long endTime = jsonObject.optLong(JSON_END_TIME_KEY);
                 String psid = jsonObject.optString(JSON_PSID_KEY);
                 int launchMode = jsonObject.optInt(JSON_LAUNCH_MODE_KEY);
+
+                recordObject = null; //set null
                 //Send playtime agent
                 AgentEventManager.sendApplicationPlayTime(launchMode == HOT_LAUNCH_MODE ? 3 : 1, startTime, endTime, psid);
-                recordObject = null;
                 CommonLogUtil.e(TAG, "Time up to send application playTime, reset playStartTime and send agent, playtime:" + (endTime - startTime)/1000);
             } else {
                 CommonLogUtil.e(TAG, "Time up to send application playTime, but recordObject is null.");
@@ -108,9 +110,6 @@ public class ApplicationLifecycleListener implements Application.ActivityLifecyc
             CommonLogUtil.e(TAG, "onActivityResumed : restart to record starttime");
             try {
                 startTime = SDKContext.getInstance().createPsid(activity.getApplicationContext(), SDKContext.getInstance().getAppId(), HOT_LAUNCH_MODE);
-                if (startTime == 0) {
-                    startTime = System.currentTimeMillis();
-                }
             } catch (Exception e) {
                 if (Const.DEBUG) {
                     e.printStackTrace();
@@ -124,6 +123,9 @@ public class ApplicationLifecycleListener implements Application.ActivityLifecyc
             CommonLogUtil.e(TAG, "onActivityResumed : Continue to record the pervious start time");
         }
 
+        if (startTime == 0) {
+            startTime = System.currentTimeMillis();
+        }
 
         CommonLogUtil.e(TAG, "onActivityResumed: Method use time:" + (System.currentTimeMillis() - methodStatTime));
     }

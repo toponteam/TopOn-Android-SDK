@@ -5,7 +5,6 @@ import android.view.View;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.appnext.banners.BannerAdRequest;
@@ -20,31 +19,19 @@ import java.util.Map;
 public class AppnextATBannerAdapter extends CustomBannerAdapter {
     private final String TAG = AppnextATBannerAdapter.class.getSimpleName();
 
-
-    CustomBannerListener mListener;
-
     String mPlacementId;
 
     BannerView mBannerView;
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-
-        mListener = customBannerListener;
-
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(AppnextATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         if (serverExtras.containsKey("placement_id")) {
             mPlacementId = (String) serverExtras.get("placement_id");
 
         } else {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(AppnextATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "placement_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "placement_id is empty!");
             }
             return;
         }
@@ -80,30 +67,29 @@ public class AppnextATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onAdLoaded(String s, AppnextAdCreativeType appnextAdCreativeType) {
                 mBannerView = banner;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(AppnextATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onError(AppnextError appnextError) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(AppnextATBannerAdapter.this
-                            , ErrorCode.getErrorCode(ErrorCode.noADError, "", appnextError.getErrorMessage()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", appnextError.getErrorMessage());
                 }
             }
 
             @Override
             public void adImpression() {
-                if (mListener != null) {
-                    mListener.onBannerAdShow(AppnextATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
                 }
             }
 
             @Override
             public void onAdClicked() {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(AppnextATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
         });
@@ -117,20 +103,32 @@ public class AppnextATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mBannerView != null) {
+            mBannerView.setBannerListener(null);
             mBannerView.destroy();
+            mBannerView = null;
         }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 
     @Override
     public String getNetworkName() {
         return AppnextATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AppnextATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mPlacementId;
     }
 
 }

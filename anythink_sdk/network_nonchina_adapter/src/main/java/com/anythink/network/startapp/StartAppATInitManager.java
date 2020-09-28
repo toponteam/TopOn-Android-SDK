@@ -40,7 +40,7 @@ public class StartAppATInitManager extends ATInitMediation {
 
         if (!TextUtils.isEmpty(appId)) {
             if (TextUtils.isEmpty(mAppId) || !TextUtils.equals(mAppId, appId)) {
-                StartAppSDK.init(context, appId, false);
+                StartAppSDK.init(context.getApplicationContext(), appId, false);
                 StartAppAd.disableAutoInterstitial();
                 StartAppAd.disableSplash();
                 mAppId = appId;

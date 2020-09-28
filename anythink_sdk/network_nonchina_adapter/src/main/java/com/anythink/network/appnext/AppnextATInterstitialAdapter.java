@@ -1,11 +1,11 @@
 package com.anythink.network.appnext;
 
+import android.app.Activity;
 import android.content.Context;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.appnext.ads.interstitial.Interstitial;
 import com.appnext.core.AppnextAdCreativeType;
 import com.appnext.core.callbacks.OnAdClicked;
@@ -24,23 +24,15 @@ public class AppnextATInterstitialAdapter extends CustomInterstitialAdapter {
     Interstitial mInterstitial;
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
-        mLoadResultListener = customInterstitialListener;
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(AppnextATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
 
         if (serverExtras.containsKey("placement_id")) {
             mPlacementId = (String) serverExtras.get("placement_id");
 
         } else {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(AppnextATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "placement_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "placement_id is empty!");
             }
             return;
         }
@@ -53,8 +45,8 @@ public class AppnextATInterstitialAdapter extends CustomInterstitialAdapter {
         mInterstitial.setOnAdLoadedCallback(new OnAdLoaded() {
             @Override
             public void adLoaded(String s, AppnextAdCreativeType appnextAdCreativeType) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(AppnextATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
         });// Get callback for ad opened
@@ -62,7 +54,7 @@ public class AppnextATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void adOpened() {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(AppnextATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdShow();
                 }
             }
         });// Get callback for ad clicked
@@ -70,7 +62,7 @@ public class AppnextATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void adClicked() {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked(AppnextATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClicked();
                 }
             }
         });// Get callback for ad closed
@@ -78,16 +70,15 @@ public class AppnextATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void onAdClosed() {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose(AppnextATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
         });// Get callback for ad error
         mInterstitial.setOnAdErrorCallback(new OnAdError() {
             @Override
             public void adError(String error) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(AppnextATInterstitialAdapter.this
-                            , ErrorCode.getErrorCode(ErrorCode.noADError, "", error));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", error);
                 }
             }
         });
@@ -105,36 +96,37 @@ public class AppnextATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AppnextATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public void show(Activity activity) {
         if (mInterstitial != null) {
             mInterstitial.showAd();
         }
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mInterstitial != null) {
             mInterstitial.destroy();
+            mInterstitial = null;
         }
     }
 
     @Override
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onPause() {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 
     @Override
     public String getNetworkName() {
         return AppnextATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mPlacementId;
     }
 }

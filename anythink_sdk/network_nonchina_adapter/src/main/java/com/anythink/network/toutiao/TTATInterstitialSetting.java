@@ -6,6 +6,7 @@ import com.anythink.core.api.ATMediationSetting;
  * Created by zhou on 2018/6/27.
  */
 
+@Deprecated
 public class TTATInterstitialSetting implements ATMediationSetting {
     int interstitialWidth;
 

@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.chartboost.sdk.CBLocation;
 import com.chartboost.sdk.Chartboost;
 import com.chartboost.sdk.Model.CBError;
@@ -30,8 +29,8 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
     /***
      * init and load
      */
-    private void initAndLoad(Activity activity, Map<String, Object> serverExtras) {
-        ChartboostATInitManager.getInstance().initSDK(activity, serverExtras, new ChartboostATInitManager.InitCallback() {
+    private void initAndLoad(Context context, Map<String, Object> serverExtras) {
+        ChartboostATInitManager.getInstance().initSDK(context, serverExtras, new ChartboostATInitManager.InitCallback() {
             @Override
             public void didInitialize() {
                 ChartboostATInterstitialAdapter.this.didInitialize();
@@ -41,47 +40,24 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+
+        String appid = (String) serverExtras.get("app_id");
+        String appkey = (String) serverExtras.get("app_signature");
+        location = (String) serverExtras.get("location");
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(location)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " app_id ,app_signature or location is empty.");
             }
             return;
         }
-        if (mediationSetting != null && mediationSetting instanceof ChartboostRewardedVideoSetting) {
-            mChartboostMediationSetting = (ChartboostRewardedVideoSetting) mediationSetting;
 
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " serverExtras is empty."));
-            }
-            return;
-        } else {
-            String appid = (String) serverExtras.get("app_id");
-            String appkey = (String) serverExtras.get("app_signature");
-            location = (String) serverExtras.get("location");
-
-            if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(location)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " app_id ,app_signature or location is empty."));
-                }
-                return;
-            }
-        }
-
-        if (!(context instanceof Activity)) {
-            mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " context must be activity."));
-            return;
-        }
-        initAndLoad((Activity) context, serverExtras);
-
+        initAndLoad(context, serverExtras);
     }
 
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras != null) {
             if (serverExtras.containsKey("app_id") && serverExtras.containsKey("app_signature") && serverExtras.containsKey("location")) {
                 location = (String) serverExtras.get("location");
@@ -100,7 +76,7 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
     }
 
     @Override
@@ -109,12 +85,10 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void onResume() {
+    public String getNetworkPlacementId() {
+        return location;
     }
 
-    @Override
-    public void onPause() {
-    }
 
     @Override
     public boolean isAdReady() {
@@ -122,14 +96,19 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return ChartboostATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public void show(Activity activity) {
         ChartboostATInitManager.getInstance().putAdapter(location, this);
         Chartboost.showInterstitial(location);
     }
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return ChartboostATConst.getNetworkVersion();
     }
 
@@ -147,14 +126,14 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     public void didCacheInterstitial(String location) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onInterstitialAdLoaded(ChartboostATInterstitialAdapter.this);
+        if (mLoadListener != null) {
+            mLoadListener.onAdCacheLoaded();
         }
     }
 
     public void didFailToLoadInterstitial(String location, CBError.CBImpressionError error) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onInterstitialAdLoadFail(ChartboostATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + error.name(), " " + error.toString()));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError("" + error.name(), " " + error.toString());
         }
     }
 
@@ -163,7 +142,7 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
 
     public void didDismissInterstitial(String location) {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdClose(ChartboostATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdClose();
         }
     }
 
@@ -173,25 +152,31 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
 
     public void didClickInterstitial(String location) {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdClicked(ChartboostATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdClicked();
         }
     }
 
     public void didCompleteInterstitial(String location) {
         isRewared = true;
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdVideoEnd(ChartboostATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdVideoEnd();
         }
     }
 
     public void didDisplayInterstitial(String location) {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdShow(ChartboostATInterstitialAdapter.this);
-            mImpressListener.onInterstitialAdVideoStart(ChartboostATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdShow();
+            mImpressListener.onInterstitialAdVideoStart();
         }
     }
 
     public void didInitialize() {
-        startload();
+        try {
+            startload();
+        } catch (Throwable e) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", e.getMessage());
+            }
+        }
     }
 }

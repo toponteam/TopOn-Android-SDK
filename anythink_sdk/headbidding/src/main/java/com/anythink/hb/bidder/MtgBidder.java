@@ -14,7 +14,7 @@ import com.anythink.hb.constants.ADType;
 import com.anythink.hb.data.AuctionNotification;
 import com.anythink.hb.data.BidRequestInfo;
 import com.anythink.hb.data.BiddingResponse;
-import com.anythink.hb.data.HiBidContext;
+import com.anythink.hb.data.HBDataContext;
 import com.anythink.hb.exception.BidderInitFailedException;
 import com.anythink.hb.exception.BiddingException;
 import com.anythink.hb.exception.FailedToGetRenderException;
@@ -43,7 +43,7 @@ public class MtgBidder implements Bidder {
 
     private static volatile boolean sdkInitialized = false;
 
-    private HiBidContext mContext;
+    private HBDataContext mContext;
     private Object adBidFormat;
     private BidRequestInfo curBidRequestInfo = null;
     private BidResponsed curBidResponsed = null;
@@ -63,7 +63,7 @@ public class MtgBidder implements Bidder {
     }
 
     @Override
-    public void init(HiBidContext context) throws BidderInitFailedException, SdkIntegratedException {
+    public void init(HBDataContext context) throws BidderInitFailedException, SdkIntegratedException {
         try {
             mContext = context;
             if (!sdkInitialized) {
@@ -191,20 +191,21 @@ public class MtgBidder implements Bidder {
     @Override
     public void onAuctionNotification(AuctionNotification notification) {
         if (curBidResponsed != null && mContext != null) {
-            if (notification.isWinner()) {
-                LogUtil.i(TAG, "Mtg Bidder Wins");
-                curBidResponsed.sendWinNotice(mContext.getContext());
-            } else {
-                if (notification.getReasonCode().equals(AuctionNotification.ReasonCode.Loss)) {
-                    LogUtil.i(TAG, "Mtg Bidder Loss");
-                    curBidResponsed.sendLossNotice(mContext.getContext(), BidLossCode.bidPriceNotHighest());
-                } else if (notification.getReasonCode().equals(AuctionNotification.ReasonCode.Timeout)) {
-                    LogUtil.i(TAG, "Mtg Bidder Timeout");
-                    curBidResponsed.sendLossNotice(mContext.getContext(), BidLossCode.bidTimeOut());
-                } else {
-                    LogUtil.i(TAG, "Mtg Bidder Loss");
-                }
-            }
+            //TODO Stop to send winner and losser
+//            if (notification.isWinner()) {
+//                LogUtil.i(TAG, "Mtg Bidder Wins");
+//                curBidResponsed.sendWinNotice(mContext.getContext());
+//            } else {
+//                if (notification.getReasonCode().equals(AuctionNotification.ReasonCode.Loss)) {
+//                    LogUtil.i(TAG, "Mtg Bidder Loss");
+//                    curBidResponsed.sendLossNotice(mContext.getContext(), BidLossCode.bidPriceNotHighest());
+//                } else if (notification.getReasonCode().equals(AuctionNotification.ReasonCode.Timeout)) {
+//                    LogUtil.i(TAG, "Mtg Bidder Timeout");
+//                    curBidResponsed.sendLossNotice(mContext.getContext(), BidLossCode.bidTimeOut());
+//                } else {
+//                    LogUtil.i(TAG, "Mtg Bidder Loss");
+//                }
+//            }
         }
 
     }
@@ -216,7 +217,7 @@ public class MtgBidder implements Bidder {
         }
 
         if (mContext == null) {
-            throw new FailedToGetRenderException("HiBidContext == NULL!");
+            throw new FailedToGetRenderException("HBDataContext == NULL!");
         }
 
         Object adsRender = null;

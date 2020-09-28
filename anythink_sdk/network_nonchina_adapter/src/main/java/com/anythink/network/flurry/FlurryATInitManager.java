@@ -50,31 +50,12 @@ public class FlurryATInitManager extends ATInitMediation {
 
 
         if (!TextUtils.isEmpty(sdkKey)) {
-            Object[] result = supportGDPR(context, serviceExtras);
 
             if (TextUtils.isEmpty(mSDKKey) || !mSDKKey.equals(sdkKey)) {
 
                 FlurryAgent.Builder builder = new FlurryAgent.Builder();
-                //防止无GDPR 版本出现报错
-                try {
-                    Map<String, String> consentStrings = new HashMap<>();
-                    consentStrings.put("IAB", (String) result[0]);
 
-                    FlurryConsent flurryConsent = new FlurryConsent((boolean) result[1], consentStrings);
-                    builder.withConsent(flurryConsent)
-                            .withListener(new FlurryAgentListener() {
-                                @Override
-                                public void onSessionStarted() {
-                                    Log.d("flurry", "onSessionStarted....");
-                                }
-                            });
-                } catch (Exception pE) {
-
-                }
-
-                builder
-//                        .withLogEnabled(ATSDK.isNetworkLogDebug())
-                        .withCaptureUncaughtExceptions(true)
+                builder.withCaptureUncaughtExceptions(true)
                         .withContinueSessionMillis(10000)
                         .withLogLevel(VERBOSE)
                         .build(context.getApplicationContext(), sdkKey);
@@ -83,39 +64,21 @@ public class FlurryATInitManager extends ATInitMediation {
         }
     }
 
-    private Object[] supportGDPR(Context context, Map<String, Object> serviceExtras) {
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
         Object[] result = new Object[2];
 
         String iabConsentString = "";
+        Map<String, String> consentStrings = new HashMap<>();
+        consentStrings.put("IAB", iabConsentString);
+        result[0] = iabConsentString;
+        result[1] = isConsent;
+        FlurryConsent flurryConsent = new FlurryConsent(isConsent, consentStrings);
 
-        if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-            //Whether to agree to collect data
-            boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-            //Whether to set the GDPR of the network
-            boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-            if (need_set_gdpr) {
-                try {
-                    Map<String, String> consentStrings = new HashMap<>();
-                    consentStrings.put("IAB", iabConsentString);
-                    result[0] = iabConsentString;
-                    result[1] = gdp_consent;
-                    FlurryConsent flurryConsent = new FlurryConsent(gdp_consent, consentStrings);
-
-                    FlurryAgent.updateFlurryConsent(flurryConsent);
-                    return result;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    result[0] = "";
-                    result[1] = false;
-                }
-            }
-        }
-
-        logGDPRSetting(FlurryATConst.NETWORK_FIRM_ID);
-
-        return result;
+        FlurryAgent.updateFlurryConsent(flurryConsent);
+        return true;
     }
+
 
     public void postDelay(Runnable runnable, long time) {
         mHandler.postDelayed(runnable, time);

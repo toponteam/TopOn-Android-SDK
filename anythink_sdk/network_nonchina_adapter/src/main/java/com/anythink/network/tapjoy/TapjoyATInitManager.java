@@ -8,6 +8,7 @@ import com.anythink.core.api.ATSDK;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GoogleSignatureVerifier;
 import com.tapjoy.TJConnectListener;
+import com.tapjoy.TJPrivacyPolicy;
 import com.tapjoy.Tapjoy;
 
 import java.util.ArrayList;
@@ -44,27 +45,11 @@ public class TapjoyATInitManager extends ATInitMediation {
         if (TextUtils.isEmpty(mSdkKey) || !TextUtils.equals(mSdkKey, appkey)) {
 
             try {
-                if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                    //Whether to agree to collect data
-                    boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                    //Whether to agree to collect data
-                    boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                    if (need_set_gdpr) {
-                        //1:agree  0:deny
-                        String consent = gdp_consent ? "1" : "0";
-                        Tapjoy.setUserConsent(consent);
-
-                        Tapjoy.subjectToGDPR(ATSDK.isEUTraffic(context));
-                    }
-                }
-                logGDPRSetting(TapjoyATConst.NETWORK_FIRM_ID);
-
                 final Hashtable<String, Object> connectFlags = new Hashtable<>();
 //                connectFlags.put(TapjoyConnectFlag.ENABLE_LOGGING, ATSDK.isNetworkLogDebug());
 //                TapjoyLog.setDebugEnabled(ATSDK.isNetworkLogDebug());
 
-                Tapjoy.connect(context, appkey, connectFlags, new TJConnectListener() {
+                Tapjoy.connect(context.getApplicationContext(), appkey, connectFlags, new TJConnectListener() {
                     @Override
                     public void onConnectSuccess() {
                         mSdkKey = appkey;
@@ -91,6 +76,15 @@ public class TapjoyATInitManager extends ATInitMediation {
                 connectListener.onConnectSuccess();
             }
         }
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        //1:agree  0:deny
+        String consent = isConsent ? "1" : "0";
+        TJPrivacyPolicy.getInstance().setUserConsent(consent);
+        TJPrivacyPolicy.getInstance().setSubjectToGDPR(ATSDK.isEUTraffic(context));
+        return true;
     }
 
     @Override

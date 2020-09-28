@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.chartboost.sdk.CBLocation;
 import com.chartboost.sdk.Chartboost;
 import com.chartboost.sdk.Model.CBError;
@@ -27,8 +26,8 @@ public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     /***
      * init and load
      */
-    private void initAndLoad(Activity activity, Map<String, Object> serverExtras) {
-        ChartboostATInitManager.getInstance().initSDK(activity, serverExtras, new ChartboostATInitManager.InitCallback() {
+    private void initAndLoad(Context context, Map<String, Object> serverExtras) {
+        ChartboostATInitManager.getInstance().initSDK(context, serverExtras, new ChartboostATInitManager.InitCallback() {
             @Override
             public void didInitialize() {
                 ChartboostATRewardedVideoAdapter.this.didInitialize();
@@ -38,48 +37,24 @@ public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void loadRewardVideoAd(final Activity activity, final Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
+
+        String appid = (String) serverExtras.get("app_id");
+        String appkey = (String) serverExtras.get("app_signature");
+        location = (String) serverExtras.get("location");
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(location)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " app_id ,app_signature or location is empty.");
             }
             return;
         }
-        if (mediationSetting != null && mediationSetting instanceof ChartboostRewardedVideoSetting) {
-            mChartboostMediationSetting = (ChartboostRewardedVideoSetting) mediationSetting;
-        }
 
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid ,unitid or sdkkey is empty."));
-            }
-            return;
-        } else {
-
-            String appid = (String) serverExtras.get("app_id");
-            String appkey = (String) serverExtras.get("app_signature");
-            location = (String) serverExtras.get("location");
-
-            if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(location)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " app_id ,app_signature or location is empty."));
-                }
-                return;
-            }
-        }
-
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                initAndLoad(activity, serverExtras);
-            }
-        });
-
+        initAndLoad(context, serverExtras);
     }
 
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
         if (serverExtras != null) {
             if (serverExtras.containsKey("app_id") && serverExtras.containsKey("app_signature") && serverExtras.containsKey("location")) {
                 location = (String) serverExtras.get("location");
@@ -98,21 +73,19 @@ public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
-    @Override
-    public void onResume(Activity activity) {
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-    }
 
     @Override
     public boolean isAdReady() {
         return Chartboost.hasRewardedVideo(location);
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return ChartboostATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
     }
 
     @Override
@@ -123,13 +96,18 @@ public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return ChartboostATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return ChartboostATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return location;
     }
 
     /**
@@ -141,21 +119,21 @@ public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     public void didCacheRewardedVideo(String location) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdLoaded(ChartboostATRewardedVideoAdapter.this);
+        if (mLoadListener != null) {
+            mLoadListener.onAdCacheLoaded();
         }
 
     }
 
     public void didFailToLoadRewardedVideo(String location, CBError.CBImpressionError error) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdFailed(ChartboostATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + error.name(), " " + error.toString()));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(error.name(), " " + error.toString());
         }
     }
 
     public void didDismissRewardedVideo(String location) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdClosed(ChartboostATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdClosed();
         }
     }
 
@@ -164,23 +142,23 @@ public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     public void didClickRewardedVideo(String location) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayClicked(ChartboostATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayClicked();
         }
     }
 
     public void didCompleteRewardedVideo(String location, int reward) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayEnd(ChartboostATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayEnd();
         }
 
         if (mImpressionListener != null) {
-            mImpressionListener.onReward(ChartboostATRewardedVideoAdapter.this);
+            mImpressionListener.onReward();
         }
     }
 
     public void didDisplayRewardedVideo(String location) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayStart(ChartboostATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayStart();
         }
 
     }
@@ -190,6 +168,12 @@ public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
 
     public void didInitialize() {
-        startload();
+        try {
+            startload();
+        } catch (Throwable e) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", e.getMessage());
+            }
+        }
     }
 }

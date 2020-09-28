@@ -1,12 +1,11 @@
 package com.anythink.interstitial.unitgroup.api;
 
-import com.anythink.core.api.AdError;
 
 public interface CustomInterstitialEventListener {
-    public void onInterstitialAdClicked(CustomInterstitialAdapter adapter);
-    public void onInterstitialAdShow(CustomInterstitialAdapter adapter);
-    public void onInterstitialAdClose(CustomInterstitialAdapter adapter);
-    public void onInterstitialAdVideoStart(CustomInterstitialAdapter adapter);
-    public void onInterstitialAdVideoEnd(CustomInterstitialAdapter adapter);
-    public void onInterstitialAdVideoError(CustomInterstitialAdapter adapter, AdError adError);
+    void onInterstitialAdClicked();
+    void onInterstitialAdShow();
+    void onInterstitialAdClose();
+    void onInterstitialAdVideoStart();
+    void onInterstitialAdVideoEnd();
+    void onInterstitialAdVideoError(String errorCode, String errorMsg);
 }

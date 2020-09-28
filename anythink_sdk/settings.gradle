@@ -3,3 +3,4 @@ include ':network_nonchina_adapter',':network_nonchina_sdk'
 include ':network_china_adapter',':network_china_sdk'
 
 
+include ':jacocohelper'

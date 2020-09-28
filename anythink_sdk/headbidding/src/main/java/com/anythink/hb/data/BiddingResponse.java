@@ -8,66 +8,87 @@ import com.anythink.hb.Bidder;
 /**
  * Response for one bidder's bid request
  */
-public class BiddingResponse implements Comparable<BiddingResponse>{
+public class BiddingResponse implements Comparable<BiddingResponse> {
 
-	private Class bidderClass;
-	private double biddingPriceUSD;
+    private Class bidderClass;
+    private double biddingPriceUSD;
     private Object payload;
-	private Bidder bidder;
-	private BidRequestInfo bidRequestInfo;
-	private String errorMessage;
+    private Bidder bidder;
+    private BidRequestInfo bidRequestInfo;
+    private String errorMessage;
+    private long biddingStartTime;
+    private long biddingEndTime;
+    private boolean isSuccess;
+    private boolean isTimeout;
 
-	public BiddingResponse(){
 
-	}
+    public BiddingResponse(Class bidderClass, double biddingPriceUSD, Object payload,
+                           Bidder bidder, BidRequestInfo bidRequestInfo) {
+        this.bidderClass = bidderClass;
+        this.biddingPriceUSD = biddingPriceUSD;
+        this.payload = payload;
+        this.bidder = bidder;
+        this.bidRequestInfo = bidRequestInfo;
+        this.isSuccess = biddingPriceUSD > 0.0;
+        this.biddingEndTime = System.currentTimeMillis();
+    }
 
-	public BiddingResponse(Class bidderClass, double biddingPriceUSD, Object payload,
-						   Bidder bidder, BidRequestInfo bidRequestInfo) {
-		this.bidderClass = bidderClass;
-		this.biddingPriceUSD = biddingPriceUSD;
-		this.payload = payload;
-		this.bidder = bidder;
-		this.bidRequestInfo = bidRequestInfo;
-	}
+    public BiddingResponse(Class bidderClass, String errorMessage, Bidder bidder, BidRequestInfo bidRequestInfo) {
+        this.bidderClass = bidderClass;
+        this.errorMessage = errorMessage;
+        this.bidder = bidder;
+        this.bidRequestInfo = bidRequestInfo;
+        this.biddingEndTime = System.currentTimeMillis();
+    }
 
-	public BiddingResponse(Class bidderClass, String errorMessage, Bidder bidder, BidRequestInfo bidRequestInfo) {
-		this.bidderClass = bidderClass;
-		this.errorMessage = errorMessage;
-		this.bidder = bidder;
-		this.bidRequestInfo = bidRequestInfo;
-	}
+    public BiddingResponse(Class bidderClass, String errorMessage, Bidder bidder, BidRequestInfo bidRequestInfo, boolean isTimeout) {
+        this.bidderClass = bidderClass;
+        this.errorMessage = errorMessage;
+        this.bidder = bidder;
+        this.bidRequestInfo = bidRequestInfo;
+        this.isTimeout = isTimeout;
+        this.biddingEndTime = System.currentTimeMillis();
+    }
 
-	public Class getBidderClass() {
-		return bidderClass;
-	}
+    public boolean isSuccess() {
+        return this.isSuccess;
+    }
 
-	public void setBidderClass(Class bidderClass) {
-		this.bidderClass = bidderClass;
-	}
+    public boolean isTimeout() {
+        return this.isTimeout;
+    }
 
-	public double getBiddingPriceUSD() {
-		return biddingPriceUSD;
-	}
+    public Class getBidderClass() {
+        return bidderClass;
+    }
 
-	public void setBiddingPriceUSD(double biddingPriceUSD) {
-		this.biddingPriceUSD = biddingPriceUSD;
-	}
+    public void setBidderClass(Class bidderClass) {
+        this.bidderClass = bidderClass;
+    }
 
-	public Object getPayload() {
-		return payload;
-	}
+    public double getBiddingPriceUSD() {
+        return biddingPriceUSD;
+    }
 
-	public void setPayload(Object payload) {
-		this.payload = payload;
-	}
+    public void setBiddingPriceUSD(double biddingPriceUSD) {
+        this.biddingPriceUSD = biddingPriceUSD;
+    }
 
-	public Bidder getBidder() {
-		return bidder;
-	}
+    public Object getPayload() {
+        return payload;
+    }
 
-	public void setBidder(Bidder bidder) {
-		this.bidder = bidder;
-	}
+    public void setPayload(Object payload) {
+        this.payload = payload;
+    }
+
+    public Bidder getBidder() {
+        return bidder;
+    }
+
+    public void setBidder(Bidder bidder) {
+        this.bidder = bidder;
+    }
 
     public String getErrorMessage() {
         return errorMessage;
@@ -77,24 +98,36 @@ public class BiddingResponse implements Comparable<BiddingResponse>{
         this.errorMessage = errorMessage;
     }
 
-	public BidRequestInfo getBidRequestInfo() {
-		return bidRequestInfo;
-	}
+    public BidRequestInfo getBidRequestInfo() {
+        return bidRequestInfo;
+    }
 
-	public void setBidRequestInfo(BidRequestInfo bidRequestInfo) {
-		this.bidRequestInfo = bidRequestInfo;
-	}
+    public void setBidRequestInfo(BidRequestInfo bidRequestInfo) {
+        this.bidRequestInfo = bidRequestInfo;
+    }
 
-	@Override
-	public int compareTo(BiddingResponse other) {
-		if (this.biddingPriceUSD > other.getBiddingPriceUSD()) {
-			return -1;
-		} else if (this.biddingPriceUSD == other.getBiddingPriceUSD()) {
-			return 0;
-		} else {
-			return 1;
-		}
-	}
+    public long getBiddingStartTime() {
+        return biddingStartTime;
+    }
+
+    public void setBiddingStartTime(long biddingStartTime) {
+        this.biddingStartTime = biddingStartTime;
+    }
+
+    public long getBiddingEndTime() {
+        return this.biddingEndTime;
+    }
+
+    @Override
+    public int compareTo(BiddingResponse other) {
+        if (this.biddingPriceUSD > other.getBiddingPriceUSD()) {
+            return -1;
+        } else if (this.biddingPriceUSD == other.getBiddingPriceUSD()) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
 
 
 }

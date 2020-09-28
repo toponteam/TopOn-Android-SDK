@@ -3,19 +3,14 @@ package com.anythink.network.facebook;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
-import com.anythink.nativead.unitgroup.BaseNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 import com.facebook.ads.Ad;
+import com.facebook.ads.AdError;
 import com.facebook.ads.NativeAd;
 import com.facebook.ads.NativeAdListener;
 import com.facebook.ads.NativeBannerAd;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,7 +26,7 @@ public class FacebookATAdapter extends CustomNativeAdapter {
     boolean isAutoPlay = false;
 
     @Override
-    public void loadNativeAd(final Context context, final CustomNativeListener customNativeListener, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
         try {
             if (serverExtras.containsKey("unit_id")) {
                 unitId = serverExtras.get("unit_id").toString();
@@ -49,9 +44,8 @@ public class FacebookATAdapter extends CustomNativeAdapter {
         }
 
         if (TextUtils.isEmpty(unitId)) {
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "facebook unitId is empty.");
-                customNativeListener.onNativeAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "facebook unitId is empty.");
             }
             return;
         }
@@ -72,25 +66,12 @@ public class FacebookATAdapter extends CustomNativeAdapter {
         }
 
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    startAdLoad(context, customNativeListener);
+        startAdLoad(context);
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    if (customNativeListener != null) {
-                        AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                        customNativeListener.onNativeAdFailed(FacebookATAdapter.this, adError);
-                    }
-                }
-            }
-        }).start();
     }
 
 
-    private void startAdLoad(final Context context, final CustomNativeListener customNativeListener) {
+    private void startAdLoad(final Context context) {
         NativeAdListener nativeAdListener = new NativeAdListener() {
             @Override
             public void onMediaDownloaded(Ad ad) {
@@ -98,10 +79,9 @@ public class FacebookATAdapter extends CustomNativeAdapter {
             }
 
             @Override
-            public void onError(Ad ad, com.facebook.ads.AdError adError) {
-                com.anythink.core.api.AdError adUpError = ErrorCode.getErrorCode(ErrorCode.noADError, adError.getErrorCode() + "", adError.getErrorMessage());
-                if (customNativeListener != null) {
-                    customNativeListener.onNativeAdFailed(FacebookATAdapter.this, adUpError);
+            public void onError(Ad ad, AdError adError) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(adError.getErrorCode() + "", adError.getErrorMessage());
                 }
             }
 
@@ -110,18 +90,14 @@ public class FacebookATAdapter extends CustomNativeAdapter {
                 switch (unitType) {
                     case "1":
                         FacebookATNativeBannerAd nativeBanner = new FacebookATNativeBannerAd(context, (NativeBannerAd) ad, unitHeight);
-                        List<CustomNativeAd> baseNativeBannerAdList = new ArrayList<>();
-                        baseNativeBannerAdList.add(nativeBanner);
-                        if (customNativeListener != null) {
-                            customNativeListener.onNativeAdLoaded(FacebookATAdapter.this, baseNativeBannerAdList);
+                        if (mLoadListener != null) {
+                            mLoadListener.onAdCacheLoaded(nativeBanner);
                         }
                         break;
                     default:
                         FacebookATNativeAd nativeAd = new FacebookATNativeAd(context, (NativeAd) ad);
-                        List<CustomNativeAd> baseNativeAdList = new ArrayList<>();
-                        baseNativeAdList.add(nativeAd);
-                        if (customNativeListener != null) {
-                            customNativeListener.onNativeAdLoaded(FacebookATAdapter.this, baseNativeAdList);
+                        if (mLoadListener != null) {
+                            mLoadListener.onAdCacheLoaded(nativeAd);
                         }
                         break;
                 }
@@ -155,7 +131,7 @@ public class FacebookATAdapter extends CustomNativeAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
@@ -165,7 +141,17 @@ public class FacebookATAdapter extends CustomNativeAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return FacebookATConst.getNetworkVersion();
     }
 }

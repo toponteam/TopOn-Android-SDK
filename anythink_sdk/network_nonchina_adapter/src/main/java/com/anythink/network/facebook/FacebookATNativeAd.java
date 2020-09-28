@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
@@ -18,10 +17,8 @@ import com.facebook.ads.MediaViewListener;
 import com.facebook.ads.NativeAd;
 import com.facebook.ads.NativeAdLayout;
 import com.facebook.ads.NativeAdListener;
-import com.facebook.ads.NativeBannerAd;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Z on 2018/1/12.
@@ -35,7 +32,7 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
 
     public FacebookATNativeAd(Context context, NativeAd nativeAd) {
         mContext = context.getApplicationContext();
-        mFacebookNativeAd =nativeAd;
+        mFacebookNativeAd = nativeAd;
         mFacebookNativeAd.setAdListener(this);
     }
 
@@ -109,24 +106,13 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
         return mContainer;
     }
 
-    @Override
-    public void clear(final View view) {
-        if (mMediaView != null) {
-            mMediaView.destroy();
-            mMediaView = null;
-        }
-        if (mFacebookNativeAd != null) {
-            mFacebookNativeAd.unregisterView();
-        }
-
-    }
-
     MediaView mMediaView;
 
     @Override
     public View getAdMediaView(Object... object) {
         try {
             if (mMediaView != null) {
+                mMediaView.setListener(null);
                 mMediaView.destroy();
                 mMediaView = null;
             }
@@ -192,16 +178,37 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
     }
 
     @Override
-    public void destroy() {
-        log(TAG, "destory");
+    public void clear(final View view) {
+        if (mMediaView != null) {
+            mMediaView.setListener(null);
+            mMediaView.destroy();
+            mMediaView = null;
+        }
         if (mFacebookNativeAd != null) {
+            mFacebookNativeAd.unregisterView();
+        }
+
+    }
+
+    @Override
+    public void destroy() {
+        if (mFacebookNativeAd != null) {
+            mFacebookNativeAd.setAdListener(null);
+            mFacebookNativeAd.unregisterView();
             mFacebookNativeAd.destroy();
             mFacebookNativeAd = null;
         }
         if (mMediaView != null) {
+            mMediaView.setListener(null);
             mMediaView.destroy();
             mMediaView = null;
         }
+        mContext = null;
+        if (mAdIconView != null) {
+            mAdIconView.destroy();
+            mAdIconView = null;
+        }
+        mContainer = null;
     }
 
     /**
@@ -268,10 +275,5 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
     @Override
     public void onMediaDownloaded(Ad ad) {
 
-    }
-
-    interface LoadCallbackListener {
-        public void onSuccess(CustomNativeAd customNativeAd);
-        public void onFail(com.anythink.core.api.AdError adError);
     }
 }

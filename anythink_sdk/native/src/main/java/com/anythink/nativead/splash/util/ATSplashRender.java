@@ -12,9 +12,11 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.anythink.core.common.res.ImageLoader;
+import com.anythink.core.common.res.ResourceEntry;
+import com.anythink.core.common.utils.BitmapUtil;
 import com.anythink.core.common.utils.CommonUtil;
 import com.anythink.nativead.api.ATNativeAdRenderer;
-import com.anythink.nativead.bussiness.CommonImageLoader;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.views.AppRatingView;
 import com.anythink.nativead.views.RoundImageView;
@@ -25,8 +27,10 @@ import com.anythink.nativead.views.RoundImageView;
 
 public class ATSplashRender implements ATNativeAdRenderer<CustomNativeAd> {
 
+    private Context mContext;
 
     public ATSplashRender(Context context) {
+        mContext = context.getApplicationContext();
     }
 
     View mDevelopView;
@@ -71,16 +75,16 @@ public class ATSplashRender implements ATNativeAdRenderer<CustomNativeAd> {
         if (!TextUtils.isEmpty(ad.getAdChoiceIconUrl())) {
             logoView.setVisibility(View.VISIBLE);
             int logoSize = logoView.getLayoutParams().width;
-            CommonImageLoader.getInstance().startLoadImage(ad.getAdChoiceIconUrl(), logoSize, new CommonImageLoader.ImageCallback() {
+            ImageLoader.getInstance(mContext).load(new ResourceEntry(ResourceEntry.CUSTOM_IMAGE_CACHE_TYPE, ad.getAdChoiceIconUrl()), logoSize, logoSize, new ImageLoader.ImageLoaderListener() {
                 @Override
-                public void onSuccess(Bitmap bitmap, String key) {
+                public void onSuccess(String key, Bitmap bitmap) {
                     logoView.setImageBitmap(bitmap);
                     logonImageFinish = true;
                     imageFinish();
                 }
 
                 @Override
-                public void onFail() {
+                public void onFail(String key, String errorMsg) {
                     logonImageFinish = true;
                     imageFinish();
                 }
@@ -122,7 +126,7 @@ public class ATSplashRender implements ATNativeAdRenderer<CustomNativeAd> {
             }
             mainImageFinish = true;
             Bitmap defaultBg = BitmapFactory.decodeResource(context.getResources(), CommonUtil.getResId(context, "plugin_splash_default_bg", "drawable"));
-            bgView.setImageBitmap(CommonImageLoader.getInstance().getBlurBitmap(context, defaultBg));
+            bgView.setImageBitmap(BitmapUtil.blurBitmap(context, defaultBg));
             if (defaultBg != null) {
                 defaultBg.recycle();
             }
@@ -136,20 +140,20 @@ public class ATSplashRender implements ATNativeAdRenderer<CustomNativeAd> {
             contentArea.addView(imageView, params);
             contentArea.setVisibility(View.VISIBLE);
 
-            CommonImageLoader.getInstance().startLoadImage(ad.getMainImageUrl(), bigSize, new CommonImageLoader.ImageCallback() {
+            ImageLoader.getInstance(mContext).load(new ResourceEntry(ResourceEntry.CUSTOM_IMAGE_CACHE_TYPE, ad.getMainImageUrl()), bigSize, bigSize, new ImageLoader.ImageLoaderListener() {
                 @Override
-                public void onSuccess(Bitmap bitmap, String key) {
+                public void onSuccess(String key,Bitmap bitmap) {
                     imageView.setImageBitmap(bitmap);
-                    Bitmap blurBitmap = CommonImageLoader.getInstance().getBlurBitmap(context, bitmap);
+                    Bitmap blurBitmap = BitmapUtil.blurBitmap(context, bitmap);
                     bgView.setImageBitmap(blurBitmap);
                     mainImageFinish = true;
                     imageFinish();
                 }
 
                 @Override
-                public void onFail() {
+                public void onFail(String key, String errorMsg) {
                     Bitmap defaultBg = BitmapFactory.decodeResource(context.getResources(), CommonUtil.getResId(context, "plugin_splash_default_bg", "drawable"));
-                    bgView.setImageBitmap(CommonImageLoader.getInstance().getBlurBitmap(context, defaultBg));
+                    bgView.setImageBitmap(BitmapUtil.blurBitmap(context, defaultBg));
                     if (defaultBg != null) {
                         defaultBg.recycle();
                     }

@@ -1,12 +1,11 @@
 package com.anythink.network.vungle;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
+import com.anythink.core.api.ATAdConst;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.vungle.warren.AdConfig;
 import com.vungle.warren.LoadAdCallback;
 import com.vungle.warren.PlayAdCallback;
@@ -19,27 +18,25 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     private final String TAG = VungleATRewardedVideoAdapter.class.getSimpleName();
     String mPlacementId;
-    VungleRewardedVideoSetting mSetting;
     AdConfig mAdConfig;
 
     private final LoadAdCallback loadAdCallback = new LoadAdCallback() {
         @Override
         public void onAdLoad(String s) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(VungleATRewardedVideoAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
 
         @Override
         public void onError(String s, VungleException throwable) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(VungleATRewardedVideoAdapter.this
-                        , ErrorCode.getErrorCode(ErrorCode.noADError, "", throwable.toString()));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", throwable.toString());
             }
         }
     };
 
-    private final PlayAdCallback vungleDefaultListener = new PlayAdCallback() {
+    private PlayAdCallback vungleDefaultListener = new PlayAdCallback() {
 
         @Override
         public void onAdEnd(String placementReferenceId, boolean wasSuccessFulView, boolean wasCallToActionClicked) {
@@ -47,17 +44,45 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             // if wasSuccessfulView is true, the user watched the ad and could be rewarded
             // if wasCallToActionClicked is true, the user clicked the call to action button in the ad.
 
+//            if (mImpressionListener != null) {
+//                if (wasCallToActionClicked) {
+//                    mImpressionListener.onRewardedVideoAdPlayClicked();
+//                }
+//                mImpressionListener.onRewardedVideoAdPlayEnd();
+//                if (wasSuccessFulView) {
+//                    mImpressionListener.onReward();
+//                }
+//                mImpressionListener.onRewardedVideoAdClosed();
+//
+//            }
+
+        }
+
+        @Override
+        public void onAdEnd(String s) {
             if (mImpressionListener != null) {
-                if (wasCallToActionClicked) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(VungleATRewardedVideoAdapter.this);
-                }
-                mImpressionListener.onRewardedVideoAdPlayEnd(VungleATRewardedVideoAdapter.this);
-                if (wasSuccessFulView) {
-                    mImpressionListener.onReward(VungleATRewardedVideoAdapter.this);
-                }
-                mImpressionListener.onRewardedVideoAdClosed(VungleATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayEnd();
+                mImpressionListener.onRewardedVideoAdClosed();
+            }
+        }
+
+        @Override
+        public void onAdClick(String s) {
+            if (mImpressionListener != null) {
+                mImpressionListener.onRewardedVideoAdPlayClicked();
+            }
+        }
+
+        @Override
+        public void onAdRewarded(String s) {
+            if (mImpressionListener != null) {
+                mImpressionListener.onReward();
 
             }
+        }
+
+        @Override
+        public void onAdLeftApplication(String s) {
 
         }
 
@@ -65,7 +90,7 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         public void onAdStart(String placementReferenceId) {
             // Called before playing an ad
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayStart(VungleATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayStart();
             }
         }
 
@@ -73,48 +98,80 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         public void onError(String placementReferenceId, VungleException reason) {
             // Called after playAd(placementId, adConfig) is unable to play the ad
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayFailed(VungleATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", reason.toString()));
+                mImpressionListener.onRewardedVideoAdPlayFailed("", reason.toString());
             }
         }
     };
 
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         String mAppId = (String) serverExtras.get("app_id");
         mPlacementId = (String) serverExtras.get("placement_id");
 
-        mLoadResultListener = customRewardVideoListener;
 
         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mPlacementId)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid & placementId is empty."));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " appid & placementId is empty.");
             }
             return;
         }
 
-        if (mediationSetting instanceof VungleRewardedVideoSetting) {
-            mSetting = (VungleRewardedVideoSetting) mediationSetting;
-        }
 
         mAdConfig = new AdConfig();
+        mAdConfig.setOrdinal(AdConfig.AUTO_ROTATE);
 
-        if (mSetting != null) {
-            mAdConfig.setOrdinal(AdConfig.AUTO_ROTATE);
-            mAdConfig.setMuted(mSetting.isSoundEnable());
-            mAdConfig.setBackButtonImmediatelyEnabled(mSetting.isBackButtonImmediatelyEnable());
+        try {
+            if (localExtras.containsKey(ATAdConst.KEY.AD_ORIENTATION)) {
+                int orientation = Integer.parseInt(localExtras.get(ATAdConst.KEY.AD_ORIENTATION).toString());
+                switch (orientation) {
+                    case ATAdConst.ORIENTATION_HORIZONTAL:
+                        mAdConfig.setOrdinal(AdConfig.LANDSCAPE);
+                        break;
+                    case ATAdConst.ORIENTATION_VERTICAL:
+                        mAdConfig.setOrdinal(AdConfig.PORTRAIT);
+                        break;
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
 
-        VungleATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new VungleATInitManager.InitListener() {
+        try {
+            if (localExtras.containsKey(ATAdConst.KEY.AD_SOUND)) {
+                boolean isSoundEnable = Boolean.parseBoolean(localExtras.get(ATAdConst.KEY.AD_SOUND).toString());
+                if (isSoundEnable) {
+                    mAdConfig.setMuted(false);
+                } else {
+                    mAdConfig.setMuted(true);
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        //TODO Local Config
+//        if (mSetting != null) {
+//
+//            mAdConfig.setMuted(mSetting.isSoundEnable());
+//            mAdConfig.setBackButtonImmediatelyEnabled(mSetting.isBackButtonImmediatelyEnable());
+//        }
+
+        VungleATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new VungleATInitManager.InitListener() {
             @Override
             public void onSuccess() {
-                Vungle.loadAd(mPlacementId, loadAdCallback);
+                try {
+                    Vungle.loadAd(mPlacementId, loadAdCallback);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
 
             @Override
             public void onError(Throwable throwable) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(VungleATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", throwable.toString()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", throwable.toString());
                 }
             }
         });
@@ -126,12 +183,15 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return VungleATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
     public void show(Activity activity) {
-        if (Vungle.canPlayAd(mPlacementId)) {
-            // Play a Placement ad with Placement ID, you can pass AdConfig to customize your ad
-            Vungle.setIncentivizedFields(mUserId, "", "", "", "");
-            Vungle.playAd(mPlacementId, mAdConfig, vungleDefaultListener);
-        }
+        // Play a Placement ad with Placement ID, you can pass AdConfig to customize your ad
+        Vungle.setIncentivizedFields(mUserId, "", "", "", "");
+        Vungle.playAd(mPlacementId, mAdConfig, vungleDefaultListener);
     }
 
     @Override
@@ -140,19 +200,19 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
+    public String getNetworkPlacementId() {
+        return mPlacementId;
     }
 
     @Override
-    public void onResume(Activity activity) {
+    public void destory() {
+        mAdConfig = null;
+        vungleDefaultListener = null;
     }
 
-    @Override
-    public void onPause(Activity activity) {
-    }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 

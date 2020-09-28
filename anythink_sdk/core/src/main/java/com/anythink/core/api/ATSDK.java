@@ -12,6 +12,7 @@ import com.anythink.core.common.utils.task.TaskManager;
 
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -58,7 +59,8 @@ public class ATSDK {
      * @param appId
      * @param appKey
      */
-    public static void init(Context context, String appId, String appKey, ATSDKInitListener listener) {
+    @Deprecated
+    public synchronized static void init(Context context, String appId, String appKey, ATSDKInitListener listener) {
 
         try {
             if (context == null) {
@@ -152,6 +154,13 @@ public class ATSDK {
      */
     public static void initPlacementCustomMap(String placmentId, Map<String, Object> customMap) {
         SDKContext.getInstance().setPlacementCustomMap(placmentId, customMap);
+    }
+
+    /**
+     * Set Exclude MyOffer Package List
+     */
+    public static void setExcludeMyOfferPkgList(List<String> packageList) {
+        SDKContext.getInstance().setExcludeMyOfferPkgList(packageList);
     }
 
     /**

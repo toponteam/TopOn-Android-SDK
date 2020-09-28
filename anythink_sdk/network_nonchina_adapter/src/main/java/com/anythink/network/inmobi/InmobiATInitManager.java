@@ -9,6 +9,7 @@ import com.anythink.core.api.ATInitMediation;
 import com.anythink.core.api.ATSDK;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GoogleSignatureVerifier;
+import com.inmobi.ads.listeners.InterstitialAdEventListener;
 import com.inmobi.sdk.InMobiSdk;
 import com.inmobi.sdk.SdkInitializationListener;
 import com.squareup.picasso.Picasso;
@@ -16,6 +17,7 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +36,11 @@ public class InmobiATInitManager extends ATInitMediation {
     private static InmobiATInitManager sInstance;
 
     private Handler mHandler;
+    List<Object> inmobiAdObjects;
 
     private InmobiATInitManager() {
         mHandler = new Handler(Looper.getMainLooper());
+        inmobiAdObjects = Collections.synchronizedList(new ArrayList<Object>());
     }
 
     public synchronized static InmobiATInitManager getInstance() {
@@ -44,6 +48,19 @@ public class InmobiATInitManager extends ATInitMediation {
             sInstance = new InmobiATInitManager();
         }
         return sInstance;
+    }
+
+    public void addInmobiAd(Object inmobiAd) {
+        if (inmobiAd != null) {
+            inmobiAdObjects.add(inmobiAd);
+        }
+
+    }
+
+    public void removeInmobiAd(Object inmobiAd) {
+        if (inmobiAd != null) {
+            inmobiAdObjects.remove(inmobiAd);
+        }
     }
 
 
@@ -76,39 +93,13 @@ public class InmobiATInitManager extends ATInitMediation {
                             }
                             return;
                         }
-                        JSONObject jsonObject = new JSONObject();
 
-                        try {
-                            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                                //Whether to agree to collect data
-                                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                                //Whether to set the GDPR of the network
-                                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-                                if (need_set_gdpr) {
-                                    //Is in EU?
-                                    String gdprScope = ATSDK.isEUTraffic(context) ? "1" : "0";
-                                    // Provide correct consent value to sdk which is obtained by User
-
-                                    jsonObject.put(InMobiSdk.IM_GDPR_CONSENT_AVAILABLE, gdp_consent);
-
-                                    // Provide 0 if GDPR is not applicable and 1 if applicable
-                                    jsonObject.put("gdpr", gdprScope);
-                                    InMobiSdk.updateGDPRConsent(jsonObject);
-                                }
-
-                            }
-                            logGDPRSetting(InmobiATConst.NETWORK_FIRM_ID);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-//                        InMobiSdk.setLogLevel(ATSDK.isNetworkLogDebug() ? InMobiSdk.LogLevel.DEBUG : InMobiSdk.LogLevel.NONE);
-                        InMobiSdk.init(context, accountId, jsonObject, new SdkInitializationListener() {
+                        InMobiSdk.init(context.getApplicationContext(), accountId, jsonObject, new SdkInitializationListener() {
                             @Override
                             public void onInitializationComplete(Error error) {
 
                                 if (callback != null) {
-                                    if(error == null) {
+                                    if (error == null) {
                                         mAccountId = accountId;
                                         callback.onSuccess();
                                     } else {
@@ -129,8 +120,31 @@ public class InmobiATInitManager extends ATInitMediation {
 
     }
 
+    JSONObject jsonObject = new JSONObject();
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+
+        try {
+            //Is in EU?
+            String gdprScope = isEUTraffic ? "1" : "0";
+            // Provide correct consent value to sdk which is obtained by User
+
+            jsonObject.put(InMobiSdk.IM_GDPR_CONSENT_AVAILABLE, isConsent);
+
+            // Provide 0 if GDPR is not applicable and 1 if applicable
+            jsonObject.put("gdpr", gdprScope);
+            InMobiSdk.updateGDPRConsent(jsonObject);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
     public interface OnInitCallback {
         void onSuccess();
+
         void onError(String errorMsg);
     }
 

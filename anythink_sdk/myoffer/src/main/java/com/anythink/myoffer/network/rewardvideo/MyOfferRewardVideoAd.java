@@ -1,13 +1,12 @@
 package com.anythink.myoffer.network.rewardvideo;
 
 import android.content.Context;
-import android.text.TextUtils;
 
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.myoffer.buiness.MyOfferAdManager;
 import com.anythink.myoffer.buiness.MyOfferImpressionRecordManager;
 import com.anythink.myoffer.buiness.resource.MyOfferLoader;
-import com.anythink.myoffer.entity.MyOfferAd;
 import com.anythink.myoffer.network.base.MyOfferAdMessager;
 import com.anythink.myoffer.network.base.MyOfferBaseAd;
 import com.anythink.myoffer.ui.MyOfferAdActivity;
@@ -22,13 +21,8 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
     public static final String TAG = MyOfferRewardVideoAd.class.getSimpleName();
 
     private MyOfferRewardVideoAdListener mListener;
-    private MyOfferAd mMyOfferAd;
 
-    public MyOfferRewardVideoAd(Context context, String placementId, String offerId, String myoffer_setting) {
-        super(context, placementId, offerId, myoffer_setting, false);
-    }
-
-    public MyOfferRewardVideoAd(Context context, String placementId, String offerId, String myoffer_setting, boolean isDefault) {
+    public MyOfferRewardVideoAd(Context context, String placementId, String offerId, MyOfferSetting myoffer_setting, boolean isDefault) {
         super(context, placementId, offerId, myoffer_setting, isDefault);
     }
 
@@ -40,27 +34,13 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
     @Override
     public void load() {
         try {
-            if (TextUtils.isEmpty(mOfferId) || TextUtils.isEmpty(mPlacementId)) {
+            MyOfferError myOfferError = checkLoadParams();
+            if (myOfferError != null) {
                 if (mListener != null) {
-                    mListener.onAdLoadFailed(MyOfferErrorCode.get(MyOfferErrorCode.noADError, MyOfferErrorCode.fail_params));
+                    mListener.onAdLoadFailed(myOfferError);
                 }
                 return;
             }
-            mMyOfferAd = MyOfferAdManager.getInstance(mContext).getAdCache(mPlacementId, mOfferId);
-
-            if (mMyOfferAd == null) {
-                if (mListener != null) {
-                    mListener.onAdLoadFailed(MyOfferErrorCode.get(MyOfferErrorCode.noADError, MyOfferErrorCode.fail_no_offer));
-                }
-                return;
-            }
-            if (mMyOfferSetting == null) {
-                if (mListener != null) {
-                    mListener.onAdLoadFailed(MyOfferErrorCode.get(MyOfferErrorCode.noSettingError, MyOfferErrorCode.fail_no_setting));
-                }
-                return;
-            }
-
 
             MyOfferAdManager.getInstance(mContext).load(mPlacementId, mMyOfferAd, mMyOfferSetting, new MyOfferLoader.MyOfferLoaderListener() {
                 @Override
@@ -177,26 +157,9 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
     public boolean isReady() {
 
         try {
-            if (mContext == null) {
-                CommonLogUtil.d(TAG, "isReady() context = null!");
-                return false;
-            } else if (TextUtils.isEmpty(mPlacementId)) {
-                CommonLogUtil.d(TAG, "isReady() mPlacementId = null!");
-                return false;
-            } else if (TextUtils.isEmpty(mOfferId)) {
-                CommonLogUtil.d(TAG, "isReady() mOfferId = null!");
-                return false;
+            if (checkIsReadyParams()) {
+                return MyOfferAdManager.getInstance(mContext).isReady(mMyOfferAd, mMyOfferSetting, mIsDefault);
             }
-
-            if (mMyOfferAd == null) {
-                mMyOfferAd = MyOfferAdManager.getInstance(mContext).getAdCache(mPlacementId, mOfferId);
-                if (mMyOfferAd == null) {
-                    CommonLogUtil.d(TAG, "isReady() MyOffer no exist!");
-                    return false;
-                }
-            }
-
-            return MyOfferAdManager.getInstance(mContext).isReady(mMyOfferAd, mIsDefault);
         } catch (Exception e) {
             e.printStackTrace();
         }

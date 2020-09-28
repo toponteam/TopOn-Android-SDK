@@ -1,14 +1,19 @@
 package com.anythink.myoffer.buiness.resource;
 
 import com.anythink.core.common.track.AgentEventManager;
-import com.anythink.network.myoffer.MyOfferError;
+import com.anythink.core.common.res.image.ResourceDownloadBaseUrlLoader;
+import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.common.utils.task.Worker;
+import com.anythink.myoffer.buiness.MyOfferResourceManager;
+import com.anythink.network.myoffer.MyOfferErrorCode;
 
+import java.io.InputStream;
 import java.util.Map;
 
 /**
  * MyOffer URL Resource Loader
  */
-class MyOfferUrlLoader extends MyOfferBaseUrlLoader {
+class MyOfferUrlLoader extends ResourceDownloadBaseUrlLoader {
 
     private String mPlacementId;
     private boolean mIsPreLoad;
@@ -33,28 +38,36 @@ class MyOfferUrlLoader extends MyOfferBaseUrlLoader {
 
     }
 
-    /**
-     * Preload use single thread
-     */
-    protected boolean isUseSingleThread() {
-        return mIsPreLoad;
+    @Override
+    protected boolean saveHttpResource(InputStream inputStream) {
+        return MyOfferResourceManager.getInstance().writeToDiskLruCache(mURL, inputStream);
     }
 
     @Override
+    protected void startWorker(Worker worker) {
+        if (mIsPreLoad) {
+            TaskManager.getInstance().run(worker, TaskManager.TYPE_PRELOAD_TASK);
+        } else {
+            TaskManager.getInstance().run(worker, TaskManager.TYPE_IMAGE_TYPE);
+        }
+    }
+
+
+    @Override
     protected void onLoadFinishCallback() {
-        super.onLoadFinishCallback();
         if (mIsVideo) {
             AgentEventManager.myOfferVideoUrlDownloadEvent(mPlacementId, mOfferId, mURL, "1"
                     , downloadSize, null, downloadStartTime, downloadEndTime);
         }
+        MyOfferUrlLoadManager.getInstance().notifyDownloadSuccess(mURL);
     }
 
     @Override
-    protected void onLoadFailedCallback(MyOfferError error) {
-        super.onLoadFailedCallback(error);
+    protected void onLoadFailedCallback(String errorCode, String erroMsg) {
         if (mIsVideo) {
             AgentEventManager.myOfferVideoUrlDownloadEvent(mPlacementId, mOfferId, mURL, "0"
-                    , downloadSize, error.printStackTrace(), downloadStartTime, 0);
+                    , downloadSize, erroMsg, downloadStartTime, 0);
         }
+        MyOfferUrlLoadManager.getInstance().notifyDownloadFailed(mURL, MyOfferErrorCode.get(errorCode, erroMsg));
     }
 }

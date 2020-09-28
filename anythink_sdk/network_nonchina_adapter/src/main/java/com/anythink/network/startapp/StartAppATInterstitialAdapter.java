@@ -8,7 +8,6 @@ import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.startapp.sdk.adsbase.Ad;
 import com.startapp.sdk.adsbase.StartAppAd;
 import com.startapp.sdk.adsbase.adlisteners.AdDisplayListener;
@@ -23,7 +22,7 @@ public class StartAppATInterstitialAdapter extends CustomInterstitialAdapter {
     String adTag = "";
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String appId = "";
 
@@ -38,20 +37,10 @@ public class StartAppATInterstitialAdapter extends CustomInterstitialAdapter {
             adTag = "";
         }
 
-        mLoadResultListener = customInterstitialListener;
 
         if (TextUtils.isEmpty(appId)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id could not be null.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "context need be activity.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id could not be null.");
             }
             return;
         }
@@ -83,18 +72,18 @@ public class StartAppATInterstitialAdapter extends CustomInterstitialAdapter {
         startAppAd.loadAd(adMode, adPreferences, new AdEventListener() {
             @Override
             public void onReceiveAd(Ad ad) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(StartAppATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onFailedToReceiveAd(Ad ad) {
-                if (mLoadResultListener != null) {
+                if (mLoadListener != null) {
                     if (ad != null) {
-                        mLoadResultListener.onInterstitialAdLoadFail(StartAppATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", ad.getErrorMessage()));
+                        mLoadListener.onAdLoadError("", ad.getErrorMessage());
                     } else {
-                        mLoadResultListener.onInterstitialAdLoadFail(StartAppATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "StartApp has not error msg."));
+                        mLoadListener.onAdLoadError("", "StartApp has not error msg.");
                     }
                 }
             }
@@ -103,27 +92,27 @@ public class StartAppATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
-        if (startAppAd.isReady()) {
+    public void show(Activity activity) {
+        if (startAppAd != null && startAppAd.isReady()) {
             AdDisplayListener adDisplayListener = new AdDisplayListener() {
                 @Override
                 public void adHidden(Ad ad) {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClose(StartAppATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClose();
                     }
                 }
 
                 @Override
                 public void adDisplayed(Ad ad) {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdShow(StartAppATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdShow();
                     }
                 }
 
                 @Override
                 public void adClicked(Ad ad) {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClicked(StartAppATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClicked();
                     }
                 }
 
@@ -140,15 +129,6 @@ public class StartAppATInterstitialAdapter extends CustomInterstitialAdapter {
         }
     }
 
-    @Override
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onPause() {
-
-    }
 
     @Override
     public boolean isAdReady() {
@@ -156,17 +136,30 @@ public class StartAppATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return StartAppATConst.getSDKVersion();
     }
 
     @Override
-    public void clean() {
-
+    public void destory() {
+        if (startAppAd != null) {
+            startAppAd.setVideoListener(null);
+            startAppAd = null;
+        }
     }
 
     @Override
     public String getNetworkName() {
         return StartAppATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return adTag;
     }
 }

@@ -7,12 +7,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.mintegral.msdk.out.BannerAdListener;
 import com.mintegral.msdk.out.BannerSize;
 import com.mintegral.msdk.out.CustomInfoManager;
@@ -29,81 +24,9 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
     String size;
     String mPayload;
     String mCustomData = "{}";
-    CustomBannerListener mCustomBannerListener;
     int mRefreshTime;
 
-    @Override
-    public void loadBannerAd(final ATBannerView bannerView, final Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        mCustomBannerListener = customBannerListener;
-
-        String appid = "";
-        String appkey = "";
-        if (serverExtras.containsKey("appid")) {
-            appid = serverExtras.get("appid").toString();
-        }
-        if (serverExtras.containsKey("appkey")) {
-            appkey = serverExtras.get("appkey").toString();
-        }
-        if (serverExtras.containsKey("unitid")) {
-            unitId = serverExtras.get("unitid").toString();
-        }
-        if (serverExtras.containsKey("size")) {
-            size = serverExtras.get("size").toString();
-        }
-        if (serverExtras.containsKey("payload")) {
-            mPayload = serverExtras.get("payload").toString();
-        }
-        if (serverExtras.containsKey("placement_id")) {
-            placementId = serverExtras.get("placement_id").toString();
-        }
-
-        if (serverExtras.containsKey("tp_info")) {
-            mCustomData = serverExtras.get("tp_info").toString();
-        }
-
-        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitId)) {
-            if (mCustomBannerListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "appid、appkey or unitid is empty.");
-                mCustomBannerListener.onBannerAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        if (!(activity instanceof Activity)) {
-            if (mCustomBannerListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "Context must be activity.");
-                mCustomBannerListener.onBannerAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        mRefreshTime = 0;
-        try {
-            if (serverExtras.containsKey("nw_rft")) {
-                mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
-                mRefreshTime /= 1000f;
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        MintegralATInitManager.getInstance().initSDK(activity, serverExtras, new MintegralATInitManager.InitCallback() {
-            @Override
-            public void onSuccess() {
-                startLoad(activity, bannerView);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                if (mCustomBannerListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                    mCustomBannerListener.onBannerAdLoadFail(MintegralATBannerAdapter.this, adError);
-                }
-            }
-        });
-    }
-
-    private void startLoad(Context activity, final ATBannerView bannerView) {
+    private void startLoad(Context activity) {
         mMTGBannerView = new MTGBannerView(activity);
         int bannerSize;
         int width;
@@ -139,19 +62,22 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
         mMTGBannerView.setBannerAdListener(new BannerAdListener() {
             @Override
             public void onLoadFailed(String s) {
-                if (bannerView != null) {
-                    bannerView.removeView(mMTGBannerView);
+                if (mATBannerView != null) {
+                    mATBannerView.removeView(mMTGBannerView);
                 }
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdLoadFail(MintegralATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", s));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", s);
                 }
             }
 
             @Override
             public void onLoadSuccessed() {
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdLoaded(MintegralATBannerAdapter.this);
-                    mCustomBannerListener.onBannerAdShow(MintegralATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
+                }
+
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
                 }
             }
 
@@ -162,8 +88,8 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onClick() {
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdClicked(MintegralATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
@@ -184,8 +110,8 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onCloseBanner() {
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdClose(MintegralATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
                 }
             }
         });
@@ -196,9 +122,9 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
             mMTGBannerView.setRefreshTime(0);
         }
 
-        if (bannerView != null) {
-            bannerView.addView(mMTGBannerView, lp);
-        }
+//        if (bannerView != null) {
+//            bannerView.addView(mMTGBannerView, lp);
+//        }
 
         if (!TextUtils.isEmpty(mPayload)) {
             try {
@@ -227,20 +153,92 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+    public String getNetworkName() {
+        return MintegralATInitManager.getInstance().getNetworkName();
     }
 
     @Override
-    public void clean() {
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        String appid = "";
+        String appkey = "";
+        if (serverExtra.containsKey("appid")) {
+            appid = serverExtra.get("appid").toString();
+        }
+        if (serverExtra.containsKey("appkey")) {
+            appkey = serverExtra.get("appkey").toString();
+        }
+        if (serverExtra.containsKey("unitid")) {
+            unitId = serverExtra.get("unitid").toString();
+        }
+        if (serverExtra.containsKey("size")) {
+            size = serverExtra.get("size").toString();
+        }
+        if (serverExtra.containsKey("payload")) {
+            mPayload = serverExtra.get("payload").toString();
+        }
+        if (serverExtra.containsKey("placement_id")) {
+            placementId = serverExtra.get("placement_id").toString();
+        }
+
+        if (serverExtra.containsKey("tp_info")) {
+            mCustomData = serverExtra.get("tp_info").toString();
+        }
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "appid、appkey or unitid is empty.");
+            }
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Context must be activity.");
+            }
+            return;
+        }
+
+        mRefreshTime = 0;
+        try {
+            if (serverExtra.containsKey("nw_rft")) {
+                mRefreshTime = Integer.valueOf((String) serverExtra.get("nw_rft"));
+                mRefreshTime /= 1000f;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        MintegralATInitManager.getInstance().initSDK(context, serverExtra, new MintegralATInitManager.InitCallback() {
+            @Override
+            public void onSuccess() {
+                startLoad(context);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.getMessage());
+                }
+            }
+        });
+    }
+
+    @Override
+    public void destory() {
         if (mMTGBannerView != null) {
+            mMTGBannerView.setBannerAdListener(null);
             mMTGBannerView.release();
             mMTGBannerView = null;
         }
     }
 
     @Override
-    public String getNetworkName() {
-        return MintegralATInitManager.getInstance().getNetworkName();
+    public String getNetworkPlacementId() {
+        return unitId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return MintegralATConst.getNetworkVersion();
     }
 }

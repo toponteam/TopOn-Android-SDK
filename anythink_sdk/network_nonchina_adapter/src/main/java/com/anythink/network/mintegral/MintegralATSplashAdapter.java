@@ -1,33 +1,14 @@
 package com.anythink.network.mintegral;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.text.TextUtils;
-import android.view.View;
-import android.view.ViewGroup;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
-import com.anythink.nativead.unitgroup.api.CustomNativeAd;
-import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
-import com.anythink.splashad.unitgroup.api.CustomSplashListener;
-import com.mintegral.msdk.MIntegralConstans;
-import com.mintegral.msdk.out.Campaign;
-import com.mintegral.msdk.out.CustomInfoManager;
-import com.mintegral.msdk.out.Frame;
 import com.mintegral.msdk.out.MTGSplashHandler;
 import com.mintegral.msdk.out.MTGSplashLoadListener;
 import com.mintegral.msdk.out.MTGSplashShowListener;
-import com.mintegral.msdk.out.MtgBidNativeHandler;
-import com.mintegral.msdk.out.MtgNativeHandler;
-import com.mintegral.msdk.out.NativeListener;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 
@@ -50,104 +31,103 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
     String placementId = "";
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
     }
 
     @Override
-    public void loadSplashAd(final Activity activity, final ViewGroup constainer, View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, final CustomSplashListener customSplashListener) {
-        {
-            try {
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
-                //支持视频
-                boolean suportVideo = false;
-                try {
-                    if (serverExtras.containsKey("appid")) {
-                        appid = serverExtras.get("appid").toString();
-                    }
-                    if (serverExtras.containsKey("unitid")) {
-                        unitId = serverExtras.get("unitid").toString();
-                    }
+        try {
+            if (serverExtras.containsKey("appid")) {
+                appid = serverExtras.get("appid").toString();
+            }
+            if (serverExtras.containsKey("unitid")) {
+                unitId = serverExtras.get("unitid").toString();
+            }
 
-                    if (serverExtras.containsKey("placement_id")) {
-                        placementId = serverExtras.get("placement_id").toString();
-                    }
-                    if (serverExtras.containsKey("appkey")) {
-                        sdkKey = serverExtras.get("appkey").toString();
-                    }
+            if (serverExtras.containsKey("placement_id")) {
+                placementId = serverExtras.get("placement_id").toString();
+            }
+            if (serverExtras.containsKey("appkey")) {
+                sdkKey = serverExtras.get("appkey").toString();
+            }
 
-                    if (serverExtras.containsKey("payload")) {
-                        mPayload = serverExtras.get("payload").toString();
-                    }
+            if (serverExtras.containsKey("payload")) {
+                mPayload = serverExtras.get("payload").toString();
+            }
 
-                    if (serverExtras.containsKey("tp_info")) {
-                        mCustomData = serverExtras.get("tp_info").toString();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            if (serverExtras.containsKey("tp_info")) {
+                mCustomData = serverExtras.get("tp_info").toString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-                if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitId) || TextUtils.isEmpty(sdkKey)) {
-                    if (customSplashListener != null) {
-                        AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "mintegral appid ,unitid or sdkkey is empty.");
-                        customSplashListener.onSplashAdFailed(this, adError);
-                    }
-                    return;
-                }
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitId) || TextUtils.isEmpty(sdkKey)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "mintegral appid ,unitid or sdkkey is empty.");
+            }
+            return;
+        }
 
-                if (serverExtras.containsKey("countdown")) {
-                    countdown = Integer.parseInt(serverExtras.get("countdown").toString());
-                }
+        if (serverExtras.containsKey("countdown")) {
+            countdown = Integer.parseInt(serverExtras.get("countdown").toString());
+        }
 
-                if (serverExtras.containsKey("allows_skip")) {
-                    allowSkip = Integer.parseInt(serverExtras.get("allows_skip").toString()) == 1;
-                }
+        if (serverExtras.containsKey("allows_skip")) {
+            allowSkip = Integer.parseInt(serverExtras.get("allows_skip").toString()) == 1;
+        }
 
-                if (serverExtras.containsKey("orientation")) {
-                    orientation = TextUtils.equals(serverExtras.get("orientation").toString(), "2") ? Configuration.ORIENTATION_LANDSCAPE : Configuration.ORIENTATION_PORTRAIT;
-                }
+        if (serverExtras.containsKey("orientation")) {
+            orientation = TextUtils.equals(serverExtras.get("orientation").toString(), "2") ? Configuration.ORIENTATION_LANDSCAPE : Configuration.ORIENTATION_PORTRAIT;
+        }
 
 
-                MintegralATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new MintegralATInitManager.InitCallback() {
-                    @Override
-                    public void onSuccess() {
-                        startLoad(constainer, customSplashListener);
-                    }
+        MintegralATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new MintegralATInitManager.InitCallback() {
+            @Override
+            public void onSuccess() {
+                startLoad();
+            }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        if (customSplashListener != null) {
-                            AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                            customSplashListener.onSplashAdFailed(MintegralATSplashAdapter.this, adError);
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-                if (customSplashListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                    customSplashListener.onSplashAdFailed(MintegralATSplashAdapter.this, adError);
+            @Override
+            public void onError(Throwable e) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.getMessage());
                 }
             }
-        }
+        });
     }
 
     MTGSplashHandler splashHandler = null;
 
-    private void startLoad(ViewGroup container, final CustomSplashListener splashListener) {
+    private void startLoad() {
         splashHandler = new MTGSplashHandler(placementId, unitId, allowSkip, countdown, orientation, 0, 0);
         splashHandler.setSplashLoadListener(new MTGSplashLoadListener() {
             @Override
             public void onLoadSuccessed(int i) {
-                if (splashListener != null) {
-                    splashListener.onSplashAdLoaded(MintegralATSplashAdapter.this);
+
+                if (splashHandler != null && splashHandler.isReady()) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
+                    }
+                    if (mContainer != null) {
+                        splashHandler.show(mContainer);
+                    }
+
+
+                } else {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", "Mintegral Splash Ad is not ready.");
+                    }
                 }
+
             }
 
             @Override
             public void onLoadFailed(String s, int i) {
-                if (splashListener != null) {
-                    splashListener.onSplashAdFailed(MintegralATSplashAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", s));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", s);
                 }
             }
         });
@@ -155,8 +135,8 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
         splashHandler.setSplashShowListener(new MTGSplashShowListener() {
             @Override
             public void onShowSuccessed() {
-                if (splashListener != null) {
-                    splashListener.onSplashAdShow(MintegralATSplashAdapter.this);
+                if (mImpressionListener != null) {
+                    mImpressionListener.onSplashAdShow();
                 }
             }
 
@@ -167,15 +147,15 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
 
             @Override
             public void onAdClicked() {
-                if (splashListener != null) {
-                    splashListener.onSplashAdClicked(MintegralATSplashAdapter.this);
+                if (mImpressionListener != null) {
+                    mImpressionListener.onSplashAdClicked();
                 }
             }
 
             @Override
             public void onDismiss(int i) {
-                if (splashListener != null) {
-                    splashListener.onSplashAdDismiss(MintegralATSplashAdapter.this);
+                if (mImpressionListener != null) {
+                    mImpressionListener.onSplashAdDismiss();
                 }
             }
 
@@ -185,12 +165,13 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
             }
         });
 
-        splashHandler.loadAndShow(container);
+
+        splashHandler.preLoad();
         splashHandler.onResume();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (splashHandler != null) {
             splashHandler.onPause();
             splashHandler.onDestroy();
@@ -201,5 +182,15 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
     @Override
     public String getNetworkName() {
         return MintegralATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MintegralATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
     }
 }

@@ -7,15 +7,12 @@ import android.view.View;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.startapp.sdk.ads.banner.Banner;
 import com.startapp.sdk.ads.banner.BannerListener;
-import com.startapp.sdk.ads.banner.Cover;
 import com.startapp.sdk.ads.banner.Mrec;
-import com.startapp.sdk.adsbase.StartAppAd;
 import com.startapp.sdk.adsbase.model.AdPreferences;
 
 import java.util.Map;
@@ -23,12 +20,11 @@ import java.util.Map;
 public class StartAppATBannerAdapter extends CustomBannerAdapter {
 
     String adTag = "";
-    CustomBannerListener mListener;
 
     View mBannerView;
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         String appId = "";
         String size = "";
         if (serverExtras.containsKey("app_id")) {
@@ -42,20 +38,16 @@ public class StartAppATBannerAdapter extends CustomBannerAdapter {
         }
 
 
-        mListener = customBannerListener;
-
         if (TextUtils.isEmpty(appId)) {
-            if (mListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id could not be null.");
-                mListener.onBannerAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id could not be null.");
             }
             return;
         }
 
         if (!(context instanceof Activity)) {
-            if (mListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "context need be activity.");
-                mListener.onBannerAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "context need be activity.");
             }
             return;
         }
@@ -88,16 +80,15 @@ public class StartAppATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onReceiveAd(View banner) {
                 mBannerView = banner;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(StartAppATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onFailedToReceiveAd(View banner) {
-                if (mListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "StartApp Banner Load Fail");
-                    mListener.onBannerAdLoadFail(StartAppATBannerAdapter.this, adError);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "StartApp Banner onFailedToReceiveAd");
                 }
             }
 
@@ -108,8 +99,8 @@ public class StartAppATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onClick(View banner) {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(StartAppATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
         });
@@ -122,16 +113,15 @@ public class StartAppATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onReceiveAd(View banner) {
                 mBannerView = banner;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(StartAppATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onFailedToReceiveAd(View banner) {
-                if (mListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "StartApp Banner Load Fail");
-                    mListener.onBannerAdLoadFail(StartAppATBannerAdapter.this, adError);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "StartApp Banner onFailedToReceiveAd");
                 }
             }
 
@@ -142,8 +132,8 @@ public class StartAppATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onClick(View banner) {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(StartAppATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
         });
@@ -153,18 +143,35 @@ public class StartAppATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return StartAppATConst.getSDKVersion();
     }
 
     @Override
-    public void clean() {
-        mBannerView = null;
+    public void destory() {
+        if (mBannerView != null) {
+            if (mBannerView instanceof Banner) {
+                ((Banner) mBannerView).setBannerListener(null);
+            } else if (mBannerView instanceof Mrec) {
+                ((Mrec) mBannerView).setBannerListener(null);
+            }
+            mBannerView = null;
+        }
     }
 
     @Override
     public String getNetworkName() {
         return StartAppATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return adTag;
     }
 
     @Override

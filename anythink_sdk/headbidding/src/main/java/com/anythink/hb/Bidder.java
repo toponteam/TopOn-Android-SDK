@@ -6,7 +6,7 @@ package com.anythink.hb;
 import com.anythink.hb.callback.BiddingCallback;
 import com.anythink.hb.data.AuctionNotification;
 import com.anythink.hb.data.BidRequestInfo;
-import com.anythink.hb.data.HiBidContext;
+import com.anythink.hb.data.HBDataContext;
 import com.anythink.hb.exception.BidderInitFailedException;
 import com.anythink.hb.exception.BiddingException;
 import com.anythink.hb.exception.FailedToGetRenderException;
@@ -31,7 +31,7 @@ public interface Bidder {
 	 * @param biddingContext
 	 * @throws BidderInitFailedException
 	 */
-	void init(HiBidContext biddingContext) throws BidderInitFailedException, SdkIntegratedException;
+	void init(HBDataContext biddingContext) throws BidderInitFailedException, SdkIntegratedException;
 
 	/**
 	 * bid request

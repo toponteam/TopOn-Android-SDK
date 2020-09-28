@@ -1,10 +1,9 @@
 package com.anythink.core.common.utils;
 
 import android.content.Context;
-import android.util.Log;
 
+import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.cap.AdCapV2Manager;
-import com.anythink.core.common.base.AnyThinkBaseAdapter;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdTrackingInfo;
@@ -37,7 +36,7 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmGroupId(mCurrentStrategy.getGroupId());
 
 
-        if (mCurrentStrategy.getFormat() == Integer.valueOf(Const.FORMAT.REWARDEDVIDEO_FORMAT)) {
+        if (mCurrentStrategy.getFormat() == Integer.parseInt(Const.FORMAT.REWARDEDVIDEO_FORMAT)) {
             adTrackingInfo.setmSourceType("1");
         } else {
             adTrackingInfo.setmSourceType("0");
@@ -63,6 +62,9 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmPlacementRewardInfo(mCurrentStrategy.getPlacementRewardInfo());
         adTrackingInfo.setmCustomRule(mCurrentStrategy.getSdkCustomMap());
 
+        adTrackingInfo.setmHBWaitingToRequestTime(mCurrentStrategy.getHbWaitingToRequestTime());
+        adTrackingInfo.setmHBBidTimeout(mCurrentStrategy.getHbBidTimeout());
+
         return adTrackingInfo;
     }
 
@@ -75,7 +77,7 @@ public class TrackingInfoUtil {
      * @param unitGroupInfo
      * @return
      */
-    public static AdTrackingInfo initPlacementUnitGroupTrackingInfo(AnyThinkBaseAdapter baseAdapter, AdTrackingInfo adTrackingInfo, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+    public static AdTrackingInfo initPlacementUnitGroupTrackingInfo(ATBaseAdAdapter baseAdapter, AdTrackingInfo adTrackingInfo, PlaceStrategy.UnitGroupInfo unitGroupInfo, int requestLevel) {
 
         PlacementImpressionInfo.AdSourceImpressionInfo adSourceImpressionInfo = AdCapV2Manager.getInstance(SDKContext.getInstance().getContext()).getUnitGroupImpressionInfo(adTrackingInfo.getmPlacementId(), unitGroupInfo.unitId);
 
@@ -83,7 +85,7 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmUnitGroupUnitId(unitGroupInfo.unitId);
         adTrackingInfo.setmShowTkSwitch(unitGroupInfo.showTkSwitch);
         adTrackingInfo.setmClickTkSwtich(unitGroupInfo.clickTkSwitch);
-        adTrackingInfo.setmLevel(unitGroupInfo.level);
+        adTrackingInfo.setRequestLevel(requestLevel);
         adTrackingInfo.setmNetworkContent(unitGroupInfo.content);
         adTrackingInfo.setmHourlyFrequency(adSourceImpressionInfo != null ? adSourceImpressionInfo.hourShowCount : 0);
         adTrackingInfo.setmDailyFrequency(adSourceImpressionInfo != null ? adSourceImpressionInfo.dayShowCount : 0);
@@ -94,9 +96,13 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmClickTkDelayMaxTime(unitGroupInfo.getClickTkDelayMaxTime());
         adTrackingInfo.setmEcpmLevel(unitGroupInfo.getEcpmLayLevel());
         adTrackingInfo.setmEcpmPrecision(unitGroupInfo.getEcpmPrecision());
-        adTrackingInfo.setmNetworkPlacementId(NetworkContentUtil.getNetworkPlacementId(unitGroupInfo.networkType, unitGroupInfo.content));
 
-        adTrackingInfo.setmNetworkVersion(baseAdapter.getSDKVersion());
+        try {
+            adTrackingInfo.setmNetworkVersion(baseAdapter.getNetworkSDKVersion());
+        } catch (Throwable e) {
+
+        }
+
         adTrackingInfo.setNetworkName(baseAdapter.getNetworkName());
 
         baseAdapter.setmUnitgroupInfo(unitGroupInfo);
@@ -116,10 +122,9 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmRefresh(isRefresh);
         adTrackingInfo.setmTrafficGroupId(placeStrategy != null ? placeStrategy.getTracfficGroupId() : 0);
         adTrackingInfo.setmGroupId(placeStrategy != null ? placeStrategy.getGroupId() : 0);
-
+        adTrackingInfo.setAsid(placeStrategy != null ? placeStrategy.getAsid() : "");
         return adTrackingInfo;
     }
-
 
 
     /**
@@ -134,20 +139,21 @@ public class TrackingInfoUtil {
         int formatDayShowTime = 0;
         int formatHourShowTime = 0;
 
+        PlacementImpressionInfo placementImpressionInfo = null;
         if (impressionInfoMap != null) {
             for (PlacementImpressionInfo impressionInfo : impressionInfoMap.values()) {
                 formatDayShowTime += impressionInfo.dayShowCount;
                 formatHourShowTime += impressionInfo.hourShowCount;
             }
-        }
 
-        PlacementImpressionInfo placementImpressionInfo = impressionInfoMap.get(adTrackingInfo.getmPlacementId());
+            placementImpressionInfo = impressionInfoMap.get(adTrackingInfo.getmPlacementId());
+        }
 
         adTrackingInfo.setAdTypeDayShowTime(formatDayShowTime + 1);
         adTrackingInfo.setAdTypeHourShowTime(formatHourShowTime + 1);
         adTrackingInfo.setPlacementDayShowTime((placementImpressionInfo != null ? placementImpressionInfo.dayShowCount : 0) + 1);
         adTrackingInfo.setPlacementHourShowTime((placementImpressionInfo != null ? placementImpressionInfo.hourShowCount : 0) + 1);
-        CommonLogUtil.i("anythink", "Check cap waite time:" + (System.currentTimeMillis()- time));
+        CommonLogUtil.i("anythink", "Check cap waite time:" + (System.currentTimeMillis() - time));
     }
 
 }

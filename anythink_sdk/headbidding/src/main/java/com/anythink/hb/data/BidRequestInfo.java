@@ -18,41 +18,54 @@ public class BidRequestInfo {
     public static final String KEY_PLATFORM_ID = "KEY_PLATFORM_ID";
     public static final String KEY_BANNER_SIZE = "KEY_BANNER_SIZE";
     public static final String KEY_CUSTOM_INFO = "KEY_CUSTOM_INFO";
+    public static final String KEY_ADSOURCE_ID = "KEY_ADSOURCE_ID";
+    public static final String KEY_BID_TOKEN_AVAIL_TIME = "KEY_BID_TOKEN_AVAIL_TIME";
 
     private HashMap<String, Object> requestInfoMap = new HashMap<String, Object>();
 
 
-    public BidRequestInfo(){
+    public BidRequestInfo() {
 
     }
 
-    public Object get(String key){
-        if (requestInfoMap.containsKey(key)){
+    public Object get(String key) {
+        if (requestInfoMap.containsKey(key)) {
             return requestInfoMap.get(key);
         }
         return null;
     }
 
-    public void put(String key, Object value){
-        if (!requestInfoMap.containsKey(key)){
-            requestInfoMap.put(key,value);
+    public void put(String key, Object value) {
+        if (!requestInfoMap.containsKey(key)) {
+            requestInfoMap.put(key, value);
         }
+    }
+
+    public String getString(String key) {
+        if (requestInfoMap.containsKey(key) &&
+                requestInfoMap.get(key) instanceof String) {
+            return (String) requestInfoMap.get(key);
+        }
+        return null;
+    }
+
+    public long getLong(String key) {
+        if (requestInfoMap.containsKey(key)) {
+            Object obj = requestInfoMap.get(key);
+
+            if (obj instanceof Long) {
+                return (long) obj;
+            }
+        }
+        return 0;
     }
 
     public String getAppId() {
-        if (requestInfoMap.containsKey(KEY_APP_ID) &&
-                requestInfoMap.get(KEY_APP_ID) instanceof String){
-            return (String)requestInfoMap.get(KEY_APP_ID);
-        }
-        return null;
+        return getString(KEY_APP_ID);
     }
 
     public String getAppKey() {
-        if (requestInfoMap.containsKey(KEY_APP_KEY) &&
-                requestInfoMap.get(KEY_APP_KEY) instanceof String){
-            return (String)requestInfoMap.get(KEY_APP_KEY);
-        }
-        return null;
+        return getString(KEY_APP_KEY);
     }
 
     public String getUnitPlacementId() {
@@ -64,43 +77,27 @@ public class BidRequestInfo {
     }
 
     public String getPlacementId() {
-        if (requestInfoMap.containsKey(KEY_PLACEMENT_ID) &&
-                requestInfoMap.get(KEY_PLACEMENT_ID) instanceof String){
-            return (String)requestInfoMap.get(KEY_PLACEMENT_ID);
-        }
-        return null;
+        return getString(KEY_PLACEMENT_ID);
     }
 
     public String getCustomInfo() {
-        if (requestInfoMap.containsKey(KEY_CUSTOM_INFO) &&
-                requestInfoMap.get(KEY_CUSTOM_INFO) instanceof String) {
-            return (String) requestInfoMap.get(KEY_CUSTOM_INFO);
-        }
-        return null;
+        return getString(KEY_CUSTOM_INFO);
     }
 
     public Class getBidderClass() {
         if (requestInfoMap.containsKey(KEY_BIDDER_CLASS) &&
-                requestInfoMap.get(KEY_BIDDER_CLASS) instanceof Class){
-            return (Class)requestInfoMap.get(KEY_BIDDER_CLASS);
+                requestInfoMap.get(KEY_BIDDER_CLASS) instanceof Class) {
+            return (Class) requestInfoMap.get(KEY_BIDDER_CLASS);
         }
         return null;
     }
 
     public String getPlatformId() {
-        if (requestInfoMap.containsKey(KEY_PLATFORM_ID) &&
-                requestInfoMap.get(KEY_PLATFORM_ID) instanceof String){
-            return (String)requestInfoMap.get(KEY_PLATFORM_ID);
-        }
-        return null;
+        return getString(KEY_PLATFORM_ID);
     }
 
     public String getBannerSize() {
-        if (requestInfoMap.containsKey(KEY_BANNER_SIZE) &&
-                requestInfoMap.get(KEY_BANNER_SIZE) instanceof String){
-            return (String)requestInfoMap.get(KEY_BANNER_SIZE);
-        }
-        return null;
+        return getString(KEY_BANNER_SIZE);
     }
 
 }

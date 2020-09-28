@@ -11,7 +11,6 @@ import io.presage.Presage;
 
 public class OguryATInitManager extends ATInitMediation {
 
-    private static final String TAG = OguryATInitManager.class.getSimpleName();
     private String mAssetKey;
     private static OguryATInitManager sInstance;
 
@@ -31,7 +30,7 @@ public class OguryATInitManager extends ATInitMediation {
         String assetkey = (String) serviceExtras.get("key");
         if (TextUtils.isEmpty(mAssetKey) || !TextUtils.equals(mAssetKey, assetkey)) {
 //            supportGdpr(context, serviceExtras);
-            Presage.getInstance().start(assetkey, context);
+            Presage.getInstance().start(assetkey, context.getApplicationContext());
             mAssetKey = assetkey;
         }
         if (callback != null) {

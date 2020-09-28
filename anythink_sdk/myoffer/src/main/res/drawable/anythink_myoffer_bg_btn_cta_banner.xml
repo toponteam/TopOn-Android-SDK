@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+<!--    <item android:top="0.5dp" android:left="0.5dp" android:right="0.5dp" android:bottom="0.5dp">-->
+<!--        <shape>-->
+<!--            <solid android:color="#11999999"/>-->
+<!--            <corners android:radius="3dp"/>-->
+<!--        </shape>-->
+<!--    </item>-->
+
+<!--    <item android:top="1dp" android:left="1dp" android:right="1dp" android:bottom="1dp">-->
+<!--        <shape>-->
+<!--            <solid android:color="#22999999"/>-->
+<!--            <corners android:radius="3dp"/>-->
+<!--        </shape>-->
+<!--    </item>-->
+
+<!--    <item android:top="1.5dp" android:left="1.5dp" android:right="1.5dp" android:bottom="1.5dp">-->
+<!--        <shape>-->
+<!--            <solid android:color="#33999999"/>-->
+<!--            <corners android:radius="3dp"/>-->
+<!--        </shape>-->
+<!--    </item>-->
+
+<!--    <item android:top="2dp" android:left="2dp" android:right="2dp" android:bottom="2dp">-->
+<!--        <shape>-->
+<!--            <solid android:color="#44999999"/>-->
+<!--            <corners android:radius="3dp"/>-->
+<!--        </shape>-->
+<!--    </item>-->
+
+<!--    <item android:top="2.5dp" android:left="2.5dp" android:right="2.5dp" android:bottom="2.5dp">-->
+<!--        <shape>-->
+<!--            <solid android:color="#004FDF"/>-->
+<!--            <corners android:radius="3dp"/>-->
+<!--        </shape>-->
+<!--    </item>-->
+
+    <item>
+        <shape>
+            <solid android:color="#004FDF"/>
+            <corners android:radius="3dp"/>
+        </shape>
+    </item>
+
+
+</layer-list>

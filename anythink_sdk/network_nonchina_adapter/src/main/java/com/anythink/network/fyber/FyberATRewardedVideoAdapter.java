@@ -1,13 +1,13 @@
 package com.anythink.network.fyber;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.fyber.inneractive.sdk.external.ImpressionData;
 import com.fyber.inneractive.sdk.external.InneractiveAdRequest;
 import com.fyber.inneractive.sdk.external.InneractiveAdSpot;
@@ -24,9 +24,10 @@ import java.util.Map;
 public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     InneractiveAdSpot mSpot;
+    private String spotId;
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
 
         //todo  mock data
@@ -40,10 +41,9 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         //end  mock data
 
         String appId = "";
-        String spotId = "";
+        spotId = "";
         String isMute = "0";
 
-        mLoadResultListener = customRewardVideoListener;
 
         if (serverExtras.containsKey("app_id")) {
             appId = (String) serverExtras.get("app_id");
@@ -57,14 +57,13 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
 
         if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(spotId)) {
-            if (this.mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "Fyber app_id、spot_id could not be null.");
-                this.mLoadResultListener.onRewardedVideoAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Fyber app_id、spot_id could not be null.");
             }
             return;
         }
 
-        FyberATInitManager.getInstance().initSDK(activity, serverExtras);
+        FyberATInitManager.getInstance().initSDK(context, serverExtras);
 
         // spot integration for display Square
         mSpot = InneractiveAdSpotManager.get().createSpot();
@@ -93,16 +92,15 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         mSpot.setRequestListener(new InneractiveAdSpot.RequestListener() {
             @Override
             public void onInneractiveSuccessfulAdRequest(InneractiveAdSpot inneractiveAdSpot) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(FyberATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onInneractiveFailedAdRequest(InneractiveAdSpot inneractiveAdSpot, InneractiveErrorCode inneractiveErrorCode) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(FyberATRewardedVideoAdapter.this,
-                            ErrorCode.getErrorCode(ErrorCode.noADError, "", inneractiveErrorCode.name() + ", " + inneractiveErrorCode.getMetricable()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", inneractiveErrorCode.name() + ", " + inneractiveErrorCode.getMetricable());
                 }
             }
         });
@@ -124,7 +122,7 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 @Override
                 public void onAdImpression(InneractiveAdSpot inneractiveAdSpot, ImpressionData impressionData) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayStart(FyberATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdPlayStart();
                     }
                 }
 
@@ -135,7 +133,7 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 @Override
                 public void onAdClicked(InneractiveAdSpot inneractiveAdSpot) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayClicked(FyberATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdPlayClicked();
                     }
                 }
 
@@ -147,7 +145,7 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 @Override
                 public void onAdEnteredErrorState(InneractiveAdSpot inneractiveAdSpot, InneractiveUnitController.AdDisplayError adDisplayError) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayFailed(FyberATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", adDisplayError.getMessage()));
+                        mImpressionListener.onRewardedVideoAdPlayFailed("", adDisplayError.getMessage());
                     }
                 }
 
@@ -159,7 +157,7 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 @Override
                 public void onAdDismissed(InneractiveAdSpot inneractiveAdSpot) {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdClosed(FyberATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdClosed();
                     }
                 }
             });
@@ -180,8 +178,8 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 @Override
                 public void onCompleted() {
                     if (mImpressionListener != null) {
-                        mImpressionListener.onRewardedVideoAdPlayEnd(FyberATRewardedVideoAdapter.this);
-                        mImpressionListener.onReward(FyberATRewardedVideoAdapter.this);
+                        mImpressionListener.onRewardedVideoAdPlayEnd();
+                        mImpressionListener.onReward();
                     }
                 }
 
@@ -206,29 +204,25 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
     public boolean isAdReady() {
         // checking if we have ad content
         return mSpot != null && mSpot.isReady();
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return FyberATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return FyberATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mSpot != null) {
+            mSpot.setRequestListener(null);
             mSpot.destroy();
             mSpot = null;
         }
@@ -237,5 +231,10 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public String getNetworkName() {
         return FyberATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return spotId;
     }
 }

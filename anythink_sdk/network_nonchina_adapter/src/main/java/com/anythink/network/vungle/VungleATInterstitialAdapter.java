@@ -1,12 +1,12 @@
 package com.anythink.network.vungle;
 
+import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.vungle.warren.AdConfig;
 import com.vungle.warren.LoadAdCallback;
 import com.vungle.warren.PlayAdCallback;
@@ -21,19 +21,18 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
     String mPlacementId;
     AdConfig mAdConfig;
 
-    private final LoadAdCallback loadAdCallback = new LoadAdCallback() {
+    private LoadAdCallback loadAdCallback = new LoadAdCallback() {
         @Override
         public void onAdLoad(String s) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(VungleATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
 
         @Override
         public void onError(String s, VungleException throwable) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(VungleATInterstitialAdapter.this
-                        , ErrorCode.getErrorCode(ErrorCode.noADError, "", throwable.toString()));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", throwable.toString());
             }
         }
     };
@@ -46,22 +45,41 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
             // if wasSuccessfulView is true, the user watched the ad and could be rewarded
             // if wasCallToActionClicked is true, the user clicked the call to action button in the ad.
 
-            if (wasCallToActionClicked && mImpressListener != null) {
-                mImpressListener.onInterstitialAdClicked(VungleATInterstitialAdapter.this);
-            }
 
+
+        }
+
+        @Override
+        public void onAdEnd(String s) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdVideoEnd(VungleATInterstitialAdapter.this);
-                mImpressListener.onInterstitialAdClose(VungleATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdVideoEnd();
+                mImpressListener.onInterstitialAdClose();
             }
+        }
+
+        @Override
+        public void onAdClick(String s) {
+            if (mImpressListener != null) {
+                mImpressListener.onInterstitialAdClicked();
+            }
+        }
+
+        @Override
+        public void onAdRewarded(String s) {
+
+        }
+
+        @Override
+        public void onAdLeftApplication(String s) {
+
         }
 
         @Override
         public void onAdStart(String placementReferenceId) {
             // Called before playing an ad
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdShow(VungleATInterstitialAdapter.this);
-                mImpressListener.onInterstitialAdVideoStart(VungleATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdShow();
+                mImpressListener.onInterstitialAdVideoStart();
             }
         }
 
@@ -69,23 +87,22 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
         public void onError(String placementReferenceId, VungleException throwable) {
             // Called after playAd(placementId, adConfig) is unable to play the ad
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdVideoError(VungleATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", throwable.toString()));
+                mImpressListener.onInterstitialAdVideoError("", throwable.toString());
             }
         }
     };
 
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String mAppId = (String) serverExtras.get("app_id");
         mPlacementId = (String) serverExtras.get("placement_id");
 
-        mLoadResultListener = customInterstitialListener;
 
         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mPlacementId)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "vungle appid & placementId is empty."));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "vungle appid & placementId is empty.");
             }
             return;
         }
@@ -94,13 +111,19 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
         VungleATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new VungleATInitManager.InitListener() {
             @Override
             public void onSuccess() {
-                Vungle.loadAd(mPlacementId, loadAdCallback);
+                try {
+                    Vungle.loadAd(mPlacementId, loadAdCallback);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
 
             @Override
             public void onError(Throwable throwable) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(VungleATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", throwable.getMessage()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", throwable.getMessage());
                 }
             }
         });
@@ -112,12 +135,17 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return VungleATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return "";
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         if (Vungle.canPlayAd(mPlacementId)) {
             // Play a Placement ad with Placement ID, you can pass AdConfig to customize your ad
             Vungle.playAd(mPlacementId, mAdConfig, vungleDefaultListener);
@@ -125,7 +153,9 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
+        loadAdCallback = null;
+        mAdConfig = null;
     }
 
     @Override
@@ -134,11 +164,9 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void onResume() {
+    public String getNetworkPlacementId() {
+        return mPlacementId;
     }
 
-    @Override
-    public void onPause() {
-    }
 
 }

@@ -7,7 +7,7 @@ package com.anythink.core.api;
 
 public class ErrorCode {
 
-    public final static String unknow = "-9999";
+    public final static String unknown = "-9999";
 
     public final static String exception = "9999";
     public final static String httpStatuException = "9990";
@@ -24,6 +24,8 @@ public class ErrorCode {
     public final static String loadingError = "2005";
     public final static String adapterInnerError = "2006";
     public final static String inRequestFailPacing = "2007";
+    public final static String loadFailInPacingError = "2008";
+    public final static String loadCappingError = "2009";
 
     public final static String placeStrategyError = "3001";
     public final static String appIdOrPlaceIdEmpty = "3002";
@@ -34,13 +36,13 @@ public class ErrorCode {
     public final static String placementAdClose = "4003";
     public final static String noAdsourceConfig = "4004";
     public final static String noVailAdsource = "4005";
+    public final static String rewardedVideoPlayError = "4006";
 
     public final static String appKeyError = "10001";
     public final static String appIdError = "10003";
     public final static String placementIdError = "10004";
 
 
-    public static String rewardedVideoPlayError = "4005";
 
 
     /***
@@ -81,7 +83,6 @@ public class ErrorCode {
             case appIdOrPlaceIdEmpty:
                 return new AdError(appIdOrPlaceIdEmpty, "AppId or PlacementId is empty.", platformCode, platformMsg);
             case formatError:
-                //todo
                 return new AdError(formatError, "Mismatched ad placement and ad format", platformCode, platformMsg);
             case placementAdClose:
                 return new AdError(placementAdClose, "Placement Ads switch is close.", platformCode, platformMsg);
@@ -99,8 +100,12 @@ public class ErrorCode {
                 return new AdError(noVailAdsource, "Ad sources are filtered, no ad source is currently available", platformCode, platformMsg);
             case inRequestFailPacing:
                 return new AdError(inRequestFailPacing, "Not satisfy the Fail-request's Placing configuration.", platformCode, platformMsg);
+            case loadFailInPacingError:
+                return new AdError(loadFailInPacingError, "The placement load too frequent within the specified time period after the previous load failure.", platformCode, platformMsg);
+            case loadCappingError:
+                return new AdError(loadCappingError, "The placement load too many times within the specified time period.", platformCode, platformMsg);
             default:
-                return new AdError(unknow, "unkwon", platformCode, platformMsg);
+                return new AdError(unknown, "unknown", platformCode, platformMsg);
         }
     }
 }

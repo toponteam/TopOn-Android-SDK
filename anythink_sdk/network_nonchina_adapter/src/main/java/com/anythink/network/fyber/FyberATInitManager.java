@@ -47,35 +47,18 @@ public class FyberATInitManager extends ATInitMediation {
 //            if (ATSDK.isNetworkLogDebug()) {
 //                InneractiveAdManager.setLogLevel(Log.VERBOSE);
 //            }
-            InneractiveAdManager.initialize(context, app_id);
-            superGDPR(context, serviceExtras);
+            InneractiveAdManager.initialize(context.getApplicationContext(), app_id);
 
             mAppId = app_id;
         }
 
     }
 
-    /***
-     * Whether to support GDPR
-     */
-    private void superGDPR(Context context, Map<String, Object> serviceExtras) {
-        try {
-            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                //Whether to agree to collect data
-                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                //Whether to set the GDPR of the network
-                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-                if (need_set_gdpr) {
-                    InneractiveAdManager.setGdprConsent(gdp_consent);
-                }
-
-            }
-            logGDPRSetting(FyberATConst.NETWORK_FIRM_ID);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        InneractiveAdManager.setGdprConsent(isConsent);
+        return true;
     }
-
 
     @Override
     public String getNetworkSDKClass() {

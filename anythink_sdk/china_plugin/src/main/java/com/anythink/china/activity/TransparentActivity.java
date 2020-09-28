@@ -45,7 +45,7 @@ public class TransparentActivity extends Activity {
 
         if (requestCode == PERMISSION_HANDLE_TYPE) {
             for (int i = 0; i < permissions.length; i++) {
-                Log.i("ZSR", permissions[i] + ":" + grantResults[i]);
+//                Log.i("ZSR", permissions[i] + ":" + grantResults[i]);
             }
         }
         PermissionRequestManager.PermissionAuthorizeCallback callback = permissionMap.get(requestCode);

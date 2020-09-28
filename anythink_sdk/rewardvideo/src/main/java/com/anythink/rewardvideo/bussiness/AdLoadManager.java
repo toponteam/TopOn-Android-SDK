@@ -1,13 +1,16 @@
 package com.anythink.rewardvideo.bussiness;
 
 import android.app.Activity;
-import android.util.Log;
+import android.content.Context;
 
+import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.core.common.AdCacheManager;
 import com.anythink.core.common.CommonAdManager;
+import com.anythink.core.common.CommonMediationManager;
+import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
@@ -21,13 +24,12 @@ import com.anythink.rewardvideo.api.ATRewardVideoListener;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Ad Request Manager
  */
 
-public class AdLoadManager extends CommonAdManager {
+public class AdLoadManager extends CommonAdManager<RewardedVideoLoadParams> {
 
 
     public static final String TAG = AdLoadManager.class.getSimpleName();
@@ -36,30 +38,29 @@ public class AdLoadManager extends CommonAdManager {
     String mCustomData;
 
 
-    public static AdLoadManager getInstance(Activity context, String placementId) {
+    public static AdLoadManager getInstance(Context context, String placementId) {
 
-        CommonAdManager adLoadManager = CommonAdManager.getInstance(placementId);
+        CommonAdManager adLoadManager = PlacementAdManager.getInstance().getAdManager(placementId);
         if (adLoadManager == null || !(adLoadManager instanceof AdLoadManager)) {
             adLoadManager = new AdLoadManager(context, placementId);
-            CommonAdManager.addAdManager(placementId, adLoadManager);
+            PlacementAdManager.getInstance().addAdManager(placementId, adLoadManager);
         }
         adLoadManager.refreshContext(context);
         return (AdLoadManager) adLoadManager;
     }
 
 
-    private AdLoadManager(Activity context, String placementId) {
+    private AdLoadManager(Context context, String placementId) {
         super(context, placementId);
-        mSettings = new HashMap<>();
     }
 
-    public synchronized void show(final Activity activity, final String scenario, final RewardedVideoEventListener listener) {
+    public synchronized void show(final Activity activity, final String scenario, final ATRewardVideoListener listener) {
         final AdCacheInfo adCacheInfo = isAdReady(activity, true);
         if (adCacheInfo == null) {
             AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "No Cache.");
 
             if (listener != null) {
-                listener.onRewardedVideoAdPlayFailed(null, adError);
+                listener.onRewardedVideoAdPlayFailed(adError, ATAdInfo.fromAdapter(null));
             }
 
             return;
@@ -67,7 +68,7 @@ public class AdLoadManager extends CommonAdManager {
 
 
         if (adCacheInfo != null && adCacheInfo.getBaseAdapter() instanceof CustomRewardVideoAdapter) {
-            cancelReturnCache(adCacheInfo);
+            notifyNewestCacheHasBeenShow(adCacheInfo);
             /**
              * Remove CountDown
              */
@@ -94,16 +95,14 @@ public class AdLoadManager extends CommonAdManager {
 
 
                     final CustomRewardVideoAdapter customRewardVideoAdapter = ((CustomRewardVideoAdapter) adCacheInfo.getBaseAdapter());
-                    customRewardVideoAdapter.refreshActivityContext(activity);
-
-
-                    customRewardVideoAdapter.setUserId(mUserId);
-                    customRewardVideoAdapter.setAdImpressionListener(listener);
+                    if (activity != null) {
+                        customRewardVideoAdapter.refreshActivityContext(activity);
+                    }
 
                     SDKContext.getInstance().runOnMainThread(new Runnable() {
                         @Override
                         public void run() {
-                            customRewardVideoAdapter.show(activity);
+                            customRewardVideoAdapter.internalShow(activity, new RewardedVideoEventListener(customRewardVideoAdapter, listener));
                         }
                     });
                 }
@@ -113,73 +112,45 @@ public class AdLoadManager extends CommonAdManager {
 
     }
 
-    public void onPause() {
-    }
-
-    public void onResume() {
-    }
-
-    public void onDestory() {
-    }
-
-
     /**
      * Ad Request
      *
      * @param listener
      */
-    public void startLoadAd(final Activity activity, final boolean isAutoRefresh, final ATRewardVideoListener listener) {
+    public void startLoadAd(final Context context, final boolean isAutoRefresh, final ATRewardVideoListener listener) {
+        RewardedVideoLoadParams loadParams = new RewardedVideoLoadParams();
+        loadParams.isRefresh = isAutoRefresh;
+        loadParams.userId = mUserId;
+        loadParams.userData = mCustomData;
+        loadParams.listener = listener;
+        loadParams.context = context;
 
-        loadStragety(mApplicationContext, Const.FORMAT.REWARDEDVIDEO_FORMAT, mPlacementId, isAutoRefresh, new CommonAdManager.PlacementCallback() {
-            @Override
-            public void onSuccess(String placementId, String requestId, PlaceStrategy placeStrategy, List<PlaceStrategy.UnitGroupInfo> unitGroupInfoList) {
-                MediationGroupManager mediaionGroupManager = new MediationGroupManager(activity);
-                mediaionGroupManager.setUserData(mUserId, mCustomData);
-                mediaionGroupManager.setCallbackListener(listener);
-                mediaionGroupManager.setNetworkSettingMap(mSettings);
-                mediaionGroupManager.setRefresh(isAutoRefresh);
-                mediaionGroupManager.loadRewardVideoAd(mPlacementId, requestId, placeStrategy, unitGroupInfoList);
-                mHistoryMediationManager.put(requestId, mediaionGroupManager);
-                /**Clear listener in the old MediationManager**/
-                if (mCurrentManager != null) {
-                    ((MediationGroupManager) mCurrentManager).setCallbackListener(null);
-                }
-                mCurrentManager = mediaionGroupManager;
-
-            }
-
-            @Override
-            public void onAdLoaded(String placementId, String requestId) {
-                if (listener != null) {
-                    listener.onRewardedVideoAdLoaded();
-                }
-            }
-
-            @Override
-            public void onLoadError(String placementId, String requestId, AdError adError) {
-                if (listener != null) {
-                    listener.onRewardedVideoAdFailed(adError);
-                }
-            }
-
-        });
+        super.startLoadAd(mApplicationContext, Const.FORMAT.REWARDEDVIDEO_FORMAT, mPlacementId, loadParams);
     }
 
 
     @Override
-    public void startCountdown(PlaceStrategy.UnitGroupInfo unitGroupInfo, AdTrackingInfo adTrackingInfo) {
-        if (mActivityRef.get() instanceof Activity) {
-            ATMediationSetting setting = null;
-            if (mSettings != null) {
-                setting = mSettings.get(unitGroupInfo.networkType);
-            }
-            CacheCountdownTimer cacheCountdownTimer = new CacheCountdownTimer(unitGroupInfo.getUnitADCacheTime(), unitGroupInfo.getUnitADCacheTime(), unitGroupInfo, adTrackingInfo);
-            cacheCountdownTimer.setExtraInfo(setting);
-            mCacheCountdownTimer = cacheCountdownTimer;
-            mCacheCountdownTimer.start();
+    public CommonMediationManager createFormatMediationManager(RewardedVideoLoadParams formatLoadParams) {
+        MediationGroupManager mediaionGroupManager = new MediationGroupManager(formatLoadParams.context);
+        mediaionGroupManager.setUserData(mUserId, mCustomData);
+        mediaionGroupManager.setCallbackListener(formatLoadParams.listener);
+        mediaionGroupManager.setRefresh(formatLoadParams.isRefresh);
+        return mediaionGroupManager;
+    }
+
+    @Override
+    public void onCallbackOfferHasExist(RewardedVideoLoadParams formatLoadParams, String placementId, String requestId) {
+        if (formatLoadParams.listener != null) {
+            formatLoadParams.listener.onRewardedVideoAdLoaded();
         }
     }
 
+    @Override
+    public void onCallbacInternalError(RewardedVideoLoadParams formatLoadParams, String placementId, String requestId, AdError adError) {
+        if (formatLoadParams.listener != null) {
+            formatLoadParams.listener.onRewardedVideoAdFailed(adError);
+        }
+    }
 
     public void setUserData(String userId, String customData) {
         mUserId = userId;

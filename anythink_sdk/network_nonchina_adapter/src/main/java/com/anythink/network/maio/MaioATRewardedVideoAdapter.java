@@ -8,7 +8,6 @@ import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 
 import java.util.Map;
 
@@ -19,7 +18,7 @@ public class MaioATRewardedVideoAdapter extends CustomRewardVideoAdapter impleme
     String mZoneId;
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         String mMediaId = "";
         if (serverExtras.containsKey("media_id")) {
             mMediaId = serverExtras.get("media_id").toString();
@@ -29,28 +28,33 @@ public class MaioATRewardedVideoAdapter extends CustomRewardVideoAdapter impleme
             mZoneId = serverExtras.get("zone_id").toString();
         }
 
-        mLoadResultListener = customRewardVideoListener;
         if (TextUtils.isEmpty(mMediaId) || TextUtils.isEmpty(mZoneId)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", " mediaid or zoneid  is empty.");
-                mLoadResultListener.onRewardedVideoAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " mediaid or zoneid  is empty.");
+            }
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Maio context must be activity.");
             }
             return;
         }
 
         if (MaioAds.canShow(mZoneId)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
             return;
         }
 
         MaioATInitManager.getInstance().addLoadResultListener(mZoneId, this);
-        MaioATInitManager.getInstance().initSDK(activity, serverExtras);
+        MaioATInitManager.getInstance().initSDK(context, serverExtras);
     }
 
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras != null) {
             if (serverExtras.containsKey("zone_id")) {
                 mZoneId = serverExtras.get("zone_id").toString();
@@ -62,20 +66,8 @@ public class MaioATRewardedVideoAdapter extends CustomRewardVideoAdapter impleme
 
     @Override
     public void show(Activity activity) {
-        if (MaioAds.canShow(mZoneId)) {
-            MaioATInitManager.getInstance().addListener(mZoneId, this);
-            MaioAds.show(mZoneId);
-        }
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
+        MaioATInitManager.getInstance().addListener(mZoneId, this);
+        MaioAds.show(mZoneId);
     }
 
     @Override
@@ -84,7 +76,12 @@ public class MaioATRewardedVideoAdapter extends CustomRewardVideoAdapter impleme
     }
 
     @Override
-    public void clean() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public void destory() {
 
     }
 
@@ -93,50 +90,55 @@ public class MaioATRewardedVideoAdapter extends CustomRewardVideoAdapter impleme
         return MaioATInitManager.getInstance().getNetworkName();
     }
 
+    @Override
+    public String getNetworkPlacementId() {
+        return mZoneId;
+    }
+
     //internal callback
     @Override
     public void notifyLoaded() {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdLoaded(this);
+        if (mLoadListener != null) {
+            mLoadListener.onAdCacheLoaded();
         }
     }
 
     @Override
     public void notifyLoadFail(String code, String msg) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, code, msg));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(code, msg);
         }
     }
 
     @Override
     public void notifyPlayStart() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayStart(this);
+            mImpressionListener.onRewardedVideoAdPlayStart();
         }
     }
 
     @Override
     public void notifyClick() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayClicked(this);
+            mImpressionListener.onRewardedVideoAdPlayClicked();
         }
     }
 
     @Override
     public void notifyClose() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdClosed(this);
+            mImpressionListener.onRewardedVideoAdClosed();
         }
     }
 
     @Override
     public void notifyPlayEnd(boolean isReward) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayEnd(this);
+            mImpressionListener.onRewardedVideoAdPlayEnd();
         }
 
         if (mImpressionListener != null) {
-            mImpressionListener.onReward(this);
+            mImpressionListener.onReward();
         }
 
     }
@@ -144,12 +146,12 @@ public class MaioATRewardedVideoAdapter extends CustomRewardVideoAdapter impleme
     @Override
     public void notifyPlayFail(String code, String msg) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, code, msg));
+            mImpressionListener.onRewardedVideoAdPlayFailed(code, msg);
         }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MaioATConst.getNetworkVersion();
     }
 }

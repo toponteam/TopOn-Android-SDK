@@ -12,7 +12,7 @@ import com.anythink.hb.constants.ADType;
 import com.anythink.hb.data.AuctionNotification;
 import com.anythink.hb.data.BidRequestInfo;
 import com.anythink.hb.data.BiddingResponse;
-import com.anythink.hb.data.HiBidContext;
+import com.anythink.hb.data.HBDataContext;
 import com.anythink.hb.exception.BidderInitFailedException;
 import com.anythink.hb.exception.BiddingException;
 import com.anythink.hb.exception.FailedToGetRenderException;
@@ -33,7 +33,7 @@ public class FacebookBidder implements Bidder {
 
     private static volatile boolean sdkInitialized = false;
 
-    private HiBidContext mContext;
+    private HBDataContext mContext;
     private FBAdBidFormat adBidFormat;
     private FBAdBidResponse curBidResponsed = null;
     private BidRequestInfo curBidRequestInfo = null;
@@ -51,7 +51,7 @@ public class FacebookBidder implements Bidder {
     }
 
     @Override
-    public void init(HiBidContext context) throws BidderInitFailedException, SdkIntegratedException{
+    public void init(HBDataContext context) throws BidderInitFailedException, SdkIntegratedException{
         try {
             mContext = context;
             if (!sdkInitialized) {
@@ -149,15 +149,15 @@ public class FacebookBidder implements Bidder {
 
     @Override
     public void onAuctionNotification(AuctionNotification notification) {
-        if (curBidResponsed != null && mContext != null) {
-            if (notification.isWinner()) {
-                LogUtil.i(TAG, "Facebook Bidder Wins");
-                curBidResponsed.notifyWin();
-            } else {
-                LogUtil.i(TAG, "Facebook Bidder Loss");
-                curBidResponsed.notifyLoss();
-            }
-        }
+//        if (curBidResponsed != null && mContext != null) {
+//            if (notification.isWinner()) {
+//                LogUtil.i(TAG, "Facebook Bidder Wins");
+//                curBidResponsed.notifyWin();
+//            } else {
+//                LogUtil.i(TAG, "Facebook Bidder Loss");
+//                curBidResponsed.notifyLoss();
+//            }
+//        }
 
     }
 
@@ -168,7 +168,7 @@ public class FacebookBidder implements Bidder {
         }
 
         if (mContext == null){
-            throw new FailedToGetRenderException("HiBidContext == NULL!");
+            throw new FailedToGetRenderException("HBDataContext == NULL!");
         }
 
         Object adsRender = null;

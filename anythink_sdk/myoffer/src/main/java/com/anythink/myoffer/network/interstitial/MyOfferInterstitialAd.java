@@ -1,13 +1,12 @@
 package com.anythink.myoffer.network.interstitial;
 
 import android.content.Context;
-import android.text.TextUtils;
 
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.myoffer.buiness.MyOfferAdManager;
 import com.anythink.myoffer.buiness.MyOfferImpressionRecordManager;
 import com.anythink.myoffer.buiness.resource.MyOfferLoader;
-import com.anythink.myoffer.entity.MyOfferAd;
 import com.anythink.myoffer.network.base.MyOfferAdMessager;
 import com.anythink.myoffer.network.base.MyOfferBaseAd;
 import com.anythink.myoffer.ui.MyOfferAdActivity;
@@ -21,16 +20,10 @@ public class MyOfferInterstitialAd extends MyOfferBaseAd {
     public static final String TAG = MyOfferInterstitialAd.class.getSimpleName();
 
     private MyOfferInterstitialAdListener mListener;
-    private MyOfferAd mMyOfferAd;
 
-    public MyOfferInterstitialAd(Context context, String placementId, String offerId, String myoffer_setting) {
-        super(context, placementId, offerId, myoffer_setting, false);
-    }
-
-    public MyOfferInterstitialAd(Context context, String placementId, String offerId, String myoffer_setting, boolean isDefault) {
+    public MyOfferInterstitialAd(Context context, String placementId, String offerId, MyOfferSetting myoffer_setting, boolean isDefault) {
         super(context, placementId, offerId, myoffer_setting, isDefault);
     }
-
 
     public void setListener(MyOfferInterstitialAdListener listener) {
         this.mListener = listener;
@@ -39,22 +32,10 @@ public class MyOfferInterstitialAd extends MyOfferBaseAd {
     @Override
     public void load() {
         try {
-            if(TextUtils.isEmpty(mOfferId) || TextUtils.isEmpty(mPlacementId)) {
-                if(mListener != null) {
-                    mListener.onAdLoadFailed(MyOfferErrorCode.get(MyOfferErrorCode.noADError, MyOfferErrorCode.fail_params));
-                }
-                return;
-            }
-            mMyOfferAd = MyOfferAdManager.getInstance(mContext).getAdCache(mPlacementId, mOfferId);
-            if(mMyOfferAd == null) {//说明还没保存
-                if(mListener != null) {
-                    mListener.onAdLoadFailed(MyOfferErrorCode.get(MyOfferErrorCode.noADError, MyOfferErrorCode.fail_no_offer));
-                }
-                return;
-            }
-            if (mMyOfferSetting == null) {
+            MyOfferError myOfferError = checkLoadParams();
+            if (myOfferError != null) {
                 if (mListener != null) {
-                    mListener.onAdLoadFailed(MyOfferErrorCode.get(MyOfferErrorCode.noSettingError, MyOfferErrorCode.fail_no_setting));
+                    mListener.onAdLoadFailed(myOfferError);
                 }
                 return;
             }
@@ -62,21 +43,21 @@ public class MyOfferInterstitialAd extends MyOfferBaseAd {
             MyOfferAdManager.getInstance(mContext).load(mPlacementId, mMyOfferAd, mMyOfferSetting, new MyOfferLoader.MyOfferLoaderListener() {
                 @Override
                 public void onSuccess() {
-                    if(mListener != null) {
+                    if (mListener != null) {
                         mListener.onAdLoaded();
                     }
                 }
 
                 @Override
                 public void onFailed(MyOfferError error) {
-                    if(mListener != null) {
+                    if (mListener != null) {
                         mListener.onAdLoadFailed(error);
                     }
                 }
             });
         } catch (Exception e) {
             e.printStackTrace();
-            if(mListener != null) {
+            if (mListener != null) {
                 mListener.onAdLoadFailed(MyOfferErrorCode.get(MyOfferErrorCode.unknow, e.getMessage()));
             }
         }
@@ -171,26 +152,9 @@ public class MyOfferInterstitialAd extends MyOfferBaseAd {
     public boolean isReady() {
 
         try {
-            if(mContext == null) {
-                CommonLogUtil.d(TAG, "isReady() context = null!");
-                return false;
-            } else if(TextUtils.isEmpty(mPlacementId)) {
-                CommonLogUtil.d(TAG, "isReady() mPlacementId = null!");
-                return false;
-            } else if(TextUtils.isEmpty(mOfferId)) {
-                CommonLogUtil.d(TAG, "isReady() mOfferId = null!");
-                return false;
+            if (checkIsReadyParams()) {
+                return MyOfferAdManager.getInstance(mContext).isReady(mMyOfferAd, mMyOfferSetting, mIsDefault);
             }
-
-            if (mMyOfferAd == null) {
-                mMyOfferAd = MyOfferAdManager.getInstance(mContext).getAdCache(mPlacementId, mOfferId);
-                if (mMyOfferAd == null) {
-                    CommonLogUtil.d(TAG, "isReady() MyOffer no exist!");
-                    return false;
-                }
-            }
-
-            return MyOfferAdManager.getInstance(mContext).isReady(mMyOfferAd, mIsDefault);
         } catch (Exception e) {
             e.printStackTrace();
         }

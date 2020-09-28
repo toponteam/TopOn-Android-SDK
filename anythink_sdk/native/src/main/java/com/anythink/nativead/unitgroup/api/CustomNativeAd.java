@@ -44,11 +44,11 @@ public class CustomNativeAd extends BaseNativeAd {
 
 
     // Extras
-    private final Map<String, Object> mExtras;
+//    private final Map<String, Object> mExtras;
 
     public CustomNativeAd() {
 
-        mExtras = new HashMap<String, Object>();
+//        mExtras = new HashMap<String, Object>();
     }
 
 
@@ -149,12 +149,12 @@ public class CustomNativeAd extends BaseNativeAd {
     }
 
 
-    final public Object getExtra(final String key) {
-        if (TextUtils.isEmpty(key)) {
-            return null;
-        }
-        return mExtras.get(key);
-    }
+//    final public Object getExtra(final String key) {
+//        if (TextUtils.isEmpty(key)) {
+//            return null;
+//        }
+//        return mExtras.get(key);
+//    }
 
     /**
      * Returns a copy of the extras map, reflecting additional ad content not reflected in any
@@ -163,17 +163,17 @@ public class CustomNativeAd extends BaseNativeAd {
      * fields.
      */
 
-    final public Map<String, Object> getExtras() {
-        return new HashMap<String, Object>(mExtras);
-    }
+//    final public Map<String, Object> getExtras() {
+//        return new HashMap<String, Object>(mExtras);
+//    }
 
     /**
      * Returns the String url that the device will attempt to resolve when the ad is clicked.
      */
 
-    final public String getClickDestinationUrl() {
-        return mClickDestinationUrl;
-    }
+//    final public String getClickDestinationUrl() {
+//        return mClickDestinationUrl;
+//    }
 
     final public void setMainImageUrl(final String mainImageUrl) {
         mMainImageUrl = mainImageUrl;
@@ -183,9 +183,9 @@ public class CustomNativeAd extends BaseNativeAd {
         mIconImageUrl = iconImageUrl;
     }
 
-    final public void setClickDestinationUrl(final String clickDestinationUrl) {
-        mClickDestinationUrl = clickDestinationUrl;
-    }
+//    final public void setClickDestinationUrl(final String clickDestinationUrl) {
+//        mClickDestinationUrl = clickDestinationUrl;
+//    }
 
     final public void setCallToActionText(final String callToAction) {
         mCallToAction = callToAction;
@@ -229,12 +229,12 @@ public class CustomNativeAd extends BaseNativeAd {
         return null;
     }
 
-    final public void addExtra(final String key, final Object value) {
-        if (TextUtils.isEmpty(key)) {
-            return;
-        }
-        mExtras.put(key, value);
-    }
+//    final public void addExtra(final String key, final Object value) {
+//        if (TextUtils.isEmpty(key)) {
+//            return;
+//        }
+//        mExtras.put(key, value);
+//    }
 
     // Lifecycle Handlers
     @Override
@@ -264,10 +264,6 @@ public class CustomNativeAd extends BaseNativeAd {
     @Override
     public void onResume() {
 
-    }
-
-    @Deprecated
-    protected void log(String tag, String msg) {
     }
 
     @Override

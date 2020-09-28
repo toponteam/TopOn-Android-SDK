@@ -7,10 +7,10 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
-import com.kwad.sdk.export.config.KSAdVideoPlayConfig;
-import com.kwad.sdk.export.i.KsNativeAd;
-import com.kwad.sdk.nativead.KsAppDownloadListener;
-import com.kwad.sdk.nativead.KsImage;
+import com.kwad.sdk.api.KsAdVideoPlayConfig;
+import com.kwad.sdk.api.KsAppDownloadListener;
+import com.kwad.sdk.api.KsImage;
+import com.kwad.sdk.api.KsNativeAd;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public class KSATNativeAd extends CustomNativeAd {
     Context context;
     KsNativeAd ksNativeAd;
     boolean isVideoSoundEnable;
-
+    View mediaView;
 
     public KSATNativeAd(Context context, KsNativeAd ksNativeAd, boolean isVideoSoundEnable) {
         this.context = context;
@@ -60,14 +60,14 @@ public class KSATNativeAd extends CustomNativeAd {
     }
 
     private void getChildView(List<View> childViews, View view) {
-        if (view instanceof ViewGroup && view != ksNativeAd.getVideoView(context, isVideoSoundEnable)) {
+        if (view instanceof ViewGroup && view != mediaView) {
             ViewGroup viewGroup = (ViewGroup) view;
             for (int i = 0; i < viewGroup.getChildCount(); i++) {
                 View child = viewGroup.getChildAt(i);
                 getChildView(childViews, child);
             }
         } else {
-            if (view != ksNativeAd.getVideoView(context, isVideoSoundEnable)) {
+            if (view != mediaView) {
                 childViews.add(view);
             }
         }
@@ -78,44 +78,8 @@ public class KSATNativeAd extends CustomNativeAd {
 
         List<View> childViews = new ArrayList<>();
         getChildView(childViews, view);
-        ksNativeAd.registerViewForInteraction((ViewGroup) view, childViews, new KsNativeAd.AdInteractionListener() {
-            @Override
-            public void onAdClicked(View view, KsNativeAd ksNativeAd) {
-                notifyAdClicked();
-            }
 
-            @Override
-            public void onAdShow(KsNativeAd ksNativeAd) {
-
-            }
-        });
-
-        ksNativeAd.setDownloadListener(new KsAppDownloadListener() {
-            @Override
-            public void onIdle() {
-
-            }
-
-            @Override
-            public void onProgressUpdate(int i) {
-
-            }
-
-            @Override
-            public void onDownloadFinished() {
-
-            }
-
-            @Override
-            public void onDownloadFailed() {
-
-            }
-
-            @Override
-            public void onInstalled() {
-
-            }
-        });
+        bindListener((ViewGroup) view, childViews);
     }
 
     @Override
@@ -128,7 +92,12 @@ public class KSATNativeAd extends CustomNativeAd {
             childViews = new ArrayList<>();
             getChildView(childViews, view);
         }
-        ksNativeAd.registerViewForInteraction((ViewGroup) view, childViews, new KsNativeAd.AdInteractionListener() {
+
+        bindListener((ViewGroup) view, childViews);
+    }
+
+    private void bindListener(ViewGroup view, List<View> childViews) {
+        ksNativeAd.registerViewForInteraction(view, childViews, new KsNativeAd.AdInteractionListener() {
             @Override
             public void onAdClicked(View view, KsNativeAd ksNativeAd) {
                 notifyAdClicked();
@@ -171,9 +140,11 @@ public class KSATNativeAd extends CustomNativeAd {
     @Override
     public View getAdMediaView(Object... object) {
         try {
-            KSAdVideoPlayConfig.Builder builder = new KSAdVideoPlayConfig.Builder();
-            builder.setVideoSoundEnable(isVideoSoundEnable);
-            return ksNativeAd.getVideoView(context, builder.build());
+
+            KsAdVideoPlayConfig.Builder builder = new KsAdVideoPlayConfig.Builder()
+                    .videoSoundEnable(isVideoSoundEnable);
+            mediaView = ksNativeAd.getVideoView(context, builder.build());
+            return mediaView;
         } catch (Throwable e) {
 
         }
@@ -182,6 +153,14 @@ public class KSATNativeAd extends CustomNativeAd {
 
     @Override
     public void destroy() {
-
+        if (ksNativeAd != null) {
+            ksNativeAd.setDownloadListener(null);
+            try {
+                ksNativeAd.registerViewForInteraction(null, null, null);
+            } catch (Exception e) {
+            }
+            ksNativeAd = null;
+        }
+        context = null;
     }
 }

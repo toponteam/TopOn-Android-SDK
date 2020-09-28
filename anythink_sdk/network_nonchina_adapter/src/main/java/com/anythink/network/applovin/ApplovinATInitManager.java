@@ -40,7 +40,6 @@ public class ApplovinATInitManager extends ATInitMediation {
     public AppLovinSdk initSDK(Context context, String sdkKey, Map<String, Object> serviceExtras) {
 
         if (TextUtils.isEmpty(mSdkKey) || !TextUtils.equals(mSdkKey, sdkKey)) {
-            superGDPR(context, serviceExtras);
             mSdkKey = sdkKey;
         }
         AppLovinSdk appLovinSdk = AppLovinSdk.getInstance(sdkKey, new AppLovinSdkSettings(), context);
@@ -51,19 +50,10 @@ public class ApplovinATInitManager extends ATInitMediation {
     /***
      * Whether to support GDPR
      */
-    private void superGDPR(Context context, Map<String, Object> serviceExtras) {
-        if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-            //Whether to agree to collect data
-            boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-            //Whether to set the GDPR of the network
-            boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-            if (need_set_gdpr) {
-                AppLovinPrivacySettings.setHasUserConsent(gdp_consent, context);
-            }
-        }
-
-        logGDPRSetting(ApplovinATConst.NETWORK_FIRM_ID);
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        AppLovinPrivacySettings.setHasUserConsent(isConsent, context);
+        return true;
     }
 
     @Override

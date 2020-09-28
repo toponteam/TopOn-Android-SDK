@@ -1,13 +1,10 @@
 package com.anythink.network.gdt;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.qq.e.ads.rewardvideo.RewardVideoAD;
 import com.qq.e.ads.rewardvideo.RewardVideoADListener;
 
@@ -19,67 +16,62 @@ import java.util.Map;
 public class GDTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     RewardVideoAD mRewardVideoAD;
 
-
     String mUnitId;
     boolean isReady = false;
 
     @Override
-    public void loadRewardVideoAd(final Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
         String posId = "";
         String appid = "";
 
-        if (serverExtras.containsKey("app_id")) {
-            appid = serverExtras.get("app_id").toString();
+        if (serverExtra.containsKey("app_id")) {
+            appid = serverExtra.get("app_id").toString();
         }
 
-        if (serverExtras.containsKey("unit_id")) {
-            posId = serverExtras.get("unit_id").toString();
+        if (serverExtra.containsKey("unit_id")) {
+            posId = serverExtra.get("unit_id").toString();
         }
 
-        mLoadResultListener = customRewardVideoListener;
         if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(posId)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "GTD appid or unitId is empty.");
-                mLoadResultListener.onRewardedVideoAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "GTD appid or unitId is empty.");
 
             }
             return;
         }
 
-
         mUnitId = posId;
         isReady = false;
 
-        GDTATInitManager.getInstance().initSDK(activity, serverExtras, new GDTATInitManager.OnInitCallback() {
+        GDTATInitManager.getInstance().initSDK(context, serverExtra, new GDTATInitManager.OnInitCallback() {
             @Override
             public void onSuccess() {
-                startLoadAd(activity, mUnitId);
+                startLoadAd(context);
             }
 
             @Override
             public void onError() {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(GDTATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "GTD initSDK failed."));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "GTD initSDK failed.");
                 }
             }
         });
     }
 
-    private void startLoadAd(Activity activity, String posId) {
-        mRewardVideoAD = new RewardVideoAD(activity.getApplicationContext(), posId, new RewardVideoADListener() {
+    private void startLoadAd(Context context) {
+        mRewardVideoAD = new RewardVideoAD(context.getApplicationContext(), mUnitId, new RewardVideoADListener() {
             @Override
             public void onADLoad() {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdDataLoaded(GDTATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
                 }
             }
 
             @Override
             public void onVideoCached() {
                 isReady = true;
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(GDTATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
 
                 try {
@@ -93,7 +85,7 @@ public class GDTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onADShow() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(GDTATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
@@ -105,28 +97,28 @@ public class GDTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onReward() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onReward(GDTATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
 
             @Override
             public void onADClick() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(GDTATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
 
             @Override
             public void onVideoComplete() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(GDTATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
             }
 
             @Override
             public void onADClose() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed(GDTATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
 
                 try {
@@ -139,8 +131,8 @@ public class GDTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
             @Override
             public void onError(com.qq.e.comm.util.AdError adError) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(GDTATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, adError.getErrorCode() + "", adError.getErrorMsg()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(adError.getErrorCode() + "", adError.getErrorMsg());
                 }
             }
         });
@@ -153,6 +145,21 @@ public class GDTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
+    public void destory() {
+        mRewardVideoAD = null;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mUnitId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return GDTATConst.getNetworkVersion();
+    }
+
+    @Override
     public boolean isAdReady() {
         return mRewardVideoAD != null && !mRewardVideoAD.hasShown();
     }
@@ -160,29 +167,18 @@ public class GDTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public void show(Activity activity) {
         if (isReady) {
-            mRewardVideoAD.showAD(activity);
-            isReady = false;
+            try {
+                if (activity != null) {
+                    mRewardVideoAD.showAD(activity);
+                    isReady = false;
+                } else {
+                    mRewardVideoAD.showAD();
+                    isReady = false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-
-    }
-
-    @Override
-    public void clean() {
-
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return GDTATConst.getNetworkVersion();
     }
 
 }

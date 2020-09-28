@@ -5,11 +5,9 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
+import com.anythink.core.api.ATAdConst;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.out.AutoPlayMode;
 import com.mintegral.msdk.out.Campaign;
@@ -44,124 +42,125 @@ public class MintegralATAdapter extends CustomNativeAdapter {
 
     int expressWidth;
     int expressHeight;
+    private String unitId = "";
 
     @Override
-    public void loadNativeAd(final Context context, final CustomNativeListener customNativeListener, final Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+        String appid = "";
+        unitId = "";
+        String sdkKey = "";
+        String placementId = "";
+        String suportVideo_str = "1";
+        //支持视频
+        boolean suportVideo = false;
+
         try {
-            String appid = "";
-            String unitId = "";
-            String sdkKey = "";
-            String placementId = "";
-            String suportVideo_str = "1";
-            //支持视频
-            boolean suportVideo = false;
+            if (serverExtras.containsKey("appid")) {
+                appid = serverExtras.get("appid").toString();
+            }
+            if (serverExtras.containsKey("unitid")) {
+                unitId = serverExtras.get("unitid").toString();
+            }
 
+            if (serverExtras.containsKey("placement_id")) {
+                placementId = serverExtras.get("placement_id").toString();
+            }
+            if (serverExtras.containsKey("appkey")) {
+                sdkKey = serverExtras.get("appkey").toString();
+            }
+
+            if (serverExtras.containsKey("payload")) {
+                mPayload = serverExtras.get("payload").toString();
+            }
+
+            if (serverExtras.containsKey("tp_info")) {
+                mCustomData = serverExtras.get("tp_info").toString();
+            }
+
+            if (serverExtras.containsKey("unit_type")) {
+                mUnitType = serverExtras.get("unit_type").toString();
+            }
+
+            if (serverExtras.containsKey("video_muted")) {
+                videoMuted = serverExtras.get("video_muted").toString();
+            }
+
+            if (serverExtras.containsKey("video_autoplay")) {
+                videoAutoPlay = serverExtras.get("video_autoplay").toString();
+            }
+
+            if (serverExtras.containsKey("close_button")) {
+                closeButton = serverExtras.get("close_button").toString();
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitId) || TextUtils.isEmpty(sdkKey)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "mintegral appid ,unitid or sdkkey is empty.");
+            }
+            return;
+        }
+
+        int requestNum = 1;
+        try {
+            if (serverExtras != null) {
+                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (serverExtras.containsKey("suport_video")) {
+            suportVideo_str = serverExtras.get("suport_video").toString();
+            if ("1".equals(suportVideo_str)) {
+                suportVideo = true;
+            }
+        } else {
+            suportVideo = false;
+        }
+
+        try {
+            expressWidth = Integer.parseInt(localExtras.get(ATAdConst.KEY.AD_WIDTH).toString());
+            expressHeight = Integer.parseInt(localExtras.get(ATAdConst.KEY.AD_HEIGHT).toString());
+        } catch (Throwable e) {
+
+        }
+
+        if (expressWidth <= 0 && expressHeight <= 0) {
             try {
-                if (serverExtras.containsKey("appid")) {
-                    appid = serverExtras.get("appid").toString();
-                }
-                if (serverExtras.containsKey("unitid")) {
-                    unitId = serverExtras.get("unitid").toString();
-                }
-
-                if (serverExtras.containsKey("placement_id")) {
-                    placementId = serverExtras.get("placement_id").toString();
-                }
-                if (serverExtras.containsKey("appkey")) {
-                    sdkKey = serverExtras.get("appkey").toString();
-                }
-
-                if (serverExtras.containsKey("payload")) {
-                    mPayload = serverExtras.get("payload").toString();
-                }
-
-                if (serverExtras.containsKey("tp_info")) {
-                    mCustomData = serverExtras.get("tp_info").toString();
-                }
-
-                if (serverExtras.containsKey("unit_type")) {
-                    mUnitType = serverExtras.get("unit_type").toString();
-                }
-
-                if (serverExtras.containsKey("video_muted")) {
-                    videoMuted = serverExtras.get("video_muted").toString();
-                }
-
-                if (serverExtras.containsKey("video_autoplay")) {
-                    videoAutoPlay = serverExtras.get("video_autoplay").toString();
-                }
-
-                if (serverExtras.containsKey("close_button")) {
-                    closeButton = serverExtras.get("close_button").toString();
-                }
-
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitId) || TextUtils.isEmpty(sdkKey)) {
-                if (customNativeListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "mintegral appid ,unitid or sdkkey is empty.");
-                    customNativeListener.onNativeAdFailed(this, adError);
-                }
-                return;
-            }
-
-            int requestNum = 1;
-            try {
-                if (serverExtras != null) {
-                    requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            if (serverExtras.containsKey("suport_video")) {
-                suportVideo_str = serverExtras.get("suport_video").toString();
-                if ("1".equals(suportVideo_str)) {
-                    suportVideo = true;
-                }
-            } else {
-                suportVideo = false;
-            }
-
-            try{
                 expressWidth = Integer.parseInt(localExtras.get(MintegralATConst.AUTO_RENDER_NATIVE_WIDTH).toString());
                 expressHeight = Integer.parseInt(localExtras.get(MintegralATConst.AUTO_RENDER_NATIVE_HEIGHT).toString());
-            }catch (Exception e){
+            } catch (Exception e) {
                 Log.e(TAG, "Mintegral AdvancedNative size is empty.");
             }
 
-            final String finalUnitId = unitId;
-            final boolean finalSuportVideo = suportVideo;
-            final int finalRequestNum = requestNum;
-            final String finalPlacementId = placementId;
-
-            MintegralATInitManager.getInstance().initSDK(context, serverExtras, new MintegralATInitManager.InitCallback() {
-                @Override
-                public void onSuccess() {
-                    startLoad(context, customNativeListener, serverExtras, finalPlacementId, finalUnitId, finalSuportVideo, finalRequestNum);
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    if (customNativeListener != null) {
-                        AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                        customNativeListener.onNativeAdFailed(MintegralATAdapter.this, adError);
-                    }
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                customNativeListener.onNativeAdFailed(MintegralATAdapter.this, adError);
-            }
         }
+
+        final String finalUnitId = unitId;
+        final boolean finalSuportVideo = suportVideo;
+        final int finalRequestNum = requestNum;
+        final String finalPlacementId = placementId;
+
+        MintegralATInitManager.getInstance().initSDK(context, serverExtras, new MintegralATInitManager.InitCallback() {
+            @Override
+            public void onSuccess() {
+                startLoad(context, serverExtras, finalPlacementId, finalUnitId, finalSuportVideo, finalRequestNum);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.getMessage());
+                }
+            }
+        });
     }
 
-    private void startLoad(Context context, CustomNativeListener customNativeListener, Map<String, Object> serverExtras, String placementId, String unitId, boolean suportVideo, int requestNum) {
+    private void startLoad(Context context, Map<String, Object> serverExtras, String placementId, String unitId, boolean suportVideo, int requestNum) {
 
         boolean isAutoPlay = false;
         try {
@@ -173,14 +172,14 @@ public class MintegralATAdapter extends CustomNativeAdapter {
         }
 
         if (TextUtils.equals(mUnitType, "1")) {
-            loadExpressAd(context, placementId, unitId, customNativeListener);
+            loadExpressAd(context, placementId, unitId);
         } else {
-            loadAd(context, requestNum, placementId, unitId, suportVideo, customNativeListener, isAutoPlay);
+            loadAd(context, requestNum, placementId, unitId, suportVideo, isAutoPlay);
         }
 
     }
 
-    private void loadExpressAd(final Context context, final String placementId, final String unitId, final CustomNativeListener customNativeListener) {
+    private void loadExpressAd(final Context context, final String placementId, final String unitId) {
         final MTGNativeAdvancedHandler mtgNativeAdvancedHandler = new MTGNativeAdvancedHandler((Activity) context, placementId, unitId);
         if (!TextUtils.isEmpty(videoMuted)) {
             switch (videoMuted) {
@@ -223,19 +222,17 @@ public class MintegralATAdapter extends CustomNativeAdapter {
         mtgNativeAdvancedHandler.setAdListener(new NativeAdvancedAdListener() {
             @Override
             public void onLoadFailed(String s) {
-                if (customNativeListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, s, s);
-                    customNativeListener.onNativeAdFailed(MintegralATAdapter.this, adError);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", s);
                 }
+                mtgNativeAdvancedHandler.setAdListener(null);
             }
 
             @Override
             public void onLoadSuccessed() {
                 MintegralATExpressNativeAd mintegralATExpressNativeAd = new MintegralATExpressNativeAd(context, mtgNativeAdvancedHandler, false);
-                if (customNativeListener != null) {
-                    List<CustomNativeAd> customNativeAdList = new ArrayList<>();
-                    customNativeAdList.add(mintegralATExpressNativeAd);
-                    customNativeListener.onNativeAdLoaded(MintegralATAdapter.this, customNativeAdList);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded(mintegralATExpressNativeAd);
                 }
             }
 
@@ -289,7 +286,7 @@ public class MintegralATAdapter extends CustomNativeAdapter {
     }
 
 
-    private void loadAd(final Context context, final int adnum, final String placementId, final String unitId, boolean supportVideo, final CustomNativeListener customNativeListener, final boolean isAutoPlay) {
+    private void loadAd(final Context context, final int adnum, final String placementId, final String unitId, boolean supportVideo, final boolean isAutoPlay) {
         Map<String, Object> properties = MtgNativeHandler
                 .getNativeProperties(placementId, unitId);
 
@@ -303,14 +300,43 @@ public class MintegralATAdapter extends CustomNativeAdapter {
         //设置是否支持视频
         properties.put(MIntegralConstans.NATIVE_VIDEO_SUPPORT, supportVideo);
 
+
+        MtgNativeHandler mvNativeHandler = null;
+        MtgBidNativeHandler mtgBidNativeHandler = null;
+
+        if (TextUtils.isEmpty(mPayload)) {
+            try {
+                CustomInfoManager.getInstance().setCustomInfo(unitId, CustomInfoManager.TYPE_LOAD, mCustomData);
+            } catch (Throwable e) {
+            }
+
+            mvNativeHandler = new MtgNativeHandler(properties, context.getApplicationContext());
+        } else {
+            try {
+                CustomInfoManager.getInstance().setCustomInfo(unitId, CustomInfoManager.TYPE_BIDLOAD, mCustomData);
+            } catch (Throwable e) {
+            }
+
+            mtgBidNativeHandler = new MtgBidNativeHandler(properties, context.getApplicationContext());
+        }
+
+        final MtgNativeHandler finalMvNativeHandler = mvNativeHandler;
+        final MtgBidNativeHandler finalMtgBidNativeHandler = mtgBidNativeHandler;
         NativeListener.NativeAdListener listener = new NativeListener.NativeAdListener() {
 
             @Override
             public void onAdLoaded(List<Campaign> list, int i) {
                 if (list == null || list.size() <= 0) {
-                    if (customNativeListener != null) {
-                        AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", " no ad return ");
-                        customNativeListener.onNativeAdFailed(MintegralATAdapter.this, adError);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", "Request success but no Ad return!");
+                    }
+
+                    if (finalMvNativeHandler != null) {
+                        finalMvNativeHandler.setAdListener(null);
+                        finalMvNativeHandler.release();
+                    } else if (finalMtgBidNativeHandler != null) {
+                        finalMtgBidNativeHandler.setAdListener(null);
+                        finalMtgBidNativeHandler.bidRelease();
                     }
                     return;
                 }
@@ -328,26 +354,30 @@ public class MintegralATAdapter extends CustomNativeAdapter {
                 }
 
                 if (!hasReturn) {
-                    if (customNativeListener != null) {
-                        AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", " no ad return ");
-                        customNativeListener.onNativeAdFailed(MintegralATAdapter.this, adError);
-
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", "Request success but no Ad return!");
                     }
-                    return;
                 } else {
-                    if (customNativeListener != null) {
-                        customNativeListener.onNativeAdLoaded(MintegralATAdapter.this, customNativeAds);
+                    if (mLoadListener != null) {
+                        CustomNativeAd[] customNativeAdsArray = new CustomNativeAd[customNativeAds.size()];
+                        customNativeAdsArray = customNativeAds.toArray(customNativeAdsArray);
+                        mLoadListener.onAdCacheLoaded(customNativeAdsArray);
                     }
                 }
 
+                if (finalMvNativeHandler != null) {
+                    finalMvNativeHandler.setAdListener(null);
+                    finalMvNativeHandler.release();
+                } else if (finalMtgBidNativeHandler != null) {
+                    finalMtgBidNativeHandler.setAdListener(null);
+                    finalMtgBidNativeHandler.bidRelease();
+                }
             }
 
             @Override
             public void onAdLoadError(String s) {
-                if (customNativeListener != null) {
-
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, s, s);
-                    customNativeListener.onNativeAdFailed(MintegralATAdapter.this, adError);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", s);
                 }
             }
 
@@ -364,40 +394,38 @@ public class MintegralATAdapter extends CustomNativeAdapter {
             }
         };
 
-        if (TextUtils.isEmpty(mPayload)) {
-            try {
-                CustomInfoManager.getInstance().setCustomInfo(unitId, CustomInfoManager.TYPE_LOAD, mCustomData);
-            } catch (Throwable e) {
-            }
-
-            final MtgNativeHandler mvNativeHandler = new MtgNativeHandler(properties, context.getApplicationContext());
-            mvNativeHandler.setAdListener(listener);
-            mvNativeHandler.load();
-        } else {
-            try {
-                CustomInfoManager.getInstance().setCustomInfo(unitId, CustomInfoManager.TYPE_BIDLOAD, mCustomData);
-            } catch (Throwable e) {
-            }
-
-            final MtgBidNativeHandler mtgBidNativeHandler = new MtgBidNativeHandler(properties, context.getApplicationContext());
-            mtgBidNativeHandler.setAdListener(listener);
-            mtgBidNativeHandler.bidLoad(mPayload);
+        if (finalMvNativeHandler != null) {
+            finalMvNativeHandler.setAdListener(listener);
+            finalMvNativeHandler.load();
+        } else if (finalMtgBidNativeHandler != null) {
+            finalMtgBidNativeHandler.setAdListener(listener);
+            finalMtgBidNativeHandler.bidLoad(mPayload);
         }
     }
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
     @Override
     public String getNetworkName() {
         return MintegralATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MintegralATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
     }
 }

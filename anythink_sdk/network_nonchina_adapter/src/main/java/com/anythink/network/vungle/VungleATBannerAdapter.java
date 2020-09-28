@@ -3,15 +3,13 @@ package com.anythink.network.vungle;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.vungle.warren.AdConfig;
 import com.vungle.warren.Banners;
 import com.vungle.warren.LoadAdCallback;
@@ -31,7 +29,6 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
     String unitType = "";
     String sizeType = "";
 
-    CustomBannerListener mBannerListener;
 
     View mVungleBannerView;
 
@@ -42,18 +39,27 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
 
         @Override
         public void onAdEnd(String placementReferenceId, boolean completed, boolean isCTAClicked) {
-            // Calling finishDisplayingAd when you want to finish displaying In-Feed Ad
-            // will trigger onAdEnd and will tell you when you can remove the child
-            // In-Feed view container vungleNativeAd.finishDisplayingAd();
+        }
 
-            // And removing empty ad view from container
-            if (isCTAClicked) {
-                mBannerListener.onBannerAdClicked(VungleATBannerAdapter.this);
+        @Override
+        public void onAdEnd(String s) {
+        }
+
+        @Override
+        public void onAdClick(String s) {
+            if (mImpressionEventListener != null) {
+                mImpressionEventListener.onBannerAdClicked();
             }
+        }
 
-//            if (completed) {
-//                mBannerListener.onBannerAdClose(VungleATBannerAdapter.this);
-//            }
+        @Override
+        public void onAdRewarded(String s) {
+
+        }
+
+        @Override
+        public void onAdLeftApplication(String s) {
+
         }
 
         @Override
@@ -63,7 +69,7 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
     };
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, final Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
+    public void loadCustomNetworkAd(final Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
 //        serverExtras.put("app_id","5ad59a853d927044ac75263a");
 
@@ -88,11 +94,9 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
         }
 
 
-        mBannerListener = customBannerListener;
-
         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mPlacementId)) {
-            if (mBannerListener != null) {
-                mBannerListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "vungle appid & placementId is empty."));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "vungle appid & placementId is empty.");
             }
             return;
         }
@@ -103,13 +107,19 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
         VungleATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new VungleATInitManager.InitListener() {
             @Override
             public void onSuccess() {
-                startLoadAd(activity, playAdCallback);
+                try {
+                    startLoadAd(activity, playAdCallback);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
 
             @Override
             public void onError(Throwable throwable) {
-                if (mBannerListener != null) {
-                    mBannerListener.onBannerAdLoadFail(VungleATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", throwable.getMessage()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", throwable.getMessage());
                 }
             }
         });
@@ -140,15 +150,15 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
                 relativeLayout.addView(vungleNativeAd.renderNativeView());
                 mVungleBannerView = relativeLayout;
 
-                if (mBannerListener != null) {
-                    mBannerListener.onBannerAdLoaded(VungleATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onError(String s, VungleException e) {
-                if (mBannerListener != null) {
-                    mBannerListener.onBannerAdLoadFail(VungleATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", e.toString()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.toString());
                 }
             }
         });
@@ -180,12 +190,12 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
                 if (Banners.canPlayAd(mPlacementId, mAdConfig.getAdSize())) {
                     VungleBanner vungleBanner = Banners.getBanner(mPlacementId, mAdConfig.getAdSize(), playAdCallback);
                     mVungleBannerView = vungleBanner;
-                    if (mBannerListener != null) {
-                        mBannerListener.onBannerAdLoaded(VungleATBannerAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
                     }
                 } else {
-                    if (mBannerListener != null) {
-                        mBannerListener.onBannerAdLoadFail(VungleATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "Load success but couldn't play banner"));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", "Load success but couldn't play banner");
                     }
                 }
 
@@ -193,8 +203,8 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onError(String s, VungleException e) {
-                if (mBannerListener != null) {
-                    mBannerListener.onBannerAdLoadFail(VungleATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", e.toString()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.toString());
                 }
             }
         });
@@ -202,21 +212,33 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mVungleBannerView instanceof VungleBanner) {
             ((VungleBanner) mVungleBannerView).destroyAd();
         }
+        mVungleBannerView = null;
+        playAdCallback = null;
     }
 
     @Override
     public String getNetworkName() {
         return VungleATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return VungleATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mPlacementId;
     }
 
 

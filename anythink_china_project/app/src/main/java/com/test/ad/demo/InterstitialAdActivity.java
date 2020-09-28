@@ -23,8 +23,6 @@ public class InterstitialAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_interstitial_GDT
             , DemoApplicaion.mPlacementId_interstitial_video_toutiao
             , DemoApplicaion.mPlacementId_interstitial_toutiao
-            , DemoApplicaion.mPlacementId_interstitial_uniplay
-            , DemoApplicaion.mPlacementId_interstitial_oneway
             , DemoApplicaion.mPlacementId_interstitial_baidu
             , DemoApplicaion.mPlacementId_interstitial_kuaishou
             , DemoApplicaion.mPlacementId_interstitial_sigmob
@@ -33,17 +31,15 @@ public class InterstitialAdActivity extends Activity {
 
     String unitGroupName[] = new String[]{
             "All network",
-            "mintegral",
-            "mintegral video",
-            "gdt",
-            "toutiao video",
-            "toutiao",
-            "uniplay",
-            "oneway",
-            "baidu",
-            "kuaishou",
-            "sigmob",
-            "myoffer"
+            "Mintegral",
+            "Mintegral video",
+            "GDT",
+            "Toutiao video",
+            "Toutiao",
+            "Baidu",
+            "Kuaishou",
+            "Sigmob",
+            "Myoffer"
     };
 
     RadioGroup mRadioGroup;

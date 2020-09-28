@@ -140,13 +140,6 @@ public class MintegralATNativeAd extends CustomNativeAd {
     @Override
     public void clear(final View view) {
         if (mMVMediaView != null) {
-            if (mvNativeHandler != null) {
-                mvNativeHandler.clearVideoCache();
-            }
-            if (mvBidNativeHandler != null) {
-                mvBidNativeHandler.clearVideoCache();
-            }
-
             mMVMediaView.destory();
             mMVMediaView = null;
         }
@@ -219,14 +212,20 @@ public class MintegralATNativeAd extends CustomNativeAd {
             mMVMediaView = null;
         }
         if (mvNativeHandler != null) {
+            mvNativeHandler.setAdListener(null);
             mvNativeHandler.clearVideoCache();
             mvNativeHandler.release();
+            mvNativeHandler = null;
         }
 
         if (mvBidNativeHandler != null) {
+            mvBidNativeHandler.setAdListener(null);
             mvBidNativeHandler.clearVideoCache();
             mvBidNativeHandler.bidRelease();
+            mvBidNativeHandler = null;
         }
+        mContext = null;
+        mCampaign = null;
     }
 
     boolean mIsAutoPlay;

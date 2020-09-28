@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/anythink_myoffer_banner_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <ImageView
+        android:id="@+id/anythink_myoffer_banner_close"
+        android:layout_width="20.5dp"
+        android:layout_height="20.5dp"
+        android:src="@drawable/anythink_myoffer_video_close"
+        android:layout_alignParentTop="true"
+        android:padding="3dp"
+        android:layout_alignParentRight="true" />
+    
+    <com.anythink.myoffer.ui.AdTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="2dp"
+        android:layout_marginTop="2dp"/>
+
+    <com.anythink.myoffer.ui.component.RoundImageView
+        android:id="@+id/anythink_myoffer_banner_self_ad_logo"
+        android:layout_width="34dp"
+        android:layout_height="10dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginRight="2dp"
+        android:layout_marginBottom="2dp"/>
+
+</RelativeLayout>

@@ -11,9 +11,10 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.res.ImageLoader;
+import com.anythink.core.common.res.ResourceEntry;
 import com.anythink.core.common.utils.CommonUtil;
-import com.anythink.myoffer.buiness.resource.MyOfferResourceUtil;
-import com.anythink.myoffer.entity.MyOfferAd;
 
 public class BannerView extends RelativeLayout {
 
@@ -23,8 +24,6 @@ public class BannerView extends RelativeLayout {
     private TextView mTvTitle;
     private TextView mTvDesc;
     private Button mBtnCTA;
-    private Bitmap mIconBitmap;
-    private Bitmap mLogoBitmap;
 
     private OnBannerListener mListener;
 
@@ -57,22 +56,45 @@ public class BannerView extends RelativeLayout {
         ViewGroup.LayoutParams lp;
         int width;
         int height;
-        String iconUrl = myOfferAd.getIconUrl();//icon
-        if(!TextUtils.isEmpty(iconUrl)) {
+        final String iconUrl = myOfferAd.getIconUrl();//icon
+        if (!TextUtils.isEmpty(iconUrl)) {
             lp = mIvIcon.getLayoutParams();
             width = lp.width;
             height = lp.height;
-            mIconBitmap = MyOfferResourceUtil.getBitmap(iconUrl, width, height);
-            mIvIcon.setImageBitmap(mIconBitmap);
+            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, iconUrl), width, height, new ImageLoader.ImageLoaderListener() {
+                @Override
+                public void onSuccess(String url, Bitmap bitmap) {
+                    if (TextUtils.equals(url, iconUrl)) {
+                        mIvIcon.setImageBitmap(bitmap);
+                    }
+                }
+
+                @Override
+                public void onFail(String url, String errorMsg) {
+
+                }
+            });
+
         }
 
-        String logoUrl = myOfferAd.getAdChoiceUrl();//logo
-        if(!TextUtils.isEmpty(logoUrl)) {
+        final String logoUrl = myOfferAd.getAdChoiceUrl();//logo
+        if (!TextUtils.isEmpty(logoUrl)) {
             lp = mIvLogo.getLayoutParams();
             width = lp.width;
             height = lp.height;
-            mLogoBitmap = MyOfferResourceUtil.getBitmap(logoUrl, width, height);
-            mIvLogo.setImageBitmap(mLogoBitmap);
+            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, logoUrl), width, height, new ImageLoader.ImageLoaderListener() {
+                @Override
+                public void onSuccess(String url, Bitmap bitmap) {
+                    if (TextUtils.equals(url, logoUrl)) {
+                        mIvLogo.setImageBitmap(bitmap);
+                    }
+                }
+
+                @Override
+                public void onFail(String url, String errorMsg) {
+
+                }
+            });
         }
 
         mTvTitle.setText(myOfferAd.getTitle());
@@ -95,7 +117,7 @@ public class BannerView extends RelativeLayout {
         mBtnCTA.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mListener != null) {
+                if (mListener != null) {
                     mListener.onClickCTA();
                 }
             }
@@ -103,7 +125,7 @@ public class BannerView extends RelativeLayout {
         mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mListener != null) {
+                if (mListener != null) {
                     mListener.onClickBanner();
                 }
             }
@@ -113,16 +135,11 @@ public class BannerView extends RelativeLayout {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if(mIconBitmap != null) {
-            mIconBitmap.recycle();
-        }
-        if(mLogoBitmap != null) {
-            mLogoBitmap.recycle();
-        }
     }
 
     public interface OnBannerListener {
         void onClickCTA();
+
         void onClickBanner();
     }
 

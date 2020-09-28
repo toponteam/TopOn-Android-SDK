@@ -4,18 +4,18 @@ import android.content.Context;
 import android.os.Looper;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
+import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.cap.AdPacingManager;
-import com.anythink.core.common.base.AnyThinkBaseAdapter;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
-import com.anythink.core.common.entity.BaseAd;
+import com.anythink.core.api.BaseAd;
 import com.anythink.core.common.entity.TrackerInfo;
 import com.anythink.core.common.entity.UnitgroupCacheInfo;
 import com.anythink.core.common.track.AgentEventManager;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.CustomAdapterFactory;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
@@ -26,7 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,6 @@ public class AdCacheManager {
 
     private ConcurrentHashMap<String, ConcurrentHashMap<String, UnitgroupCacheInfo>> cacheMap;
     private final HashMap<Integer, Boolean> canInitReadyNetworkMap = new HashMap<>();
-    private ConcurrentHashMap<String, PlaceStrategy> cachePlaceStrategyMap = new ConcurrentHashMap<>();
 
     public synchronized static AdCacheManager getInstance() {
         if (sIntance == null) {
@@ -56,22 +54,15 @@ public class AdCacheManager {
         canInitReadyNetworkMap.put(35, true); //MyOffer
     }
 
-    public void putPlacementStrategy(String placementId, PlaceStrategy placeStrategy) {
-        cachePlaceStrategyMap.put(placementId, placeStrategy);
-    }
-
-    public PlaceStrategy getCachePlacementStrategy(String placementId) {
-        return cachePlaceStrategyMap.get(placementId);
-    }
 
     /**
      * Add offer to caches
      *
      * @param placementId
-     * @param level
+     * @param requestLevel
      * @param adapter
      */
-    public UnitgroupCacheInfo addCache(final String placementId, final int level, final AnyThinkBaseAdapter adapter, final List<? extends BaseAd> adObjectList, final long cacheTime, final PlaceStrategy placeStrategy) {
+    public UnitgroupCacheInfo addCache(final String placementId, final int requestLevel, final ATBaseAdAdapter adapter, final List<? extends BaseAd> adObjectList, final long cacheTime, final PlaceStrategy placeStrategy) {
         synchronized (AdCacheManager.this) {
 
             ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
@@ -88,37 +79,47 @@ public class AdCacheManager {
 
             if (unitgroupCacheInfo == null) {
                 unitgroupCacheInfo = new UnitgroupCacheInfo();
-                unitgroupCacheInfo.level = level;
+                unitgroupCacheInfo.requestLevel = requestLevel;
                 unitgroupCacheInfo.requestId = adapter.getTrackingInfo().getmRequestId();
-                unitgroupCacheInfo.placeStrategy = placeStrategy;
                 unitGroupCacheInfoMap.put(unitId, unitgroupCacheInfo);
             } else {
-                unitgroupCacheInfo.level = level;
+                unitgroupCacheInfo.requestLevel = requestLevel;
                 unitgroupCacheInfo.requestId = adapter.getTrackingInfo().getmRequestId();
             }
 
+            AdCacheInfo cacheInfo = unitgroupCacheInfo.getAdCacheInfo();
+            /**If current offer's Request Id equals the newest Request Id, it would not save the cache again.**/
+            if (cacheInfo != null && TextUtils.equals(ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(placementId), cacheInfo.getBaseAdapter().getTrackingInfo().getmRequestId())) {
+                return unitgroupCacheInfo;
+            }
+
             if (adObjectList != null && adObjectList.size() > 0) {
+                List<AdCacheInfo> adCacheInfoLists = new ArrayList<>();
                 for (BaseAd adObject : adObjectList) {
                     AdCacheInfo adCacheInfo = new AdCacheInfo();
-                    adCacheInfo.setLevel(level);
+                    adCacheInfo.setRequestLevel(requestLevel);
                     adCacheInfo.setBaseAdapter(adapter);
                     adCacheInfo.setAdObject(adObject);
                     adCacheInfo.setUpdateTime(System.currentTimeMillis());
                     adCacheInfo.setCacheTime(cacheTime);
                     adCacheInfo.setOriginRequestId(adapter.getTrackingInfo().getmRequestId()); //Origin RequestId
                     adCacheInfo.setUpStatusCacheTime(currentUnitGroupInfo.upStatusTimeOut); //Out-Date time of upstatus
-                    unitgroupCacheInfo.addAdCacheInfo(adCacheInfo);
+
+                    adCacheInfoLists.add(adCacheInfo);
                 }
+                unitgroupCacheInfo.setAdCacheInfoList(adCacheInfoLists);
             } else {
                 AdCacheInfo adCacheInfo = new AdCacheInfo();
-                adCacheInfo.setLevel(level);
+                adCacheInfo.setRequestLevel(requestLevel);
                 adCacheInfo.setBaseAdapter(adapter);
                 adCacheInfo.setUpdateTime(System.currentTimeMillis());
                 adCacheInfo.setCacheTime(cacheTime);
                 adCacheInfo.setOriginRequestId(adapter.getTrackingInfo().getmRequestId()); //Origin RequestId
                 adCacheInfo.setUpStatusCacheTime(currentUnitGroupInfo.upStatusTimeOut); //Out-Date time of upstatus
 
-                unitgroupCacheInfo.addAdCacheInfo(adCacheInfo);
+                List<AdCacheInfo> adCacheInfoLists = new ArrayList<>();
+                adCacheInfoLists.add(adCacheInfo);
+                unitgroupCacheInfo.setAdCacheInfoList(adCacheInfoLists);
             }
 
             return unitgroupCacheInfo;
@@ -134,9 +135,9 @@ public class AdCacheManager {
      * @param placementId
      * @return
      */
-    public AdCacheInfo getCache(Context context, String placementId, HashMap<Integer, ATMediationSetting> settings) {
+    public AdCacheInfo getCache(Context context, String placementId) {
         synchronized (AdCacheManager.this) {
-            return checkCache(context, placementId, false, false, settings);
+            return checkCache(context, placementId, false, false);
         }
     }
 
@@ -147,7 +148,7 @@ public class AdCacheManager {
      * @param isShowCall  Show call?
      * @return
      */
-    public AdCacheInfo checkCache(Context context, String placementId, boolean isAgent, boolean isShowCall, HashMap<Integer, ATMediationSetting> settings) {
+    public AdCacheInfo checkCache(Context context, String placementId, boolean isAgent, boolean isShowCall) {
 
         try {
             if (Looper.myLooper() != Looper.getMainLooper()) {
@@ -158,41 +159,42 @@ public class AdCacheManager {
 
         JSONArray checkArray = new JSONArray();
         List<PlaceStrategy.UnitGroupInfo> myOfferUnitgroupInfoList = new ArrayList<>();
+        /**Use the new list object to store the current data, so as to prevent the unitgroup list in the policy from being crashed due to operation**/
+        List<PlaceStrategy.UnitGroupInfo> unitGroupInfos = new ArrayList<>();
         synchronized (AdCacheManager.this) {
-            PlaceStrategy placeStrategy = getCachePlacementStrategy(placementId);
-            if (placeStrategy == null) {
-                placeStrategy = PlaceStrategyManager.getInstance(SDKContext.getInstance().getContext()).getPlaceStrategyByAppIdAndPlaceId(placementId);
-            }
+            PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(SDKContext.getInstance().getContext()).getPlaceStrategyByAppIdAndPlaceId(placementId);
 
             if (placeStrategy == null) {
                 return null;
             }
-            CommonAdManager adManager = CommonAdManager.getInstance(placementId);
-            String currentRequestId = adManager != null ? adManager.getCurrentRequestId() : "";
 
-            /**Use the new list object to store the current data, so as to prevent the unitgroup list in the policy from being crashed due to operation**/
-            List<PlaceStrategy.UnitGroupInfo> unitGroupInfos = new ArrayList<>();
-            if (placeStrategy.getSortByEcpmUnitGroupList() != null) {
-                unitGroupInfos.addAll(placeStrategy.getSortByEcpmUnitGroupList());
+            List<PlaceStrategy.UnitGroupInfo> newestUgList = ShowWaterfallManager.getInstance().getNewestWaterFallForPlacementId(placementId);
+            String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(placementId);
+
+
+            if (newestUgList != null) {
+                unitGroupInfos.addAll(newestUgList);
             }
 
             ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
 
-            /**Get requestId in the caches**/
-            String requestId = queryRequestIdByOffer(unitGroupInfos, unitGroupCacheInfoMap);
+//            /**Get requestId in the caches**/
+//            String requestId = queryRequestIdByOffer(unitGroupInfos, unitGroupCacheInfoMap);
 
             String psid = SDKContext.getInstance().getPsid();
             String sessionId = SDKContext.getInstance().getSessionId(placementId);
-            int groupId = placeStrategy.getGroupId();
+//            int groupId = placeStrategy.getGroupId();
 
             if (unitGroupInfos != null && unitGroupInfos.size() > 0) {
 
 
-                for (PlaceStrategy.UnitGroupInfo unitGroupInfo : unitGroupInfos) {
+                for (int i = 0; i < unitGroupInfos.size(); i++) {
+                    PlaceStrategy.UnitGroupInfo unitGroupInfo = unitGroupInfos.get(i);
                     if (unitGroupInfo.networkType == MyOfferAPIProxy.MYOFFER_NETWORK_FIRM_ID) {
                         myOfferUnitgroupInfoList.add(unitGroupInfo);
                     }
-                    int level = unitGroupInfos.indexOf(unitGroupInfo);
+
+                    int level = unitGroupInfo.level < 0 ? unitGroupInfo.level : i;
 
                     if (AdPacingManager.getInstance().isUnitGroupInPacing(placementId, unitGroupInfo)) {
                         addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_PACCING_REASON);
@@ -210,9 +212,10 @@ public class AdCacheManager {
                     UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap != null ?
                             unitGroupCacheInfoMap.get(unitGroupInfo.unitId) : null;
 
+                    AdCacheInfo adCacheInfo = unitgroupCacheInfo != null ? unitgroupCacheInfo.getAdCacheInfo() : null;
                     /**Check the isReady status of Adapter**/
-                    if (unitgroupCacheInfo == null || unitgroupCacheInfo.getAdCacheInfo() == null) {
-                        AnyThinkBaseAdapter baseAdapter = null;
+                    if (unitgroupCacheInfo == null || adCacheInfo == null) {
+                        ATBaseAdAdapter baseAdapter = null;
 
                         Boolean canReady = canInitReadyNetworkMap.get(unitGroupInfo.networkType);
                         if (canReady != null && canReady) {
@@ -221,30 +224,45 @@ public class AdCacheManager {
 
                         if (baseAdapter != null) {
                             final Map<String, Object> serviceExtras = PlaceStrategy.getServerExtrasMap(placementId, unitGroupInfo, placeStrategy.getMyOfferSetting());
-                            ATMediationSetting mediationSetting = null;
-                            if (settings != null) {
-                                mediationSetting = settings.get(unitGroupInfo.networkType);
-                            }
-
+                            final Map<String, Object> localExtras = PlacementAdManager.getInstance().getPlacementLocalSettingMap(placementId);
+                            BaseAd baseAdObject = null;
                             try {
-                                boolean initSuccess = baseAdapter.initNetworkObjectByPlacementId(context, serviceExtras, mediationSetting);
-                                isAdReady = initSuccess ? baseAdapter.isAdReady() : false;
-                            } catch (Throwable e) {
+                                boolean initSuccess = baseAdapter.internalInitNetworkObjectByPlacementId(context, serviceExtras, localExtras);
+                                if (initSuccess) {
+                                    currentRequestId = TextUtils.isEmpty(currentRequestId) ? CommonSDKUtil.createRequestId(context) : currentRequestId;
+                                    initReadyCacheTrackingInfo(baseAdapter, currentRequestId, placementId, placeStrategy, unitGroupInfo, level);
+                                }
 
+                                /**Native Ad Auto Filled**/
+                                if (TextUtils.equals(String.valueOf(placeStrategy.getFormat()), Const.FORMAT.NATIVE_FORMAT)) {
+                                    isAdReady = initSuccess ? (baseAdObject = baseAdapter.getBaseAdObject(context)) != null : false;
+                                } else {
+                                    isAdReady = initSuccess ? baseAdapter.isAdReady() : false;
+                                }
+
+                            } catch (Throwable e) {
+                                if (Const.DEBUG) {
+                                    e.printStackTrace();
+                                }
                             }
 
                             if (isAdReady) {
-                                /**Save AdCache**/
-                                requestId = TextUtils.isEmpty(requestId) ? adManager.createRequestId(context) : requestId;
 
-                                initReadyCacheTrackingInfo(context, baseAdapter, requestId, placementId, placeStrategy, unitGroupInfo);
-                                unitgroupCacheInfo = addCache(placementId, level, baseAdapter, null, unitGroupInfo.getUnitADCacheTime(), placeStrategy);
+                                List<BaseAd> baseAdList = null;
+                                if (baseAdObject != null) {
+                                    /**Native Ad Auto Filled**/
+                                    baseAdList = new ArrayList<>();
+                                    baseAdObject.setTrackingInfo(baseAdapter.getTrackingInfo());
+                                    baseAdList.add(baseAdObject);
+                                }
+                                unitgroupCacheInfo = addCache(placementId, level, baseAdapter, baseAdList, unitGroupInfo.getUnitADCacheTime(), placeStrategy);
 
                                 AdTrackingInfo adTrackingInfo = baseAdapter.getTrackingInfo();
+                                adTrackingInfo.setImpressionLevel(level);
 
                                 if (isAgent) {
                                     //Send isReady Agent
-                                    AgentEventManager.isReadyEventAgentForATToApp(adTrackingInfo, true, -1, level, unitGroupInfo.unitId, unitGroupInfo.networkType, baseAdapter.getSDKVersion(), checkArray.toString(), currentRequestId, true, "");
+                                    AgentEventManager.isReadyEventAgentForATToApp(adTrackingInfo, true, -1, level, unitGroupInfo.unitId, unitGroupInfo.networkType, baseAdapter.getNetworkSDKVersion(), checkArray.toString(), currentRequestId, true, "");
                                 }
 
                                 return unitgroupCacheInfo.getAdCacheInfo();
@@ -252,15 +270,16 @@ public class AdCacheManager {
                                 addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_NO_RESULT_REASON);
                                 continue;
                             }
+//                            continue;
                         } else {
                             addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_NO_RESULT_REASON);
                             continue;
                         }
+//                        continue;
 
                     }
 
 
-                    AdCacheInfo adCacheInfo = unitgroupCacheInfo.getAdCacheInfo();
                     if (placeStrategy.getFormat() == Integer.valueOf(Const.FORMAT.NATIVE_FORMAT)) { // Native format
                         isAdReady = adCacheInfo.getBaseAdapter() != null && adCacheInfo.getAdObject() != null;
                     } else {
@@ -270,15 +289,17 @@ public class AdCacheManager {
                     if (isAdReady) {
                         if (adCacheInfo.getUpdateTime() + adCacheInfo.getCacheTime() > System.currentTimeMillis()) {
                             //AdCache is available
-                            AnyThinkBaseAdapter baseAdapter = adCacheInfo.getBaseAdapter();
+                            ATBaseAdAdapter baseAdapter = adCacheInfo.getBaseAdapter();
 
-                            addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, baseAdapter.getSDKVersion(), true, -1);
+                            addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, baseAdapter.getNetworkSDKVersion(), true, -1);
 
                             AdTrackingInfo adTrackingInfo = baseAdapter.getTrackingInfo();
                             adTrackingInfo.setmAsResult(checkArray.toString()); //Refresh result info
+
+                            adTrackingInfo.setImpressionLevel(level); //Set Impression requestLevel
                             if (isAgent) {
                                 AgentEventManager.isReadyEventAgentForATToApp(adTrackingInfo, true, -1, level, unitGroupInfo.unitId, unitGroupInfo.networkType
-                                        , baseAdapter.getSDKVersion(), checkArray.toString(), currentRequestId, adTrackingInfo.getRequestType() == AdTrackingInfo.READY_CHECK
+                                        , baseAdapter.getNetworkSDKVersion(), checkArray.toString(), currentRequestId, adTrackingInfo.getRequestType() == AdTrackingInfo.READY_CHECK
                                         , "");
                             }
 
@@ -319,24 +340,44 @@ public class AdCacheManager {
                 if (defaultUnitGroupInfo != null) {
                     Map<String, Object> defaultExtras = PlaceStrategy.getServerExtrasMap(placementId, defaultUnitGroupInfo, placeStrategy.getMyOfferSetting());
                     defaultExtras.put(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG, true);
-
+                    int defaultMyOfferLevel = unitGroupInfos.indexOf(defaultUnitGroupInfo);
                     try {
-                        AnyThinkBaseAdapter baseAdapter = CustomAdapterFactory.createAdapter(defaultUnitGroupInfo);
-                        boolean initSuccess = baseAdapter.initNetworkObjectByPlacementId(context, defaultExtras, null);
-                        boolean isAdReady = initSuccess ? baseAdapter.isAdReady() : false;
-                        if (isAdReady) {
+                        ATBaseAdAdapter baseAdapter = CustomAdapterFactory.createAdapter(defaultUnitGroupInfo);
+                        boolean initSuccess = baseAdapter.initNetworkObjectByPlacementId(context, defaultExtras, PlacementAdManager.getInstance().getPlacementLocalSettingMap(placementId));
+                        if (initSuccess) {
                             /**Save AdCache**/
-                            requestId = TextUtils.isEmpty(requestId) ? adManager.createRequestId(context) : requestId;
-                            initReadyCacheTrackingInfo(context, baseAdapter, requestId, placementId, placeStrategy, defaultUnitGroupInfo);
-                            UnitgroupCacheInfo unitgroupCacheInfo = addCache(placementId, defaultUnitGroupInfo.level, baseAdapter, null, defaultUnitGroupInfo.getUnitADCacheTime(), placeStrategy);
+                            currentRequestId = TextUtils.isEmpty(currentRequestId) ? CommonSDKUtil.createRequestId(context) : currentRequestId;
+                            initReadyCacheTrackingInfo(baseAdapter, currentRequestId, placementId, placeStrategy, defaultUnitGroupInfo, defaultMyOfferLevel);
+                        }
+                        boolean isAdReady = false;
+                        BaseAd baseAdObject = null;
+                        /**Native Ad Default Filled**/
+                        if (TextUtils.equals(String.valueOf(placeStrategy.getFormat()), Const.FORMAT.NATIVE_FORMAT)) {
+                            isAdReady = initSuccess ? (baseAdObject = baseAdapter.getBaseAdObject(context)) != null : false;
+                        } else {
+                            isAdReady = initSuccess ? baseAdapter.isAdReady() : false;
+                        }
+                        if (isAdReady) {
+
+                            List<BaseAd> baseAdList = null;
+                            if (baseAdObject != null) {
+                                /**Native Ad Default Filled**/
+                                baseAdList = new ArrayList<>();
+                                baseAdObject.setTrackingInfo(baseAdapter.getTrackingInfo());
+                                baseAdList.add(baseAdObject);
+                            }
+
+                            UnitgroupCacheInfo unitgroupCacheInfo = addCache(placementId, defaultMyOfferLevel, baseAdapter, baseAdList, defaultUnitGroupInfo.getUnitADCacheTime(), placeStrategy);
 
                             AdTrackingInfo adTrackingInfo = baseAdapter.getTrackingInfo();
-                            //标记为兜底的MyOffer
+                            //Default MyOffer Type
                             adTrackingInfo.setMyOfferShowType(1);
+                            adTrackingInfo.setImpressionLevel(defaultMyOfferLevel);
+                            adTrackingInfo.setmAsResult(checkArray.toString());
 
                             if (isAgent) {
-                                AgentEventManager.isReadyEventAgentForATToApp(adTrackingInfo, true, -1, defaultUnitGroupInfo.level, defaultUnitGroupInfo.unitId, defaultUnitGroupInfo.networkType
-                                        , baseAdapter.getSDKVersion(), checkArray.toString(), currentRequestId, true, defaultUnitGroupInfo.content);
+                                AgentEventManager.isReadyEventAgentForATToApp(adTrackingInfo, true, -1, defaultMyOfferLevel, defaultUnitGroupInfo.unitId, defaultUnitGroupInfo.networkType
+                                        , baseAdapter.getNetworkSDKVersion(), checkArray.toString(), currentRequestId, true, defaultUnitGroupInfo.content);
                             }
 
                             return unitgroupCacheInfo.getAdCacheInfo();
@@ -349,8 +390,7 @@ public class AdCacheManager {
 
 
             if (isAgent) {
-
-                AdTrackingInfo adTrackingInfo = TrackingInfoUtil.getTrackingInfoForAgent(String.valueOf(placeStrategy.getFormat()), requestId, placementId, psid, sessionId, placeStrategy, 0);
+                AdTrackingInfo adTrackingInfo = TrackingInfoUtil.getTrackingInfoForAgent(String.valueOf(placeStrategy.getFormat()), currentRequestId, placementId, psid, sessionId, placeStrategy, 0);
                 AgentEventManager.isReadyEventAgentForATToApp(adTrackingInfo, false, AgentEventManager.NO_READY_ADSOURCE_REASON
                         , -1, "", -1, "", checkArray.toString(), currentRequestId, false, "");
                 if (isShowCall) { //Show Fail Agent
@@ -363,30 +403,32 @@ public class AdCacheManager {
         }
     }
 
-    /**
-     * Get RequestId by AdCache
-     *
-     * @param currentList
-     * @param placementUnitgrouInfoMap
-     * @return
-     */
-    private String queryRequestIdByOffer(List<PlaceStrategy.UnitGroupInfo> currentList, ConcurrentHashMap<String, UnitgroupCacheInfo> placementUnitgrouInfoMap) {
-        if (currentList != null && currentList.size() > 0 && placementUnitgrouInfoMap != null) {
-            for (PlaceStrategy.UnitGroupInfo unitGroupInfo : currentList) {
-                UnitgroupCacheInfo unitgroupCacheInfo = placementUnitgrouInfoMap.get(unitGroupInfo.unitId);
-                if (unitgroupCacheInfo != null) {
-                    return unitgroupCacheInfo.requestId;
-                }
-            }
-        }
-        return "";
-    }
+//    /**
+//     * Get RequestId by AdCache
+//     *
+//     * @param currentList
+//     * @param placementUnitgrouInfoMap
+//     * @return
+//     */
+//    private String queryRequestIdByOffer(List<PlaceStrategy.UnitGroupInfo> currentList, ConcurrentHashMap<String, UnitgroupCacheInfo> placementUnitgrouInfoMap) {
+//        if (currentList != null && currentList.size() > 0 && placementUnitgrouInfoMap != null) {
+//            for (PlaceStrategy.UnitGroupInfo unitGroupInfo : currentList) {
+//                UnitgroupCacheInfo unitgroupCacheInfo = placementUnitgrouInfoMap.get(unitGroupInfo.unitId);
+//                if (unitgroupCacheInfo != null) {
+//                    return unitgroupCacheInfo.requestId;
+//                }
+//            }
+//        }
+//        return "";
+//    }
 
 
-    private void initReadyCacheTrackingInfo(Context context, AnyThinkBaseAdapter adapter, String requestId, String placementId, PlaceStrategy placeStrategy, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+    private void initReadyCacheTrackingInfo(ATBaseAdAdapter adapter, String requestId, String placementId, PlaceStrategy placeStrategy, PlaceStrategy.UnitGroupInfo unitGroupInfo, int requestLevel) {
         AdTrackingInfo adTrackingInfo = TrackingInfoUtil.initTrackingInfo(requestId, placementId, "", placeStrategy, unitGroupInfo.networkType + "", 1, false);
-        TrackingInfoUtil.initPlacementUnitGroupTrackingInfo(adapter, adTrackingInfo, unitGroupInfo);
+        TrackingInfoUtil.initPlacementUnitGroupTrackingInfo(adapter, adTrackingInfo, unitGroupInfo, requestLevel);
         adTrackingInfo.setRequestType(AdTrackingInfo.READY_CHECK);
+        //set placement id for network
+        adTrackingInfo.setmNetworkPlacementId(adapter.getNetworkPlacementId());
         adapter.setRefresh(false);
     }
 
@@ -416,27 +458,25 @@ public class AdCacheManager {
      * @param placementId
      * @return
      */
-    public AdCacheInfo getHasShowAdCache(String placementId) {
-        synchronized (AdCacheManager.this) {
-            ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
-
-            if (unitGroupCacheInfoMap != null && unitGroupCacheInfoMap.size() > 0) {
-                if (unitGroupCacheInfoMap.values() != null && unitGroupCacheInfoMap.values().size() > 0) {
-                    for (UnitgroupCacheInfo unitgroupCacheInfo : unitGroupCacheInfoMap.values()) {
-                        if (unitgroupCacheInfo != null) {
-                            AdCacheInfo adCacheInfo = unitgroupCacheInfo.getHasShowAdCacheInfo();
-                            if (adCacheInfo != null) {
-                                return adCacheInfo;
-                            }
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-    }
-
-
+//    public AdCacheInfo getHasShowAdCache(String placementId, String requestId) {
+//        synchronized (AdCacheManager.this) {
+//            ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
+//
+//            if (unitGroupCacheInfoMap != null && unitGroupCacheInfoMap.size() > 0) {
+//                if (unitGroupCacheInfoMap.values() != null && unitGroupCacheInfoMap.values().size() > 0) {
+//                    for (UnitgroupCacheInfo unitgroupCacheInfo : unitGroupCacheInfoMap.values()) {
+//                        if (unitgroupCacheInfo != null) {
+//                            AdCacheInfo adCacheInfo = unitgroupCacheInfo.getHasShowAdCacheInfo();
+//                            if (adCacheInfo != null && TextUtils.equals(adCacheInfo.getBaseAdapter().getTrackingInfo().getmRequestId(), requestId)) {
+//                                return adCacheInfo;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            return null;
+//        }
+//    }
     @Deprecated
     public void cleanNoShowOffer(String placementId) {
     }
@@ -450,7 +490,7 @@ public class AdCacheManager {
         synchronized (this) {
             ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
             if (unitGroupCacheInfoMap != null && unitGroupCacheInfoMap.size() > 0) {
-                UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap.get(unitgroupId);
+                UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap.remove(unitgroupId);
                 if (unitgroupCacheInfo != null) {
                     unitgroupCacheInfo.destoryCache();
                 }
@@ -458,10 +498,10 @@ public class AdCacheManager {
         }
     }
 
-//    /**
-//     * @param placementId
-//     * @return
-//     */
+    /**
+     * @param placementId
+     * @return
+     */
 //    public PlaceStrategy getCacheStrategy(String placementId) {
 //        ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
 //        if (unitGroupCacheInfoMap != null) {
@@ -481,9 +521,6 @@ public class AdCacheManager {
      * @param adCacheInfo
      */
     public void saveShowTime(final Context context, final AdCacheInfo adCacheInfo) {
-        if (adCacheInfo == null) {
-            return;
-        }
         synchronized (AdCacheManager.this) {
             final AdTrackingInfo adTrackingInfo = adCacheInfo.getBaseAdapter().getTrackingInfo();
 
@@ -494,6 +531,8 @@ public class AdCacheManager {
                     @Override
                     public void run() {
                         synchronized (AdCacheManager.this) {
+                            CommonAdManager commonAdManager = PlacementAdManager.getInstance().getAdManager(adTrackingInfo.getmPlacementId());
+                            commonAdManager.notifyMediationManagerImpression(adTrackingInfo.getmRequestId(), adCacheInfo.getBaseAdapter().getmUnitgroupInfo().ecpm);
                             //Save cap
                             AdCapV2Manager.getInstance(context).saveOneCap(adTrackingInfo.getmAdType(), adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
                             //Recore time
@@ -501,7 +540,8 @@ public class AdCacheManager {
                             AdPacingManager.getInstance().saveUnitGropuShowTime(adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
 
                             if (adCacheInfo.isLast()) {
-                                AdCacheManager.getInstance().cleanNoShowOffer(adTrackingInfo.getmPlacementId());
+                                //If the last offer of AdSource had been showed, it would be removed from caches.
+                                forceCleanCache(adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
                             }
 
                         }
@@ -554,14 +594,15 @@ public class AdCacheManager {
                                 , mUserId, placementStrategy, mUnitGroupList, placementStrategy.getRequestUnitGroupNumber()
                                 , mIsRefresh);
 
-                        TrackingInfoUtil.initPlacementUnitGroupTrackingInfo(adCacheInfo.getBaseAdapter(), ugAdTrackingInfo, unitGroupInfo);
-                        ugAdTrackingInfo.setRequestType(4); //4:upstatus=1 and upstatus is available
+                        int requestLevel = unitGroupInfoList.indexOf(unitGroupInfo);
+                        TrackingInfoUtil.initPlacementUnitGroupTrackingInfo(adCacheInfo.getBaseAdapter(), ugAdTrackingInfo, unitGroupInfo, requestLevel);
+                        ugAdTrackingInfo.setRequestType(AdTrackingInfo.UPSTATUS_REQUEST); //4:upstatus=1 and upstatus is available
 
                         //Send Agent
                         AgentEventManager.upStatusAvaibleCache(ugAdTrackingInfo, adCacheInfo.getOriginRequestId());
 
 
-                        unitgroupCacheInfo.refreshCacheInfo(ugAdTrackingInfo, placementStrategy, unitGroupInfo); //Refresh AdCache Info
+                        unitgroupCacheInfo.refreshCacheInfo(ugAdTrackingInfo, requestLevel); //Refresh AdCache Info
                         continue;
                     }
                 }

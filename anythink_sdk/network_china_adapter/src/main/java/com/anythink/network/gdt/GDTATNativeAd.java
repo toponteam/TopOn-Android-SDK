@@ -9,14 +9,12 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 import com.qq.e.ads.cfg.VideoOption;
 import com.qq.e.ads.nativ.MediaListener;
 import com.qq.e.ads.nativ.MediaView;
 import com.qq.e.ads.nativ.NativeADDataRef;
 import com.qq.e.ads.nativ.NativeADEventListener;
 import com.qq.e.ads.nativ.NativeADMediaListener;
-import com.qq.e.ads.nativ.NativeExpressADView;
 import com.qq.e.ads.nativ.NativeMediaADData;
 import com.qq.e.ads.nativ.NativeUnifiedADData;
 import com.qq.e.ads.nativ.widget.NativeAdContainer;
@@ -26,7 +24,6 @@ import com.qq.e.comm.util.AdError;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by zhou on 2018/1/16.
@@ -36,28 +33,28 @@ public class GDTATNativeAd extends CustomNativeAd {
     private static final String TAG = GDTATNativeAd.class.getSimpleName();
     WeakReference<Context> mContext;
     Context mApplicationContext;
-    CustomNativeListener mCustomNativeListener;
 
     NativeMediaADData mGDTad;
 
-    NativeExpressADView mNativeExpressADView;
-
     NativeUnifiedADData mUnifiedAdData; //Self-rendering 2.0
 
+    int mVideoMuted;
+    int mVideoAutoPlay;
+    int mVideoDuration;
 
-    protected GDTATNativeAd(Context context, Object gdtad, CustomNativeListener customNativeListener
-            , Map<String, Object> localExtras) {
+
+    protected GDTATNativeAd(Context context, Object gdtad, int videoMuted, int videoAutoPlay, int videoDuration) {
 
         mApplicationContext = context.getApplicationContext();
         mContext = new WeakReference<>(context);
-        mCustomNativeListener = customNativeListener;
+
+        mVideoMuted = videoMuted;
+        mVideoAutoPlay = videoAutoPlay;
+        mVideoDuration = videoDuration;
+
         if (gdtad instanceof NativeMediaADData) {
             mGDTad = (NativeMediaADData) gdtad;
             setAdData(mGDTad);
-        }
-
-        if (gdtad instanceof NativeExpressADView) {
-            mNativeExpressADView = (NativeExpressADView) gdtad;
         }
 
         if (gdtad instanceof NativeUnifiedADData) {
@@ -96,22 +93,15 @@ public class GDTATNativeAd extends CustomNativeAd {
         }
         switch (status) {
             case 0:
+            case 4:
+            case 16:
                 return "下载";
             case 1:
-
                 return "启动";
             case 2:
-
                 return "更新";
-            case 4:
-                return pro + "%";
-
             case 8:
-
                 return "安装";
-            case 16:
-
-                return "下载失败，重新下载";
             default:
                 return "浏览";
         }
@@ -292,18 +282,12 @@ public class GDTATNativeAd extends CustomNativeAd {
             return mMediaView;
         }
 
-        if (mNativeExpressADView != null) {
-            if (mNativeExpressADView.getParent() != null) {
-                ((FrameLayout) mNativeExpressADView.getParent()).removeView(mNativeExpressADView);
-            }
-            return mNativeExpressADView;
-        }
         return super.getAdMediaView(object);
     }
 
     @Override
     public boolean isNativeExpress() {
-        return mNativeExpressADView != null;
+        return false;
     }
 
     @Override
@@ -319,9 +303,7 @@ public class GDTATNativeAd extends CustomNativeAd {
                 e.printStackTrace();
             }
         }
-        if (mNativeExpressADView != null) {
-            mNativeExpressADView.render();
-        }
+
 
         if (mUnifiedAdData != null && mContainer != null) {
             List<View> childView = new ArrayList<>();
@@ -329,7 +311,7 @@ public class GDTATNativeAd extends CustomNativeAd {
             mUnifiedAdData.bindAdToView(view.getContext(), mContainer, layoutParams, childView);
             try {
                 mUnifiedAdData.bindMediaView(mMediaView, new VideoOption.Builder()
-                        .setAutoPlayMuted(true).setAutoPlayPolicy(VideoOption.AutoPlayPolicy.WIFI).build(), new NativeADMediaListener() {
+                        .setAutoPlayMuted(mVideoMuted == 1).setAutoPlayPolicy(mVideoAutoPlay).build(), new NativeADMediaListener() {
                     @Override
                     public void onVideoInit() {
                     }
@@ -397,16 +379,12 @@ public class GDTATNativeAd extends CustomNativeAd {
                 e.printStackTrace();
             }
         }
-        if (mNativeExpressADView != null) {
-            mNativeExpressADView.render();
-        }
-
 
         if (mUnifiedAdData != null && mContainer != null) {
             mUnifiedAdData.bindAdToView(view.getContext(), mContainer, layoutParams, clickViewList);
             try {
                 mUnifiedAdData.bindMediaView(mMediaView, new VideoOption.Builder()
-                        .setAutoPlayMuted(true).setAutoPlayPolicy(VideoOption.AutoPlayPolicy.WIFI).build(), new NativeADMediaListener() {
+                        .setAutoPlayMuted(mVideoMuted == 1).setAutoPlayPolicy(mVideoAutoPlay).build(), new NativeADMediaListener() {
                     @Override
                     public void onVideoInit() {
                     }
@@ -534,6 +512,7 @@ public class GDTATNativeAd extends CustomNativeAd {
         unregisterView(view);
         onPause();
         mMediaView = null;
+        mContainer = null;
     }
 
     @Override
@@ -565,13 +544,26 @@ public class GDTATNativeAd extends CustomNativeAd {
         super.destroy();
         if (mGDTad != null) {
             mGDTad.stop();
+            mGDTad.setMediaListener(null);
             mGDTad.destroy();
         }
 
         if (mUnifiedAdData != null) {
+            mUnifiedAdData.setNativeAdEventListener(null);
             mUnifiedAdData.destroy();
+            mUnifiedAdData = null;
         }
         mMediaView = null;
 
+        mApplicationContext = null;
+        if (mContext != null) {
+            mContext.clear();
+            mContext = null;
+        }
+
+        if (mContainer != null) {
+            mContainer.removeAllViews();
+            mContainer = null;
+        }
     }
 }

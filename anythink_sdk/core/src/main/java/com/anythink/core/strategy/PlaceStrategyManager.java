@@ -7,9 +7,11 @@ import android.util.Log;
 
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
+import com.anythink.core.common.MonitoringPlatformManager;
 import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.MyOfferAd;
 import com.anythink.core.common.net.OnHttpLoaderListener;
 import com.anythink.core.common.net.PlaceStrategyLoader;
 import com.anythink.core.common.utils.CommonLogUtil;
@@ -18,7 +20,8 @@ import com.anythink.core.common.utils.SPUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,6 +38,8 @@ public class PlaceStrategyManager {
         public void loadStrategySuccess(PlaceStrategy placeStrategy);
 
         public void loadStrategyFailed(AdError errorBean);
+
+        public void overTimeSuccessStrategy(PlaceStrategy placeStrategy);
     }
 
 
@@ -103,6 +108,11 @@ public class PlaceStrategyManager {
         }
     }
 
+    public PlaceStrategy getPlaceStrategyInCache(String placementId) {
+        String appId = SDKContext.getInstance().getAppId();
+        return placeStrategyHashMap.get(appId + placementId);
+    }
+
     /***
      * @param appId
      * @param appKey
@@ -138,13 +148,18 @@ public class PlaceStrategyManager {
                             public void onFinish() {
                                 CommonLogUtil.i(TAG, "Timer onFinish，load AD by old strategy");
                                 isTimerUp[0] = true;
-                                strategyloadListener.loadStrategySuccess(oldStrategy);
+                                if (strategyloadListener != null) {
+                                    strategyloadListener.loadStrategySuccess(oldStrategy);
+                                }
+
                             }
                         };
 
                         if (psUpdateOutTime == 0) {
                             isTimerUp[0] = true;
-                            strategyloadListener.loadStrategySuccess(oldStrategy);
+                            if (strategyloadListener != null) {
+                                strategyloadListener.loadStrategySuccess(oldStrategy);
+                            }
                         } else {
                             CommonLogUtil.i(TAG, "Update placement strategy，start timer");
                             timer.start();
@@ -171,11 +186,12 @@ public class PlaceStrategyManager {
 
                                 if (curr != null) {
                                     savePlaceStrategy(mContext, placeId, curr, curr.getPucs() == 1 ? json : "");
+                                    if (curr.getIsPreLoadOfferRes() == 1) {
+                                        MyOfferAPIProxy.getIntance().preLoadTopOnOffer(mContext, placeId);
+                                    }
+
+                                    MonitoringPlatformManager.getInstance().parseMonitoringPlatformParams(curr.getImpressionRevenueForMonitoringPlatformString());
                                 }
-
-
-                                MyOfferAPIProxy.getIntance().initTopOnOffer(mContext, placeId, curr.getMyOfferList(), curr.getMyOfferTkMap(), curr.getMyOfferSetting(), curr.getIsPreLoadOfferRes() == 1);
-
 
                                 SDKContext.getInstance().runOnMainThread(new Runnable() {
                                     @Override
@@ -189,6 +205,9 @@ public class PlaceStrategyManager {
 
                                 /**If time out, Ad request would use the old placementsetting**/
                                 if (isTimerUp[0]) {
+                                    if (strategyloadListener != null && curr != null) {
+                                        strategyloadListener.overTimeSuccessStrategy(curr);
+                                    }
                                     return;
                                 }
 
@@ -284,7 +303,12 @@ public class PlaceStrategyManager {
                             if (curr != null) {
                                 savePlaceStrategy(mContext, placeId, curr, curr.getPucs() == 1 ? json : "");
 
-                                MyOfferAPIProxy.getIntance().initTopOnOffer(mContext, placeId, curr.getMyOfferList(), curr.getMyOfferTkMap(), curr.getMyOfferSetting(), curr.getIsPreLoadOfferRes() == 1);
+                                if (curr.getIsPreLoadOfferRes() == 1) {
+                                    MyOfferAPIProxy.getIntance().preLoadTopOnOffer(mContext, placeId);
+                                }
+
+                                MonitoringPlatformManager.getInstance().parseMonitoringPlatformParams(curr.getImpressionRevenueForMonitoringPlatformString());
+
                                 if (strategyloadListener != null) {
                                     strategyloadListener.loadStrategySuccess(curr);
                                 }
@@ -310,6 +334,10 @@ public class PlaceStrategyManager {
                                 String key = appId + placeId + appKey;
                                 CommonLogUtil.e(TAG, "code: " + errorBean.getPlatformCode() + "msg: " + errorBean.getPlatformMSG() + ", key -> " + key);
                                 SPUtil.putLong(mContext, Const.SPU_PLACEMENT_STRATEGY_UPDATE_CHECK_NAME, key, System.currentTimeMillis());
+
+                                if (SDKContext.getInstance().isNetworkLogDebug()) {
+                                    Log.e(Const.RESOURCE_HEAD, "Please check these params in your code (AppId: " + appId + ", AppKey: " + appKey + ", PlacementId: " + placeId + ")");
+                                }
                             }
 
                             if (strategyloadListener != null) {
@@ -329,6 +357,28 @@ public class PlaceStrategyManager {
         });
 
 
+    }
+
+
+    public List<MyOfferAd> getMyOfferListByFormat(String format) {
+        if (placeStrategyHashMap == null) {
+            return null;
+        }
+
+        List<PlaceStrategy> placeStrategyList = new ArrayList<>();
+        placeStrategyList.addAll(placeStrategyHashMap.values());
+
+        List<MyOfferAd> myOfferAdList = new ArrayList<>();
+        for (PlaceStrategy placeStrategy : placeStrategyList) {
+            if (TextUtils.equals(String.valueOf(placeStrategy.getFormat()), format)) {
+                List<MyOfferAd> tempMyOfferList = placeStrategy.getMyOfferAdList();
+                if (tempMyOfferList != null) {
+                    myOfferAdList.addAll(tempMyOfferList);
+                }
+            }
+        }
+
+        return myOfferAdList;
     }
 
 }

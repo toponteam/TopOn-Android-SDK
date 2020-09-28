@@ -12,7 +12,9 @@ android {
         versionName "1.0"
 
     }
-
+    lintOptions {
+        abortOnError false
+    }
     buildTypes {
         release {
             minifyEnabled false

@@ -9,13 +9,13 @@ import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
+import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.interstitial.business.AdLoadManager;
-import com.anythink.interstitial.business.InterstitialEventListener;
 
 import java.util.Map;
 
@@ -27,8 +27,8 @@ import java.util.Map;
  * @Email: zhoushubin@salmonads.com
  */
 public class ATInterstitial {
-    public static String TAG = ATInterstitial.class.getSimpleName();
-    public String mUnitid;
+    public static final String TAG = ATInterstitial.class.getSimpleName();
+    public String mPlacementId;
     public Context mContext;
     public ATInterstitialListener mInterstitialListener;
 
@@ -51,6 +51,9 @@ public class ATInterstitial {
 
         @Override
         public void onInterstitialAdLoadFail(final AdError errorCode) {
+            if (mAdLoadManager != null) {
+                mAdLoadManager.setLoadFail(errorCode);
+            }
             SDKContext.getInstance().runOnMainThread(new Runnable() {
                 @Override
                 public void run() {
@@ -144,25 +147,24 @@ public class ATInterstitial {
         }
     };
 
-    /***
-     * 创建一个Interstitial 广告帮追
-     * @param context 上下文
-     * @param pUnitid 广告位
-     */
-    public ATInterstitial(Context context, String pUnitid) {
+    public ATInterstitial(Context context, String placementId) {
         mContext = context;
 
-        mUnitid = pUnitid;
-        mAdLoadManager = AdLoadManager.getInstance(context, pUnitid);
+        mPlacementId = placementId;
+        mAdLoadManager = AdLoadManager.getInstance(context, placementId);
 
-    }
-
-    public void addSetting(int networkType, ATMediationSetting setting) {
-        mAdLoadManager.addSetting(networkType, setting);
     }
 
     @Deprecated
-    public void setCustomExtra(Map<String, String> map) {
+    public void addSetting(int networkType, ATMediationSetting setting) {
+    }
+
+    @Deprecated
+    public void setCustomExtra(Map<String, Object> map) {
+    }
+
+    public void setLocalExtra(Map<String, Object> map) {
+        PlacementAdManager.getInstance().putPlacementLocalSettingMap(mPlacementId, map);
     }
 
     public void load() {
@@ -170,13 +172,13 @@ public class ATInterstitial {
     }
 
     private void load(final boolean isAutoRefresh) {
-        ATSDK.apiLog(mUnitid, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
         mAdLoadManager.refreshContext(mContext);
         mAdLoadManager.startLoadAd(mContext, isAutoRefresh, mInterListener);
     }
 
     private boolean isNeedAutoLoadAfterClose() {
-        PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(SDKContext.getInstance().getContext()).getPlaceStrategyByAppIdAndPlaceId(mUnitid);
+        PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(SDKContext.getInstance().getContext()).getPlaceStrategyByAppIdAndPlaceId(mPlacementId);
         if (placeStrategy != null) {
             return placeStrategy.getAutoRefresh() == 1 && !mAdLoadManager.isLoading();
         }
@@ -205,7 +207,7 @@ public class ATInterstitial {
 //        }
 
         boolean isAdReady = mAdLoadManager.isAdReady(mContext);
-        ATSDK.apiLog(mUnitid, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_ISREADY, String.valueOf(isAdReady), "");
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_ISREADY, String.valueOf(isAdReady), "");
         return isAdReady;
     }
 
@@ -221,6 +223,7 @@ public class ATInterstitial {
         controlShow(activity, "");
     }
 
+    @Deprecated
     public void show(String scenario) {
         String realScenario = scenario;
         if (CommonSDKUtil.isVailScenario(scenario)) {
@@ -229,17 +232,14 @@ public class ATInterstitial {
         controlShow(null, realScenario);
     }
 
+    @Deprecated
     public void show() {
         controlShow(null, "");
     }
 
     private void controlShow(Activity activity, String scenario) {
-        Context showContext = activity;
-        if (showContext == null) {
-            showContext = mContext;
-        }
 
-        ATSDK.apiLog(mUnitid, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
         if (SDKContext.getInstance().getContext() == null
                 || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
                 || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
@@ -247,6 +247,15 @@ public class ATInterstitial {
 //            AdError adError = ErrorCode.getErrorCode(ErrorCode.exception, "", "sdk init error");
 //            AgentEventManager.onAdShowEventAgent(adTrackingInfo, "0", adError.printStackTrace());
             return;
+        }
+
+        Activity showActivity = activity;
+        if (showActivity == null && mContext instanceof Activity) {
+            showActivity = (Activity) mContext;
+        }
+
+        if (showActivity == null) {
+            Log.e(TAG, "Interstitial Show Activity is null.");
         }
 
 //        if (UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext())
@@ -257,7 +266,7 @@ public class ATInterstitial {
 //            return; //如果是FORBIDDEN则不去播放
 //        }
 
-        mAdLoadManager.show(showContext, scenario, new InterstitialEventListener(mInterListener));
+        mAdLoadManager.show(showActivity, scenario, mInterListener);
     }
 
     @Deprecated

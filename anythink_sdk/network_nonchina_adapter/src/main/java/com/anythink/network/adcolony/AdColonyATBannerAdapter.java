@@ -10,16 +10,8 @@ import com.adcolony.sdk.AdColonyAdOptions;
 import com.adcolony.sdk.AdColonyAdSize;
 import com.adcolony.sdk.AdColonyAdView;
 import com.adcolony.sdk.AdColonyAdViewListener;
-import com.adcolony.sdk.AdColonyInterstitial;
-import com.adcolony.sdk.AdColonyInterstitialListener;
 import com.adcolony.sdk.AdColonyZone;
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 
 import org.json.JSONArray;
 
@@ -31,10 +23,10 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
     String[] mZoneIds;
     String mSize;
 
-    AdColonyAdView adColontAdView;
+    AdColonyAdView adColonyAdView;
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, final CustomBannerListener customBannerListener) {
+    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 //        serverExtras.put("app_id", "app251236acbb494d48a8");
 //        serverExtras.put("zone_id", "vz627ee9b423cc4de09b");
 //        serverExtras.put("zone_ids", "[\"vz627ee9b423cc4de09b\"]");
@@ -66,15 +58,15 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
 
 
         if (!(activity instanceof Activity)) {
-            if (customBannerListener != null) {
-                customBannerListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "context must be activity!");
             }
             return;
         }
 
         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mZoneId)) {
-            if (customBannerListener != null) {
-                customBannerListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid & mZoneId is empty."));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " appid & mZoneId is empty.");
             }
             return;
         }
@@ -93,9 +85,9 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onRequestFilled(AdColonyAdView ad) {
                 /** Add this ad object to whatever layout you have set up for this placement */
-                adColontAdView = ad;
-                if (customBannerListener != null) {
-                    customBannerListener.onBannerAdLoaded(AdColonyATBannerAdapter.this);
+                adColonyAdView = ad;
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
@@ -103,8 +95,8 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
             }
 
             public void onClosed(AdColonyAdView ad) {
-                if (customBannerListener != null) {
-                    customBannerListener.onBannerAdClose(AdColonyATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
                 }
             }
 
@@ -112,14 +104,14 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
             }
 
             public void onClicked(AdColonyAdView ad) {
-                if (customBannerListener != null) {
-                    customBannerListener.onBannerAdClicked(AdColonyATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
             public void onRequestNotFilled(AdColonyZone zone) {
-                if (customBannerListener != null) {
-                    customBannerListener.onBannerAdLoadFail(AdColonyATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "No Fill!"));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "onRequestNotFilled!");
                 }
             }
         };
@@ -148,15 +140,19 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return AdColonyATConst.getNetworkVersion();
     }
 
 
     @Override
-    public void clean() {
+    public void destory() {
         AdColony.clearCustomMessageListeners();
-
+        if (adColonyAdView != null) {
+            adColonyAdView.setListener(null);
+            adColonyAdView.destroy();
+            adColonyAdView = null;
+        }
     }
 
     @Override
@@ -164,9 +160,19 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
         return AdColonyATInitManager.getInstance().getNetworkName();
     }
 
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AdColonyATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mZoneId;
+    }
+
 
     @Override
     public View getBannerView() {
-        return adColontAdView;
+        return adColonyAdView;
     }
 }

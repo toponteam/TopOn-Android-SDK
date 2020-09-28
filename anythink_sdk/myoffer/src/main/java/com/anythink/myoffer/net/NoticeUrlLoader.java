@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.net.AbsHttpLoader;
+import com.anythink.core.common.net.ApiRequestParam;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +19,7 @@ public class NoticeUrlLoader extends AbsHttpLoader {
 
     @Override
     protected int onPrepareType() {
-        return GET;
+        return ApiRequestParam.GET;
     }
 
     @Override

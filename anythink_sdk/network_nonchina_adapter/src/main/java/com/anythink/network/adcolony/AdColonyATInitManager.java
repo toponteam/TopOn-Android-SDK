@@ -68,13 +68,10 @@ public class AdColonyATInitManager extends ATInitMediation {
         if (!checkIsNeedInit(app_id, zone_ids)) {
             return;
         }
-        AdColonyAppOptions app_options = new AdColonyAppOptions();
-
-        suportGDPR(context, app_options, serviceExtras);
 
         Application application = (Application) context.getApplicationContext();
 
-        if (AdColony.configure(application, app_options, app_id, zone_ids)) {
+        if (AdColony.configure(application, AdColony.getAppOptions(), app_id, zone_ids)) {
             mAppId = app_id;
             mZoneIds = zone_ids;
         }
@@ -84,12 +81,10 @@ public class AdColonyATInitManager extends ATInitMediation {
         if (!TextUtils.isEmpty(mAppId) && !TextUtils.isEmpty(mZoneId)) {
             return;
         }
-        AdColonyAppOptions app_options = new AdColonyAppOptions();
-        suportGDPR(context, app_options, serviceExtras);
 
         Application application = (Application) context.getApplicationContext();
 
-        if (AdColony.configure(application, app_options, app_id, zone_id)) {
+        if (AdColony.configure(application, AdColony.getAppOptions(), app_id, zone_id)) {
             mAppId = app_id;
             mZoneId = zone_id;
         }
@@ -124,28 +119,19 @@ public class AdColonyATInitManager extends ATInitMediation {
         return false;
     }
 
-    private void suportGDPR(Context activity, AdColonyAppOptions app_options, Map<String, Object> serviceExtras) {
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
 
-        if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-            //Whether to agree to collect data
-            boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-            //Whether to set the GDPR of the network
-            boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-            if (need_set_gdpr) {
-                if (gdp_consent) {
-                    app_options.setGDPRConsentString("1");
-                } else {
-                    app_options.setGDPRConsentString("0");
-                }
-
-                boolean isEUTraffic = ATSDK.isEUTraffic(activity);
-                app_options.setGDPRRequired(isEUTraffic);
-            }
+        AdColonyAppOptions adColonyAppOptions = new AdColonyAppOptions();
+        if (isConsent) {
+            adColonyAppOptions.setPrivacyConsentString(AdColonyAppOptions.GDPR, "1");
+        } else {
+            adColonyAppOptions.setPrivacyConsentString(AdColonyAppOptions.GDPR, "0");
         }
 
-        logGDPRSetting(AdColonyATConst.NETWORK_FIRM_ID);
-
+        adColonyAppOptions.setPrivacyFrameworkRequired(AdColonyAppOptions.GDPR, isEUTraffic);
+        AdColony.setAppOptions(adColonyAppOptions);
+        return true;
     }
 
     @Override

@@ -5,12 +5,7 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.qq.e.ads.banner.ADSize;
 import com.qq.e.ads.banner.BannerADListener;
 import com.qq.e.ads.banner.BannerView;
@@ -24,74 +19,10 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
 
     String mAppId;
     String mUnitId;
-
-    CustomBannerListener mCustomBannerListener;
-
     View mBannerView;
 
     int mUnitVersion = 0;
     int mRefreshTime;
-
-    @Override
-    public void loadBannerAd(ATBannerView anythinkBannerView, final Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        String appid = "";
-        String unitId = "";
-
-        mCustomBannerListener = customBannerListener;
-        if (serverExtras.containsKey("app_id")) {
-            appid = serverExtras.get("app_id").toString();
-        }
-        if (serverExtras.containsKey("unit_id")) {
-            unitId = serverExtras.get("unit_id").toString();
-        }
-        if (serverExtras.containsKey("unit_version")) {
-            mUnitVersion = Integer.parseInt(serverExtras.get("unit_version").toString());
-        }
-
-        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitId)) {
-            if (mCustomBannerListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "GTD appid or unitId is empty.");
-                mCustomBannerListener.onBannerAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        if (!(activity instanceof Activity)) {
-            if (mCustomBannerListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "Context must be activity.");
-                mCustomBannerListener.onBannerAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        mRefreshTime = 0;
-        try {
-            if (serverExtras.containsKey("nw_rft")) {
-                mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
-                mRefreshTime /= 1000f;
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-
-        mAppId = appid;
-        mUnitId = unitId;
-
-        GDTATInitManager.getInstance().initSDK(activity, serverExtras, new GDTATInitManager.OnInitCallback() {
-            @Override
-            public void onSuccess() {
-                startLoadAd((Activity) activity);
-            }
-
-            @Override
-            public void onError() {
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdLoadFail(GDTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "GDT initSDK failed."));
-                }
-            }
-        });
-    }
 
     private void startLoadAd(Activity activity) {
         if (mUnitVersion != 2) {
@@ -104,53 +35,50 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
             bannerView.setADListener(new BannerADListener() {
                 @Override
                 public void onNoAD(com.qq.e.comm.util.AdError adError) {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdLoadFail(GDTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(adError.getErrorCode()), adError.getErrorMsg()));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(String.valueOf(adError.getErrorCode()), adError.getErrorMsg());
                     }
                 }
 
                 @Override
                 public void onADReceiv() {
-                    if (mCustomBannerListener != null) {
+                    if (mLoadListener != null) {
                         mBannerView = bannerView;
-                        mCustomBannerListener.onBannerAdLoaded(GDTATBannerAdapter.this);
+                        mLoadListener.onAdCacheLoaded();
                     }
                 }
 
                 @Override
                 public void onADExposure() {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdShow(GDTATBannerAdapter.this);
+                    if (mImpressionEventListener != null) {
+                        mImpressionEventListener.onBannerAdShow();
                     }
                 }
 
                 @Override
                 public void onADClosed() {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdClose(GDTATBannerAdapter.this);
+                    if (mImpressionEventListener != null) {
+                        mImpressionEventListener.onBannerAdClose();
                     }
                 }
 
                 @Override
                 public void onADClicked() {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdClicked(GDTATBannerAdapter.this);
+                    if (mImpressionEventListener != null) {
+                        mImpressionEventListener.onBannerAdClicked();
                     }
                 }
 
                 @Override
                 public void onADLeftApplication() {
-                    log(TAG, "onADLeftApplication");
                 }
 
                 @Override
                 public void onADOpenOverlay() {
-                    log(TAG, "onADOpenOverlay");
                 }
 
                 @Override
                 public void onADCloseOverlay() {
-                    log(TAG, "onADCloseOverlay");
                 }
             });
             bannerView.loadAD();
@@ -159,36 +87,36 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
                 @Override
                 public void onNoAD(com.qq.e.comm.util.AdError adError) {
                     mBannerView = null;
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdLoadFail(GDTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(adError.getErrorCode()), adError.getErrorMsg()));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(String.valueOf(adError.getErrorCode()), adError.getErrorMsg());
                     }
                 }
 
                 @Override
                 public void onADReceive() {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdLoaded(GDTATBannerAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
                     }
                 }
 
                 @Override
                 public void onADExposure() {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdShow(GDTATBannerAdapter.this);
+                    if (mImpressionEventListener != null) {
+                        mImpressionEventListener.onBannerAdShow();
                     }
                 }
 
                 @Override
                 public void onADClosed() {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdClose(GDTATBannerAdapter.this);
+                    if (mImpressionEventListener != null) {
+                        mImpressionEventListener.onBannerAdClose();
                     }
                 }
 
                 @Override
                 public void onADClicked() {
-                    if (mCustomBannerListener != null) {
-                        mCustomBannerListener.onBannerAdClicked(GDTATBannerAdapter.this);
+                    if (mImpressionEventListener != null) {
+                        mImpressionEventListener.onBannerAdClicked();
                     }
                 }
 
@@ -223,17 +151,87 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void clean() {
-        mBannerView = null;
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return GDTATConst.getNetworkVersion();
-    }
-
-    @Override
     public String getNetworkName() {
         return GDTATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        String appid = "";
+        String unitId = "";
+
+        if (serverExtra.containsKey("app_id")) {
+            appid = serverExtra.get("app_id").toString();
+        }
+        if (serverExtra.containsKey("unit_id")) {
+            unitId = serverExtra.get("unit_id").toString();
+        }
+        if (serverExtra.containsKey("unit_version")) {
+            mUnitVersion = Integer.parseInt(serverExtra.get("unit_version").toString());
+        }
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "GTD appid or unitId is empty.");
+            }
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Context must be activity.");
+            }
+            return;
+        }
+
+        mRefreshTime = 0;
+        try {
+            if (serverExtra.containsKey("nw_rft")) {
+                mRefreshTime = Integer.valueOf((String) serverExtra.get("nw_rft"));
+                mRefreshTime /= 1000f;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        mAppId = appid;
+        mUnitId = unitId;
+
+        GDTATInitManager.getInstance().initSDK(context, serverExtra, new GDTATInitManager.OnInitCallback() {
+            @Override
+            public void onSuccess() {
+                startLoadAd((Activity) context);
+            }
+
+            @Override
+            public void onError() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "GDT initSDK failed.");
+                }
+            }
+        });
+    }
+
+    @Override
+    public void destory() {
+        if (mBannerView != null) {
+            if (mBannerView instanceof BannerView) {
+                ((BannerView) mBannerView).setADListener(null);
+                ((BannerView) mBannerView).destroy();
+            } else if (mBannerView instanceof UnifiedBannerView) {
+                ((UnifiedBannerView) mBannerView).destroy();
+            }
+            mBannerView = null;
+        }
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mUnitId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return GDTATConst.getNetworkVersion();
     }
 }

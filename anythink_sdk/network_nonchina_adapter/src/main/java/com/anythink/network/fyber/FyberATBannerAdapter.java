@@ -8,7 +8,6 @@ import android.widget.FrameLayout;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
@@ -28,10 +27,10 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
 
     InneractiveAdSpot mSpot;
     ViewGroup mContainer;
+    private String spotId;
 
     @Override
-    public void loadBannerAd(final ATBannerView bannerView, final Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, final CustomBannerListener customBannerListener) {
-
+    public void loadCustomNetworkAd(final Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         //todo  mock data
 //        serverExtras.put("app_id", "102960");
 //        serverExtras.put("spot_id", "150942");
@@ -42,7 +41,7 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
         //end  mock data
 
         String appId = "";
-        String spotId = "";
+        spotId = "";
         if (serverExtras.containsKey("app_id")) {
             appId = (String) serverExtras.get("app_id");
         }
@@ -52,9 +51,8 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
         }
 
         if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(spotId)) {
-            if (customBannerListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "Fyber app_id、spot_id could not be null.");
-                customBannerListener.onBannerAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Fyber app_id、spot_id could not be null.");
             }
             return;
         }
@@ -98,8 +96,8 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
 
                     @Override
                     public void onAdClicked(InneractiveAdSpot inneractiveAdSpot) {
-                        if (customBannerListener != null) {
-                            customBannerListener.onBannerAdClicked(FyberATBannerAdapter.this);
+                        if (mImpressionEventListener != null) {
+                            mImpressionEventListener.onBannerAdClicked();
                         }
                     }
 
@@ -143,13 +141,16 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
                     // showing the ad
                     controller.bindView(mContainer);
 
-                    if (customBannerListener != null) {
-                        customBannerListener.onBannerAdLoaded(FyberATBannerAdapter.this);
-                        customBannerListener.onBannerAdShow(FyberATBannerAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
+                    }
+
+                    if (mImpressionEventListener != null) {
+                        mImpressionEventListener.onBannerAdShow();
                     }
                 } else {
-                    if (customBannerListener != null) {
-                        customBannerListener.onBannerAdLoadFail(FyberATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "No fill"));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", "No fill");
                     }
                 }
 
@@ -158,9 +159,8 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onInneractiveFailedAdRequest(InneractiveAdSpot inneractiveAdSpot, InneractiveErrorCode inneractiveErrorCode) {
-                if (customBannerListener != null) {
-                    customBannerListener.onBannerAdLoadFail(FyberATBannerAdapter.this,
-                            ErrorCode.getErrorCode(ErrorCode.noADError, "", inneractiveErrorCode.name() + ", " + inneractiveErrorCode.getMetricable()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", inneractiveErrorCode.name() + ", " + inneractiveErrorCode.getMetricable());
                 }
             }
         });
@@ -175,13 +175,14 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return FyberATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mSpot != null) {
+            mSpot.setRequestListener(null);
             mSpot.destroy();
             mSpot = null;
         }
@@ -191,5 +192,15 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
     @Override
     public String getNetworkName() {
         return FyberATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return FyberATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return spotId;
     }
 }

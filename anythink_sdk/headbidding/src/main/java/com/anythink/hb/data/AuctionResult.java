@@ -10,45 +10,42 @@ import java.util.List;
  * Auction result for one runtime bidding
  */
 public class AuctionResult {
-	private String transactionId = "";
-	private String unitId = "";
-	private BiddingResponse winner = null;
-	private List<BiddingResponse> otherBidders = new ArrayList<BiddingResponse>();
+    private String transactionId = "";
+    private String unitId = "";
+    private List<BiddingResponse> successBidders = new ArrayList<>();
+    private List<BiddingResponse> failedBidders = new ArrayList<>();
 
-	public String getTransactionId() {
-		return transactionId;
-	}
+    public String getTransactionId() {
+        return transactionId;
+    }
 
-	public void setTransactionId(String transactionId) {
-		this.transactionId = transactionId;
-	}
+    public void setRequestId(String transactionId) {
+        this.transactionId = transactionId;
+    }
 
-	public String getUnitId() {
-		return unitId;
-	}
+    public String getUnitId() {
+        return unitId;
+    }
 
-	public void setUnitId(String unitId) {
-		this.unitId = unitId;
-	}
+    public void setPlacementId(String unitId) {
+        this.unitId = unitId;
+    }
 
-    /**
-     *  Winner's price must be greater than zero
-     * @return
-     */
-	public BiddingResponse getWinner(){
-		return winner;
-	}
 
-	public void setWinner(BiddingResponse winner) {
-		this.winner = winner;
-	}
+    public List<BiddingResponse> getSuccessBidders() {
+        return successBidders;
+    }
 
-	public List<BiddingResponse> getOtherBidders() {
-		return otherBidders;
-	}
+    public void setSuccessBidders(List<BiddingResponse> successBidders) {
+        this.successBidders = successBidders;
+    }
 
-	public void setOtherBidders(List<BiddingResponse> otherBidders) {
-		this.otherBidders = otherBidders;
-	}
+    public List<BiddingResponse> getFailedBidders() {
+        return failedBidders;
+    }
+
+    public void setFailedBidders(List<BiddingResponse> failedBidders) {
+        this.failedBidders = failedBidders;
+    }
 
 }

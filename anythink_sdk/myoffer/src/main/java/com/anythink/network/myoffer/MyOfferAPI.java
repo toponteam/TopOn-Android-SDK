@@ -3,6 +3,7 @@ package com.anythink.network.myoffer;
 import android.content.Context;
 
 import com.anythink.core.common.entity.MyOfferInitInfo;
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.myoffer.buiness.MyOfferAdManager;
 import com.anythink.myoffer.buiness.MyOfferImpressionRecordManager;
 
@@ -16,10 +17,10 @@ public class MyOfferAPI {
      * Init MyOffer Resource
      *
      * @param context
-     * @param myOfferInitInfo
      */
-    public static void initTopOnOffer(Context context, MyOfferInitInfo myOfferInitInfo) {
-        MyOfferAdManager.getInstance(context).initOfferList(myOfferInitInfo);
+    public static void preloadTopOnOffer(Context context, MyOfferInitInfo myOfferInitInfo) {
+
+        MyOfferAdManager.getInstance(context).preloadOfferList(myOfferInitInfo.placementId);
     }
 
     /**
@@ -34,8 +35,8 @@ public class MyOfferAPI {
      * Get offerids and creativeids in MyOffer's caches
      * @return
      */
-    public static String getCacheOfferIds(Context context) {
-        return MyOfferAdManager.getInstance(context).getCacheOfferId();
+    public static String getCacheOfferIds(Context context, String format, MyOfferSetting myOfferSetting) {
+        return MyOfferAdManager.getInstance(context).getCacheOfferId(format, myOfferSetting);
     }
 
     /**

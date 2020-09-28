@@ -1,9 +1,13 @@
 package com.anythink.core.strategy;
 
+import android.text.TextUtils;
+
 import com.anythink.core.api.ATRewardInfo;
 import com.anythink.core.common.HeadBiddingKey;
 import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
+import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.entity.TemplateStrategy;
 import com.anythink.core.common.net.PlaceStrategyLoader;
 import com.anythink.core.common.utils.CommonLogUtil;
@@ -16,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /***
  * @author Z
@@ -90,6 +95,9 @@ public class PlaceStrategy {
      */
     private String headbiddingUnitGroupListStr;
 
+    private List<UnitGroupInfo> mNormalUnitGroupList;
+    private List<UnitGroupInfo> mHBUnitGroupList;
+
 //    /**
 //     */
 //    private List<UnitGroupInfo> unitGroupList;
@@ -98,10 +106,10 @@ public class PlaceStrategy {
 //     */
 //    private List<UnitGroupInfo> headbiddingUnitGroupList;
 
-    /**
-     * Current Request UnitGroupInfo List
-     */
-    private List<UnitGroupInfo> sortByEcpmUnitGroupList;
+//    /**
+//     * Current Request UnitGroupInfo List
+//     */
+//    private List<UnitGroupInfo> sortByEcpmUnitGroupList;
 
     /***
      * Ad Type
@@ -127,8 +135,6 @@ public class PlaceStrategy {
     private String settingId; //Service SettingId
     private int useDefaultMyOffer; //Default MyOffer Switch, 1:true, 0:false
 
-    private String myOfferList; //MyOffer List
-    private String myOfferSetting; //MyOffer Setting
     private int isPreLoadOfferRes; //Pre-Load MyOffer Resource，1:Yes，0:No
     private String myOfferTkMap; //Tracking Map
 
@@ -140,6 +146,105 @@ public class PlaceStrategy {
     private String currency;
     private String country;
 
+    private long hbStartTime;
+    private long hbBidTimeout;
+
+    private String hbRequestUrl;
+
+    /**
+     * v5.6.2
+     */
+    private long loadFailWaitTime;
+    private int loadCap;
+    private long loadCapInterval;
+    private int cachedOffersNum;
+
+    /**
+     * 5.6.6
+     **/
+    private List<MyOfferAd> myOfferAdList;
+    private MyOfferSetting myOfferSetting;
+
+    /**
+     * v5.6.8
+     */
+    private String impressionRevenueForMonitoringPlatformString;
+
+    public String getImpressionRevenueForMonitoringPlatformString() {
+        return impressionRevenueForMonitoringPlatformString;
+    }
+
+    public void setImpressionRevenueForMonitoringPlatformString(String impressionRevenueForMonitoringPlatformString) {
+        this.impressionRevenueForMonitoringPlatformString = impressionRevenueForMonitoringPlatformString;
+    }
+
+    public void setMyOfferSetting(MyOfferSetting myOfferSetting) {
+        this.myOfferSetting = myOfferSetting;
+    }
+
+    public MyOfferSetting getMyOfferSetting() {
+        return this.myOfferSetting;
+    }
+
+    public List<MyOfferAd> getMyOfferAdList() {
+        return myOfferAdList;
+    }
+
+    public void setMyOfferAdList(List<MyOfferAd> myOfferAdList) {
+        this.myOfferAdList = myOfferAdList;
+    }
+
+    public String getHbRequestUrl() {
+        return hbRequestUrl;
+    }
+
+    public void setHbRequestUrl(String hbRequestUrl) {
+        this.hbRequestUrl = hbRequestUrl;
+    }
+
+    public List<UnitGroupInfo> getNormalUnitGroupList() {
+        return mNormalUnitGroupList;
+    }
+
+    public void setNormalUnitGroupList(List<UnitGroupInfo> normalUnitGroupList) {
+        mNormalUnitGroupList = normalUnitGroupList;
+    }
+
+    public List<UnitGroupInfo> getHBGroupList() {
+        return mHBUnitGroupList;
+    }
+
+    public void setHBUnitGroupList(List<UnitGroupInfo> hbUnitGroupList) {
+        mHBUnitGroupList = hbUnitGroupList;
+    }
+
+    public long getHbWaitingToRequestTime() {
+        return hbStartTime;
+    }
+
+    public void setHbWaitingToRequestTime(long hbStartTime) {
+        this.hbStartTime = hbStartTime;
+    }
+
+    public long getHbBidTimeout() {
+        return hbBidTimeout;
+    }
+
+    public void setHbBidTimeout(long hbBidTimeout) {
+        this.hbBidTimeout = hbBidTimeout;
+    }
+
+    public boolean containHBUnitGroupInfo(String adsourceId) {
+        if (mHBUnitGroupList == null) {
+            return false;
+        }
+        for (UnitGroupInfo unitGroupInfo : mHBUnitGroupList) {
+            if (TextUtils.equals(adsourceId, unitGroupInfo.unitId)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public Map<String, ATRewardInfo> getScenarioRewardMap() {
         return scenarioRewardMap;
@@ -181,14 +286,6 @@ public class PlaceStrategy {
         this.sdkCustomMap = sdkCustomMap;
     }
 
-    public String getMyOfferTkMap() {
-        return myOfferTkMap;
-    }
-
-    public void setMyOfferTkMap(String myOfferTkMap) {
-        this.myOfferTkMap = myOfferTkMap;
-    }
-
     public int getIsPreLoadOfferRes() {
         return isPreLoadOfferRes;
     }
@@ -221,21 +318,6 @@ public class PlaceStrategy {
         this.useDefaultMyOffer = useDefaultMyOffer;
     }
 
-    public String getMyOfferList() {
-        return myOfferList;
-    }
-
-    public void setMyOfferList(String myOfferList) {
-        this.myOfferList = myOfferList;
-    }
-
-    public String getMyOfferSetting() {
-        return myOfferSetting;
-    }
-
-    public void setMyOfferSetting(String myOfferSetting) {
-        this.myOfferSetting = myOfferSetting;
-    }
 
     public long getLongOverLoadTime() {
         return longOverLoadTime;
@@ -428,9 +510,9 @@ public class PlaceStrategy {
         this.headbiddingUnitGroupListStr = headbiddingUnitGroupListStr;
     }
 
-    public List<UnitGroupInfo> getSortByEcpmUnitGroupList() {
-        return sortByEcpmUnitGroupList;
-    }
+//    public List<UnitGroupInfo> getSortByEcpmUnitGroupList() {
+//        return sortByEcpmUnitGroupList;
+//    }
 
 //    public void setSortByEcpmUnitGroupList(List<UnitGroupInfo> sortByEcpmUnitGroupList) {
 //        this.sortByEcpmUnitGroupList = sortByEcpmUnitGroupList;
@@ -449,6 +531,38 @@ public class PlaceStrategy {
         this.updateTime = updateTime;
     }
 
+    public long getLoadFailWaitTime() {
+        return loadFailWaitTime;
+    }
+
+    public void setLoadFailWaitTime(long loadFailWaitTime) {
+        this.loadFailWaitTime = loadFailWaitTime;
+    }
+
+    public int getLoadCap() {
+        return loadCap;
+    }
+
+    public void setLoadCap(int loadCap) {
+        this.loadCap = loadCap;
+    }
+
+    public long getLoadCapInterval() {
+        return loadCapInterval;
+    }
+
+    public void setLoadCapInterval(long loadCapInterval) {
+        this.loadCapInterval = loadCapInterval;
+    }
+
+    public int getCachedOffersNum() {
+        return cachedOffersNum;
+    }
+
+    public void setCachedOffersNum(int cachedOffersNum) {
+        this.cachedOffersNum = cachedOffersNum;
+    }
+
     static class ResponseKey {
         private final static String psidOutTime_key = "ps_id_timeout";
         private final static String ps_ct = "ps_ct";
@@ -465,6 +579,11 @@ public class PlaceStrategy {
         private final static String unitGroup_key = "ug_list";
         private final static String group_id_key = "gro_id";
         private final static String unitGroup_hb_list_key = "hb_list";
+
+        /**
+         * 5.6.1 Add Headbidding S2S List
+         */
+        private final static String unitGroup_hb_s2s_list_key = "s2shb_list";
 
 
         private final static String format_id_key = "format";
@@ -500,11 +619,36 @@ public class PlaceStrategy {
         private final static String currency = "currency"; //currency
         private final static String cc = "cc"; //country
 
+        /**
+         * v5.5.7
+         */
+        public final static String hb_start_time = "hb_start_time";
+        public final static String hb_bid_timeout = "hb_bid_timeout";
+
+        /**
+         * v5.6.1
+         */
+        public final static String hb_request_url = "addr_bid";
+
+        /**
+         * v5.6.2
+         */
+        public final static String load_fail_wtime = "load_fail_wtime";
+        public final static String load_cap = "load_cap";
+        public final static String load_cap_time = "load_cap_time";
+        public final static String cached_offers_num = "cached_offers_num";
+
+        /**
+         * v5.6.8
+         */
+        public final static String ilrd = "ilrd";
+
     }
 
-    public static class UnitGroupInfo {
+    public static class UnitGroupInfo implements Comparable<UnitGroupInfo> {
         /**
-         * Level
+         * Only use for marking the adsource would not to be load or show.
+         * if level == -1 , thie adsource would not to be load or show.
          */
         public int level;
         /***
@@ -562,6 +706,14 @@ public class PlaceStrategy {
 
         public int sortType;
 
+        /**
+         * create by HB module
+         */
+        public long bidEndTime;
+        /**
+         * create by HB module
+         */
+        public long bidUseTime;
 
         /***
          * Offer Cache Time
@@ -611,12 +763,12 @@ public class PlaceStrategy {
         public int clickTkSwitch;
 
         /**
-         * AdSource request layer-level
+         * AdSource request layer-requestLevel
          */
         public int requestLayerLevel;
 
         /**
-         * AdSource ecpm layer-level
+         * AdSource ecpm layer-requestLevel
          */
         public int ecpmLayerLevel;
 
@@ -629,6 +781,11 @@ public class PlaceStrategy {
          * Adsource load fail interval
          */
         public long requetFailInterval;
+
+        /**
+         * Bid fail interval
+         */
+        public long bidFailInterval;
 
 
         public UnitGroupInfo() {
@@ -802,7 +959,7 @@ public class PlaceStrategy {
             this.ecpmPrecision = ecpmPrecision;
         }
 
-        public void setRequestFailInterval(long requestFailInterval){
+        public void setRequestFailInterval(long requestFailInterval) {
             this.requetFailInterval = requestFailInterval;
         }
 
@@ -810,6 +967,22 @@ public class PlaceStrategy {
             return this.requetFailInterval;
         }
 
+        public long getBidFailInterval() {
+            return bidFailInterval;
+        }
+
+        public void setBidFailInterval(long bidFailInterval) {
+            this.bidFailInterval = bidFailInterval;
+        }
+
+        @Override
+        public int compareTo(UnitGroupInfo o) {
+            if (this.ecpm > o.ecpm) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
     }
 
 
@@ -967,14 +1140,18 @@ public class PlaceStrategy {
 
             if (jsonObject.isNull(ResponseKey.unitGroup_key)) {
                 strategy.setNormalUnitGroupListStr("[]");
+                strategy.setNormalUnitGroupList(new ArrayList<UnitGroupInfo>());
             } else {
                 strategy.setNormalUnitGroupListStr(jsonObject.optString(ResponseKey.unitGroup_key));
+                strategy.setNormalUnitGroupList(parseUnitGroupInfoList(jsonObject.optString(ResponseKey.unitGroup_key), false));
             }
 
-            if (jsonObject.isNull(ResponseKey.unitGroup_hb_list_key)) {
+            if (jsonObject.isNull(ResponseKey.unitGroup_hb_s2s_list_key)) {
                 strategy.setHeadbiddingUnitGroupListStr("[]");
+                strategy.setHBUnitGroupList(new ArrayList<UnitGroupInfo>());
             } else {
-                JSONArray jsonArray = jsonObject.optJSONArray(ResponseKey.unitGroup_hb_list_key);
+                strategy.setHBUnitGroupList(parseUnitGroupInfoList(jsonObject.optString(ResponseKey.unitGroup_hb_s2s_list_key), true));
+                JSONArray jsonArray = jsonObject.optJSONArray(ResponseKey.unitGroup_hb_s2s_list_key);
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject hbObject = jsonArray.optJSONObject(i);
                     hbObject.put(HeadBiddingKey.unitGroup_bidtype, 1);
@@ -983,10 +1160,12 @@ public class PlaceStrategy {
                 strategy.setHeadbiddingUnitGroupListStr(jsonArray.toString());
             }
 
+            long updateTime = 0;
             if (jsonObject.isNull("updateTime")) {
                 strategy.setUpdateTime(0);
             } else {
-                strategy.setUpdateTime(jsonObject.optLong("updateTime"));
+                updateTime = jsonObject.optLong("updateTime");
+                strategy.setUpdateTime(updateTime);
             }
 
             /**
@@ -1011,21 +1190,14 @@ public class PlaceStrategy {
             }
 
             if (jsonObject.isNull(ResponseKey.m_o)) {
-                strategy.setMyOfferList("");
+                strategy.setMyOfferAdList(null);
             } else {
-                strategy.setMyOfferList(jsonObject.optString(ResponseKey.m_o));
+                strategy.setMyOfferAdList(parseOfferList(jsonObject.optString(ResponseKey.m_o), jsonObject.optString(ResponseKey.m_o_ks), updateTime));
             }
 
             if (jsonObject.isNull(ResponseKey.m_o_s)) {
-                strategy.setMyOfferSetting("");
             } else {
-                strategy.setMyOfferSetting(jsonObject.optString(ResponseKey.m_o_s));
-            }
-
-            if (jsonObject.isNull(ResponseKey.m_o_ks)) {
-                strategy.setMyOfferTkMap("");
-            } else {
-                strategy.setMyOfferTkMap(jsonObject.optString(ResponseKey.m_o_ks));
+                strategy.setMyOfferSetting(MyOfferSetting.parseMyOfferSetting(jsonObject.optString(ResponseKey.m_o_s)));
             }
 
             if (jsonObject.isNull(ResponseKey.p_m_o)) {
@@ -1094,6 +1266,60 @@ public class PlaceStrategy {
                 }
             }
 
+            /** v5.5.7 */
+            if (jsonObject.isNull(ResponseKey.hb_start_time)) {
+                strategy.setHbWaitingToRequestTime(2000L);
+            } else {
+                strategy.setHbWaitingToRequestTime(jsonObject.optLong(ResponseKey.hb_start_time));
+            }
+            if (jsonObject.isNull(ResponseKey.hb_bid_timeout)) {
+                strategy.setHbBidTimeout(10000L);
+            } else {
+                strategy.setHbBidTimeout(jsonObject.optLong(ResponseKey.hb_bid_timeout));
+            }
+
+            /**v5.6.1**/
+            if (jsonObject.isNull(ResponseKey.hb_request_url)) {
+                strategy.setHbRequestUrl("");
+            } else {
+                strategy.setHbRequestUrl(jsonObject.optString(ResponseKey.hb_request_url));
+            }
+
+            /**
+             * v5.6.2
+             */
+            if (jsonObject.isNull(ResponseKey.load_fail_wtime)) {
+                strategy.setLoadFailWaitTime(10 * 1000);
+            } else {
+                strategy.setLoadFailWaitTime(jsonObject.optLong(ResponseKey.load_fail_wtime));
+            }
+
+            if (jsonObject.isNull(ResponseKey.load_cap)) {
+                strategy.setLoadCap(-1);
+            } else {
+                strategy.setLoadCap(jsonObject.optInt(ResponseKey.load_cap));
+            }
+
+            if (jsonObject.isNull(ResponseKey.load_cap_time)) {
+                strategy.setLoadCapInterval(900000);
+            } else {
+                strategy.setLoadCapInterval(jsonObject.optLong(ResponseKey.load_cap_time));
+            }
+
+            if (jsonObject.isNull(ResponseKey.cached_offers_num)) {
+                strategy.setCachedOffersNum(2);
+            } else {
+                strategy.setCachedOffersNum(jsonObject.optInt(ResponseKey.cached_offers_num));
+            }
+
+            /**
+             * v5.6.8
+             */
+            if (jsonObject.isNull(ResponseKey.ilrd)) {
+                strategy.setImpressionRevenueForMonitoringPlatformString(null);
+            } else {
+                strategy.setImpressionRevenueForMonitoringPlatformString(jsonObject.optString(ResponseKey.ilrd));
+            }
             return strategy;
         } catch (Exception e) {
             if (Const.DEBUG) {
@@ -1110,37 +1336,37 @@ public class PlaceStrategy {
         return adDeliverySw == 1;
     }
 
-    List<UnitGroupInfo> mNofilterList = new ArrayList<>();
+//    List<UnitGroupInfo> mNofilterList = new ArrayList<>();
 
     /**
      * Temp no filer UnitGroupList, use to tracking
      *
      * @param noFilterList
      */
-    public synchronized void setNoFilterList(List<UnitGroupInfo> noFilterList) {
-        CommonLogUtil.i("placement", "setNoFilterList Size:" + noFilterList.size());
-        mNofilterList = noFilterList;
-        for (UnitGroupInfo unitGroupInfo : mNofilterList) {
-            unitGroupInfo.level = -1;
-        }
-    }
+//    public synchronized void setNoFilterList(List<UnitGroupInfo> noFilterList) {
+//        CommonLogUtil.i("placement", "setNoFilterList Size:" + noFilterList.size());
+//        mNofilterList = noFilterList;
+//        for (UnitGroupInfo unitGroupInfo : mNofilterList) {
+//            unitGroupInfo.level = -1;
+//        }
+//    }
 
-    /**
-     * Final Request UnitGroup List
-     *
-     * @param filterList
-     */
-    public synchronized void updateSortUnitgroupList(List<UnitGroupInfo> filterList) {
-        if (sortByEcpmUnitGroupList != null) {
-            sortByEcpmUnitGroupList.clear();
-        } else {
-            sortByEcpmUnitGroupList = new ArrayList<>();
-        }
-
-        CommonLogUtil.i("placement", "update filteSize:" + filterList.size() + "---no filter size:" + mNofilterList.size());
-        sortByEcpmUnitGroupList.addAll(filterList);
-        sortByEcpmUnitGroupList.addAll(mNofilterList);
-    }
+//    /**
+//     * Final Request UnitGroup List
+//     *
+//     * @param filterList
+//     */
+//    public synchronized void updateSortUnitgroupList(List<UnitGroupInfo> filterList) {
+//        if (sortByEcpmUnitGroupList != null) {
+//            sortByEcpmUnitGroupList.clear();
+//        } else {
+//            sortByEcpmUnitGroupList = new ArrayList<>();
+//        }
+//
+//        CommonLogUtil.i("placement", "update filteSize:" + filterList.size() + "---no filter size:" + mNofilterList.size());
+//        sortByEcpmUnitGroupList.addAll(filterList);
+//        sortByEcpmUnitGroupList.addAll(mNofilterList);
+//    }
 
 
 //    /**
@@ -1167,8 +1393,8 @@ public class PlaceStrategy {
      * @param successArray
      * @return
      */
-    public static List<PlaceStrategy.UnitGroupInfo> parseUnitGroupInfoList(String successArray) {
-        List<PlaceStrategy.UnitGroupInfo> unitGroupList = new ArrayList<PlaceStrategy.UnitGroupInfo>();
+    public static List<PlaceStrategy.UnitGroupInfo> parseUnitGroupInfoList(String successArray, boolean isHB) {
+        CopyOnWriteArrayList<UnitGroupInfo> unitGroupList = new CopyOnWriteArrayList<PlaceStrategy.UnitGroupInfo>();
         try {
             JSONArray unitGroupArray = new JSONArray(successArray);
 
@@ -1180,8 +1406,8 @@ public class PlaceStrategy {
                     continue;
                 }
                 unitGroupInfo = new PlaceStrategy.UnitGroupInfo();
-                unitGroupInfo.level = -1;
-                unitGroupInfo.bidType = arryItemTemp.optInt(HeadBiddingKey.unitGroup_bidtype);
+//                unitGroupInfo.level = i;
+                unitGroupInfo.bidType = isHB ? 1 : 0;
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_adapterClassName_key)) {
                     unitGroupInfo.adapterClassName = "";
                 } else {
@@ -1253,7 +1479,9 @@ public class PlaceStrategy {
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_ecpm)) {
                     unitGroupInfo.setEcpm(0);
                 } else {
-                    unitGroupInfo.setEcpm(arryItemTemp.optDouble(HeadBiddingKey.unitGroup_ecpm));
+                    if (!isHB) {
+                        unitGroupInfo.setEcpm(arryItemTemp.optDouble(HeadBiddingKey.unitGroup_ecpm));
+                    }
                 }
 
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_hb_timeout)) {
@@ -1352,6 +1580,12 @@ public class PlaceStrategy {
                     unitGroupInfo.setRequestFailInterval(arryItemTemp.optLong(HeadBiddingKey.unitGroup_request_fail_interval));
                 }
 
+                if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_bid_fail_interval)) {
+                    unitGroupInfo.setBidFailInterval(0);
+                } else {
+                    unitGroupInfo.setBidFailInterval(arryItemTemp.optLong(HeadBiddingKey.unitGroup_bid_fail_interval));
+                }
+
 
                 unitGroupList.add(unitGroupInfo);
             }
@@ -1361,6 +1595,90 @@ public class PlaceStrategy {
 
         return unitGroupList;
 
+    }
+
+    /**
+     * Parse MyOffer List
+     *
+     * @param offerList
+     * @return
+     */
+    private static List<MyOfferAd> parseOfferList(String offerList, String tkInfoMap, long updateTime) {
+        List<MyOfferAd> myOfferAdList = new ArrayList<>();
+
+        try {
+            JSONArray jsonArray = new JSONArray(offerList);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                MyOfferAd myOfferAd = new MyOfferAd();
+                JSONObject offerObject = jsonArray.optJSONObject(i);
+                myOfferAd.setOfferId(offerObject.optString("o_id"));
+                myOfferAd.setCreativeId(offerObject.optString("c_id"));
+                myOfferAd.setTitle(offerObject.optString("t"));
+                myOfferAd.setPkgName(offerObject.optString("p_g"));
+                myOfferAd.setDesc(offerObject.optString("d"));
+                myOfferAd.setIconUrl(offerObject.optString("ic_u"));
+                myOfferAd.setMainImageUrl(offerObject.optString("im_u"));
+                myOfferAd.setEndCardImageUrl(offerObject.optString("f_i_u"));
+                myOfferAd.setAdChoiceUrl(offerObject.optString("a_c_u"));
+                myOfferAd.setCtaText(offerObject.optString("c_t"));
+                myOfferAd.setVideoUrl(offerObject.optString("v_u"));
+                myOfferAd.setClickType(offerObject.optInt("l_t"));
+                myOfferAd.setPreviewUrl(offerObject.optString("p_u"));
+                myOfferAd.setDeeplinkUrl(offerObject.optString("dl"));
+                myOfferAd.setClickUrl(offerObject.optString("c_u"));
+                myOfferAd.setNoticeUrl(offerObject.optString("ip_u"));
+
+                /**Tracking url handle**/
+                myOfferAd.setVideoStartTrackUrl(offerObject.optString("t_u"));
+                myOfferAd.setVideoProgress25TrackUrl(offerObject.optString("t_u_25"));
+                myOfferAd.setVideoProgress50TrackUrl(offerObject.optString("t_u_50"));
+                myOfferAd.setVideoProgress75TrackUrl(offerObject.optString("t_u_75"));
+                myOfferAd.setVideoFinishTrackUrl(offerObject.optString("t_u_100"));
+                myOfferAd.setEndCardShowTrackUrl(offerObject.optString("s_e_c_t_u"));
+                myOfferAd.setEndCardCloseTrackUrl(offerObject.optString("c_t_u"));
+                myOfferAd.setImpressionTrackUrl(offerObject.optString("ip_n_u"));
+                myOfferAd.setClickTrackUrl(offerObject.optString("c_n_u"));
+
+
+                myOfferAd.setOfferCap(offerObject.optInt("o_a_d_c"));
+                myOfferAd.setOfferPacing(offerObject.optLong("o_a_p"));
+                myOfferAd.setUpdateTime(updateTime);
+
+                myOfferAd.setOfferType(offerObject.optInt("unit_type"));
+                myOfferAd.setClickMode(offerObject.optInt("c_m"));
+
+                /**v5.6.6**/
+                myOfferAd.setBanner320x50Url(offerObject.optString("ext_h_pic"));
+                myOfferAd.setBanner320x90Url(offerObject.optString("ext_big_h_pic"));
+                myOfferAd.setBanner300x250Url(offerObject.optString("ext_rect_h_pic"));
+                myOfferAd.setBanner728x90Url(offerObject.optString("ext_home_h_pic"));
+
+                myOfferAd.setTkInfoMap(tkInfoMap);
+                myOfferAdList.add(myOfferAd);
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return myOfferAdList;
+    }
+
+
+    /**
+     * Get MyOffer by Id
+     *
+     * @param offerId
+     * @return
+     */
+    public MyOfferAd getMyOfferByOfferId(String offerId) {
+        if (myOfferAdList != null) {
+            for (MyOfferAd myOfferAd : myOfferAdList) {
+                if (TextUtils.equals(offerId, myOfferAd.getOfferId()) && !myOfferAd.isExpire(myOfferSetting)) {
+                    return myOfferAd;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -1374,7 +1692,7 @@ public class PlaceStrategy {
     /**
      * JSONObject to Map
      */
-    public static Map<String, Object> getServerExtrasMap(String placementId, PlaceStrategy.UnitGroupInfo unitGroupInfo, String extraSetting) {
+    public static Map<String, Object> getServerExtrasMap(String placementId, PlaceStrategy.UnitGroupInfo unitGroupInfo, MyOfferSetting extraSetting) {
         Map<String, Object> serviceExtras = getServerExtrasMap(unitGroupInfo.content);
 
         serviceExtras.put("payload", unitGroupInfo.getPayload());
@@ -1382,8 +1700,6 @@ public class PlaceStrategy {
             serviceExtras.put("myoffer_setting", extraSetting);
             serviceExtras.put("topon_placement", placementId);
         }
-
-        AppStrategy.fillGdprData(serviceExtras);
         return serviceExtras;
     }
 

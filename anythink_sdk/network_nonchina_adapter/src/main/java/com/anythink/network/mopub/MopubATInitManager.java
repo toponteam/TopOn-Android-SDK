@@ -50,27 +50,6 @@ public class MopubATInitManager extends ATInitMediation {
             @Override
             public void onInitializationFinished() {
 
-                if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                    //Whether to agree to collect data
-                    boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                    //Whether to set the GDPR of the network
-                    boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                    if (need_set_gdpr) {
-                        PersonalInfoManager mPersonalInfoManager = MoPub.getPersonalInformationManager();
-
-                        if (gdp_consent) {
-                            //Agree
-                            mPersonalInfoManager.grantConsent();
-                        } else {
-                            //Refuse
-                            mPersonalInfoManager.revokeConsent();
-                        }
-                    }
-                }
-
-                logGDPRSetting(MopubATConst.NETWORK_FIRM_ID);
-
                 if (initListener != null) {
                     initListener.initSuccess();
                 }
@@ -81,6 +60,22 @@ public class MopubATInitManager extends ATInitMediation {
     @Override
     public void initSDK(Context context, Map<String, Object> serviceExtras) {
         initSDK(context, serviceExtras, null);
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        PersonalInfoManager mPersonalInfoManager = MoPub.getPersonalInformationManager();
+        if (mPersonalInfoManager == null) {
+            return false;
+        }
+        if (isConsent) {
+            //Agree
+            mPersonalInfoManager.grantConsent();
+        } else {
+            //Refuse
+            mPersonalInfoManager.revokeConsent();
+        }
+        return true;
     }
 
     interface InitListener {

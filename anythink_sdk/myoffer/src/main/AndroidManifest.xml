@@ -11,5 +11,9 @@
             android:name="com.anythink.myoffer.ui.MyOfferPortraitActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:screenOrientation="sensorPortrait" />
+
+        <activity
+            android:name="com.anythink.myoffer.ui.ApkConfirmDialogActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
     </application>
 </manifest>

@@ -17,18 +17,17 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.CommonUtil;
 import com.anythink.myoffer.buiness.MyOfferResourceManager;
 import com.anythink.myoffer.buiness.resource.MyOfferVideoUtil;
-import com.anythink.myoffer.entity.MyOfferSetting;
 import com.anythink.myoffer.ui.util.ViewUtil;
 import com.anythink.network.myoffer.MyOfferError;
 import com.anythink.network.myoffer.MyOfferErrorCode;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
-import java.io.IOException;
 
 
 public class PlayerView extends RelativeLayout implements TextureView.SurfaceTextureListener {
@@ -63,7 +62,6 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
 
     private OnPlayerListener mListener;
     private Handler mMainHandler;
-
 
 
     private int mViewSizeDp = 29;//dp
@@ -110,34 +108,32 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
                 }
 
                 //Control to show close button
-                if(mCloseBtn == null && mShowCloseTime >= 0 && mCurrentPosition >= mShowCloseTime) {
+                if (mCloseBtn == null && mShowCloseTime >= 0 && mCurrentPosition >= mShowCloseTime) {
                     showCloseButton();
                 }
 
-                if(!mIsVideoStart && !mIsVideoPlayCompletion) {
+                if (!mIsVideoStart && !mIsVideoPlayCompletion) {
                     mIsVideoStart = true;
                     if (mListener != null) {
                         mListener.onVideoPlayStart();
                     }
                 }
 
-                if(mListener != null) {
+                if (mListener != null) {
                     mListener.onVideoUpdateProgress(mCurrentPosition);
                 }
 
-                if(!mVideoPlay25 && mCurrentPosition >= mVideoProgress25) {
+                if (!mVideoPlay25 && mCurrentPosition >= mVideoProgress25) {
                     mVideoPlay25 = true;
                     if (mListener != null) {
                         mListener.onVideoPlayProgress(25);
                     }
-                }
-                else if(!mVideoPlay50 && mCurrentPosition >= mVideoProgress50) {
+                } else if (!mVideoPlay50 && mCurrentPosition >= mVideoProgress50) {
                     mVideoPlay50 = true;
                     if (mListener != null) {
                         mListener.onVideoPlayProgress(50);
                     }
-                }
-                else if(!mVideoPlay75 && mCurrentPosition >= mVideoProgress75) {
+                } else if (!mVideoPlay75 && mCurrentPosition >= mVideoProgress75) {
                     mVideoPlay75 = true;
                     if (mListener != null) {
                         mListener.onVideoPlayProgress(75);
@@ -145,7 +141,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
                 }
 
                 showView();
-                if(mCountDownView != null && mCountDownView.isShown()) {
+                if (mCountDownView != null && mCountDownView.isShown()) {
                     mCountDownView.refresh(mCurrentPosition);
                 }
             }
@@ -189,8 +185,8 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         mIsVideoPlayCompletion = ss.saveIsVideoPlayCompletion;
         mIsMute = ss.saveIsMute;
 
-        if(mMediaPlayer != null) {
-            mMediaPlayer.setVolume(mIsMute? 0: 1, mIsMute? 0: 1);
+        if (mMediaPlayer != null) {
+            mMediaPlayer.setVolume(mIsMute ? 0 : 1, mIsMute ? 0 : 1);
         }
 
     }
@@ -237,7 +233,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
             out.writeBooleanArray(booleans);
         }
 
-        public static final Parcelable.Creator<SavedState> CREATOR = new Parcelable.Creator<SavedState>(){
+        public static final Parcelable.Creator<SavedState> CREATOR = new Parcelable.Creator<SavedState>() {
 
             @Override
             public SavedState createFromParcel(Parcel source) {
@@ -264,7 +260,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
 
 
     public void setSetting(MyOfferSetting myOfferSetting) {
-        if(myOfferSetting == null) {
+        if (myOfferSetting == null) {
             return;
         }
 
@@ -277,8 +273,8 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     private void init() {
         CommonLogUtil.d(TAG, "init...");
         boolean error = checkValid();
-        if(error) {
-            if(mListener != null) {
+        if (error) {
+            if (mListener != null) {
                 mListener.onVideoShowFailed(MyOfferErrorCode.get(MyOfferErrorCode.rewardedVideoPlayError, MyOfferErrorCode.fail_video_file_error_));
             }
             return;
@@ -305,16 +301,16 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     }
 
     private void computeVideoSize() {
-        if(mVideoWidth != 0 && mVideoHeight != 0) {
+        if (mVideoWidth != 0 && mVideoHeight != 0) {
             return;
         }
         try {
             DisplayMetrics dm = getResources().getDisplayMetrics();
             MyOfferVideoUtil.Size videoSize = MyOfferVideoUtil.getAdaptiveVideoSize(mSourceFD, dm.widthPixels, dm.heightPixels);
 
-            if(videoSize != null) {
+            if (videoSize != null) {
                 mVideoWidth = videoSize.width;
-                mVideoHeight= videoSize.height;
+                mVideoHeight = videoSize.height;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -323,7 +319,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
 
 
     private void initCountDownView() {
-        if(getChildAt(mCountDownViewIndex) != null) {
+        if (getChildAt(mCountDownViewIndex) != null) {
             removeViewAt(mCountDownViewIndex);
         }
 
@@ -331,13 +327,13 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         mCountDownView.setId(CommonUtil.getResId(getContext(), "myoffer_count_down_view_id", "id"));
         RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(mViewSize, mViewSize);
         rl.leftMargin = mLeftMargin;
-        rl.topMargin  = mTopMargin;
+        rl.topMargin = mTopMargin;
         mCountDownView.setVisibility(View.INVISIBLE);
         addView(mCountDownView, mCountDownViewIndex, rl);
     }
 
     private void initMutebutton() {
-        if(getChildAt(mMuteButtonIndex) != null) {
+        if (getChildAt(mMuteButtonIndex) != null) {
             removeViewAt(mMuteButtonIndex);
         }
 
@@ -351,7 +347,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         mMuteBtn.setVisibility(View.INVISIBLE);
         addView(mMuteBtn, mMuteButtonIndex, rl);
 
-        if(mIsMute) {
+        if (mIsMute) {
             mMuteBtn.setBackgroundResource(mMuteResId);
         } else {
             mMuteBtn.setBackgroundResource(mNoMuteResId);
@@ -360,12 +356,12 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         mMuteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mIsVideoPlayCompletion) {
+                if (mIsVideoPlayCompletion) {
                     return;
                 }
 
                 mIsMute = !mIsMute;
-                if(mIsMute) {//静音
+                if (mIsMute) {//静音
                     mMuteBtn.setBackgroundResource(mMuteResId);
                     if (mMediaPlayer != null) {
                         mMediaPlayer.setVolume(0f, 0f);
@@ -382,7 +378,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     }
 
     private void initCloseButton() {
-        if(getChildAt(mCloseButtonIndex) != null) {
+        if (getChildAt(mCloseButtonIndex) != null) {
             removeViewAt(mCloseButtonIndex);
         }
 
@@ -402,7 +398,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         mCloseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mListener != null) {
+                if (mListener != null) {
                     mListener.onVideoCloseClick();
                 }
             }
@@ -415,21 +411,20 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     }
 
     private void showCountDownView() {
-        if(mCountDownView != null && !mCountDownView.isShown()) {
+        if (mCountDownView != null && !mCountDownView.isShown()) {
             mCountDownView.setVisibility(View.VISIBLE);
         }
     }
 
     private void showMuteButton() {
-        if(mMuteBtn != null && !mMuteBtn.isShown()) {
+        if (mMuteBtn != null && !mMuteBtn.isShown()) {
             mMuteBtn.setVisibility(View.VISIBLE);
         }
     }
 
 
-
     private void startProgressThread() {
-        if(mProgressThread != null) {
+        if (mProgressThread != null) {
             return;
         }
         mFlag = true;
@@ -468,21 +463,21 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         boolean error = false;
 
         try {
-            if(mFileInputStream == null) {
+            if (mFileInputStream == null) {
                 error = true;
-            } else{
+            } else {
                 mSourceFD = mFileInputStream.getFD();
             }
 
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             error = true;
         }
-        if(error) {
-            if(mFileInputStream != null) {
+        if (error) {
+            if (mFileInputStream != null) {
                 try {
                     mFileInputStream.close();
-                } catch (IOException e) {
+                } catch (Throwable e) {
                     e.printStackTrace();
                 }
             }
@@ -494,7 +489,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     private void initMediaPlayer() {
         if (mMediaPlayer == null) {
             mMediaPlayer = new MediaPlayer();
-            mMediaPlayer.setVolume(mIsMute? 0: 1, mIsMute? 0: 1);
+            mMediaPlayer.setVolume(mIsMute ? 0 : 1, mIsMute ? 0 : 1);
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
@@ -503,7 +498,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
 
                     mIsMediaPlayerPrepared = true;
                     mDuration = mMediaPlayer.getDuration();
-                    if(mCountDownView != null) {
+                    if (mCountDownView != null) {
                         mCountDownView.setDuration(mDuration);
                     }
                     mVideoProgress25 = Math.round(0.25f * mDuration);
@@ -511,7 +506,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
                     mVideoProgress75 = Math.round(0.75f * mDuration);
 
 
-                    if(mCurrentPosition > 0) {
+                    if (mCurrentPosition > 0) {
                         mMediaPlayer.seekTo(mCurrentPosition);
                     } else {
 
@@ -527,7 +522,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
                 }
             });
 
-            if(!mIsVideoPlayCompletion) {
+            if (!mIsVideoPlayCompletion) {
                 mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                     @Override
                     public void onCompletion(MediaPlayer mp) {
@@ -535,7 +530,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
                         mIsVideoPlayCompletion = true;
                         mCurrentPosition = mDuration;
 
-                        if(mListener != null) {
+                        if (mListener != null) {
                             mListener.onVideoPlayCompletion();
                         }
                     }
@@ -545,7 +540,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
             mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                 @Override
                 public boolean onError(MediaPlayer mp, int what, int extra) {
-                    if(mListener != null) {
+                    if (mListener != null) {
                         mListener.onVideoShowFailed(MyOfferErrorCode.get(MyOfferErrorCode.rewardedVideoPlayError, MyOfferErrorCode.fail_player));
                     }
                     return true;//false will call OnCompletionListener
@@ -562,7 +557,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
             mTextureView.setKeepScreenOn(true);
 
             RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-            if(mVideoWidth != 0 && mVideoHeight != 0) {
+            if (mVideoWidth != 0 && mVideoHeight != 0) {
                 rl.width = mVideoWidth;
                 rl.height = mVideoHeight;
             }
@@ -573,7 +568,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
             mTextureView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(mListener != null) {
+                    if (mListener != null) {
                         mListener.onVideoClick();
                     }
                 }
@@ -586,13 +581,19 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         init();
         try {
             mMediaPlayer.reset();
-            CommonLogUtil.d(TAG, "valid - " + mSourceFD.valid());
+
+            if (!mSourceFD.valid()) {
+                throw new IllegalStateException("MyOffer video resource is valid");
+            } else {
+                CommonLogUtil.d(TAG, "video resource valid - " + mSourceFD.valid());
+            }
+
             mMediaPlayer.setDataSource(this.mSourceFD);
             try {
-                if(mFileInputStream != null) {
+                if (mFileInputStream != null) {
                     mFileInputStream.close();
                 }
-            } catch (IOException e){
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
             if (mSurface == null) {
@@ -601,9 +602,9 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
             mMediaPlayer.setSurface(mSurface);
             mMediaPlayer.prepareAsync();
 
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
-            if(mListener != null) {
+            if (mListener != null) {
                 mListener.onVideoShowFailed(MyOfferErrorCode.get(MyOfferErrorCode.rewardedVideoPlayError, e.getMessage()));
             }
         }
@@ -625,24 +626,24 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     public void pause() {
         CommonLogUtil.d(TAG, "pause()");
         stopProgressThread();
-        if(isPlaying()) {
+        if (isPlaying()) {
             mMediaPlayer.pause();
         }
     }
 
     public void stop() {
         CommonLogUtil.d(TAG, "stop()");
-        if(mMediaPlayer != null) {
+        if (mMediaPlayer != null) {
             mMediaPlayer.stop();
         }
 
-        if(mListener != null) {
+        if (mListener != null) {
             mListener.onVideoPlayEnd();
         }
     }
 
     public void release() {
-        if(!mIsMediaPlayerPrepared) {
+        if (!mIsMediaPlayerPrepared) {
             return;
         }
         CommonLogUtil.d(TAG, "release...");
@@ -650,14 +651,14 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         mSurfaceTexture = null;
         mSurface = null;
         if (mMediaPlayer != null) {
-            if(mMediaPlayer.isPlaying()) {
+            if (mMediaPlayer.isPlaying()) {
                 mMediaPlayer.stop();
             }
             mMediaPlayer.reset();
             mMediaPlayer.release();
             mMediaPlayer = null;
         }
-        if(mMainHandler != null) {
+        if (mMainHandler != null) {
             mMainHandler.removeCallbacksAndMessages(null);
         }
         mIsMediaPlayerPrepared = false;
@@ -704,12 +705,19 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
 
     public interface OnPlayerListener {
         void onVideoPlayStart();
+
         void onVideoUpdateProgress(int progress);
+
         void onVideoPlayEnd();
+
         void onVideoPlayCompletion();
+
         void onVideoShowFailed(MyOfferError error);
+
         void onVideoPlayProgress(int progressArea);
+
         void onVideoCloseClick();
+
         void onVideoClick();
     }
 }

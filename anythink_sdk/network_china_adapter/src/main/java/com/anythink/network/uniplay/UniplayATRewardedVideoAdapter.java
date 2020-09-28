@@ -1,11 +1,9 @@
 package com.anythink.network.uniplay;
 
 import android.app.Activity;
+import android.content.Context;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.uniplay.adsdk.VideoAd;
 import com.uniplay.adsdk.VideoAdListener;
 
@@ -22,75 +20,77 @@ public class UniplayATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
         @Override
         public void onVideoAdReady() {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(UniplayATRewardedVideoAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
 
         @Override
         public void onVideoAdStart() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayStart(UniplayATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayStart();
             }
         }
 
         @Override
         public void onVideoAdProgress(int i, int i1) {
-            log(TAG, "onVideoAdProgress:" + i);
         }
 
         @Override
         public void onVideoAdFailed(String s) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(UniplayATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", s));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", s);
             }
         }
 
         @Override
         public void onVideoAdComplete() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayEnd(UniplayATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayEnd();
             }
 
             if (mImpressionListener != null) {
-                mImpressionListener.onReward(UniplayATRewardedVideoAdapter.this);
+                mImpressionListener.onReward();
             }
         }
 
         @Override
         public void onVideoAdClose() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdClosed(UniplayATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdClosed();
             }
         }
     };
 
+
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, final CustomRewardVideoListener customRewardVideoListener) {
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
 
-        mLoadResultListener = customRewardVideoListener;
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
-
-        if (serverExtras.containsKey("app_id")) {
-            appId = (String) serverExtras.get("app_id");
+        if (serverExtra.containsKey("app_id")) {
+            appId = (String) serverExtra.get("app_id");
 
         } else {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id is empty!");
             }
             return;
         }
 
-        mVideoAd = VideoAd.getInstance().init(activity, appId, mAdListener);
-        mVideoAd.loadVideoAd();
-
+        postOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mVideoAd = VideoAd.getInstance().init(context.getApplicationContext(), appId, mAdListener);
+                    mVideoAd.loadVideoAd();
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
+            }
+        });
     }
+
 
     @Override
     public boolean isAdReady() {
@@ -110,27 +110,26 @@ public class UniplayATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
-        mVideoAd = null;
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return "";
-    }
-
-    @Override
     public String getNetworkName() {
         return UniplayATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void destory() {
+        if (mVideoAd != null) {
+            mVideoAd.setOnVideoAdStateListener(null);
+            mVideoAd = null;
+        }
+        mAdListener = null;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return appId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return "";
     }
 }

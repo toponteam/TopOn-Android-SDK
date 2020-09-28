@@ -6,7 +6,6 @@ import android.content.Context;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 
 import net.nend.android.NendAdFullBoard;
 import net.nend.android.NendAdFullBoardLoader;
@@ -30,32 +29,15 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
     boolean mIsReady = false;
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-
-        if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity."));
-            }
-            return;
-        }
-
-        Activity activity = (Activity) context;
-
-        if (serverExtras == null) {
-            if (customInterstitialListener != null) {
-                customInterstitialListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         if (serverExtras.containsKey("api_key") && serverExtras.containsKey("spot_id")) {
             mApiKey = (String) serverExtras.get("api_key");
             mSpotId = Integer.parseInt((String) serverExtras.get("spot_id"));
 
         } else {
-            if (customInterstitialListener != null) {
-                customInterstitialListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id or slot_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id or slot_id is empty!");
             }
             return;
         }
@@ -67,23 +49,23 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
 
         //interstitial ad
         if (mInterstitalType == 0) {
-            NendATInterstitialLoadManager.getInstance().loadAd(activity, mSpotId, mApiKey, this);
+            NendATInterstitialLoadManager.getInstance().loadAd(context.getApplicationContext(), mSpotId, mApiKey, this);
         }
 
 
         //interstitial video ad
         if (mInterstitalType == 1) {
-            videoAdLoad(activity);
+            videoAdLoad(context.getApplicationContext());
         }
 
         //fullscreen ad
         if (mInterstitalType == 2) {
-            fullscreenAdLoad(activity);
+            fullscreenAdLoad(context.getApplicationContext());
         }
     }
 
-    private void fullscreenAdLoad(Activity activity) {
-        mNendAdFullScreen = new NendAdFullBoardLoader(activity, mSpotId, mApiKey);
+    private void fullscreenAdLoad(Context context) {
+        mNendAdFullScreen = new NendAdFullBoardLoader(context.getApplicationContext(), mSpotId, mApiKey);
         mNendAdFullScreen.loadAd(new NendAdFullBoardLoader.Callback() {
             @Override
             public void onSuccess(NendAdFullBoard nendAdFullBoard) {
@@ -114,8 +96,8 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
         });
     }
 
-    private void videoAdLoad(Activity activity) {
-        mNendAdInterstitalVideo = new NendAdInterstitialVideo(activity, mSpotId, mApiKey);
+    private void videoAdLoad(Context context) {
+        mNendAdInterstitalVideo = new NendAdInterstitialVideo(context.getApplicationContext(), mSpotId, mApiKey);
         mNendAdInterstitalVideo.setAdListener(new NendAdVideoListener() {
             @Override
             public void onLoaded(NendAdVideo nendAdVideo) {
@@ -171,10 +153,10 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
 
-        if (mInterstitalType == 0 && context instanceof Activity) {
-            NendAdInterstitial.NendAdInterstitialShowResult result = NendAdInterstitial.showAd((Activity) context, mSpotId, new NendAdInterstitial.OnClickListener() {
+        if (mInterstitalType == 0 && activity != null) {
+            NendAdInterstitial.NendAdInterstitialShowResult result = NendAdInterstitial.showAd(activity, mSpotId, new NendAdInterstitial.OnClickListener() {
                 @Override
                 public void onClick(NendAdInterstitial.NendAdInterstitialClickType nendAdInterstitialClickType) {
                     switch (nendAdInterstitialClickType) {
@@ -196,27 +178,17 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
             }
         }
 
-        if (mInterstitalType == 1 && context instanceof Activity) {
+        if (mInterstitalType == 1 && activity != null) {
             if (mNendAdInterstitalVideo != null) {
-                mNendAdInterstitalVideo.showAd((Activity) context);
+                mNendAdInterstitalVideo.showAd(activity);
             }
         }
 
-        if (mInterstitalType == 2 && context instanceof Activity) {
+        if (mInterstitalType == 2 && activity != null) {
             if (mNendAdFullBoard != null) {
-                mNendAdFullBoard.show((Activity) context);
+                mNendAdFullBoard.show(activity);
             }
         }
-    }
-
-    @Override
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onPause() {
-
     }
 
     @Override
@@ -237,50 +209,75 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void clean() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
 
+    @Override
+    public void destory() {
+        if (mNendAdFullBoard != null) {
+            mNendAdFullBoard.setAdListener(null);
+            mNendAdFullBoard = null;
+        }
+
+        if (mNendAdInterstitalVideo != null) {
+            mNendAdInterstitalVideo.setAdListener(null);
+            mNendAdInterstitalVideo = null;
+        }
+
+        mNendAdFullScreen = null;
     }
 
 
     public void notifyLoaded() {
         mIsReady = true;
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onInterstitialAdLoaded(this);
+        if (mLoadListener != null) {
+            mLoadListener.onAdCacheLoaded();
         }
     }
 
     public void notifyLoadFail(String code, String msg) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, code, msg));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(code, msg);
         }
     }
 
     public void notifyShow() {
         mIsReady = false;
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdShow(this);
+            mImpressListener.onInterstitialAdShow();
         }
     }
 
     public void notifyClick() {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdClicked(this);
+            mImpressListener.onInterstitialAdClicked();
         }
     }
 
     public void notifyClose() {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdClose(this);
+            mImpressListener.onInterstitialAdClose();
         }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 
     @Override
     public String getNetworkName() {
         return NendATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        try {
+            return String.valueOf(mSpotId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

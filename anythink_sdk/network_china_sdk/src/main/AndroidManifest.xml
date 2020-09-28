@@ -13,8 +13,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.GET_TASKS" /> <!-- 如果有视频相关的广告且使用textureView播放，请务必添加，否则黑屏 -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.per!mission.WRITE_EXTERNAL_STORAGE" /> <!-- 以下为可选权限 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- 以下为可选权限 -->
     <!-- <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
     <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
     <application>
@@ -71,53 +70,9 @@
         </provider>
 
         <activity
-            android:name="com.mintegral.msdk.activity.MTGCommonActivity"
-            android:configChanges="keyboard|orientation"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
-        </activity>
-
-        <receiver android:name="com.mintegral.msdk.click.AppReceiver" >
-            <intent-filter>
-                <action android:name="android.intent.action.PACKAGE_ADDED" />
-
-                <data android:scheme="package" />
-            </intent-filter>
-        </receiver>
-
-        <service android:name="com.mintegral.msdk.shell.MTGService" >
-            <intent-filter>
-                <action android:name="com.mintegral.msdk.download.action" />
-            </intent-filter>
-        </service>
-
-        <activity
-            android:name="com.mintegral.msdk.reward.player.MTGRewardVideoActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-        <activity
-            android:name="com.mintegral.msdk.interstitial.view.MTGInterstitialActivity"
-            android:configChanges="orientation|screenSize"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <provider
-            android:name="com.mintegral.msdk.base.utils.MTGFileProvider"
-            android:authorities="${applicationId}.mtgFileProvider"
-            android:exported="false"
-            android:grantUriPermissions="true" >
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/anythink_bk_mtg_file_path" />
-        </provider>
-
-        <activity
             android:name="mobi.oneway.export.AdShowActivity"
             android:configChanges="fontScale|keyboard|keyboardHidden|locale|mnc|mcc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|touchscreen"
             android:hardwareAccelerated="true"
-            android:launchMode="singleTask"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
 
         <provider

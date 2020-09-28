@@ -12,16 +12,16 @@ class MyOfferUrlLoadManager {
 
     public static final String TAG = MyOfferUrlLoadManager.class.getSimpleName();
 
+    private static MyOfferUrlLoadManager sInstance;
     private MyOfferUrlLoadManager() {
 
     }
 
-    public static MyOfferUrlLoadManager getInstance() {
-        return Holder.sInstance;
-    }
-
-    private static class Holder {
-        private static final MyOfferUrlLoadManager sInstance = new MyOfferUrlLoadManager();
+    public synchronized static MyOfferUrlLoadManager getInstance() {
+        if(sInstance == null){
+            sInstance = new MyOfferUrlLoadManager();
+        }
+        return sInstance;
     }
 
     private List<ResourceLoadResult> mResourceLoadResultList = new CopyOnWriteArrayList<>();

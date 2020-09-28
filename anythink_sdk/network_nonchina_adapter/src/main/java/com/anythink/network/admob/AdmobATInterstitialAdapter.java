@@ -1,5 +1,6 @@
 package com.anythink.network.admob;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -7,7 +8,6 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -31,6 +31,7 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
     Bundle extras = new Bundle();
 
     boolean isAdReady = false;
+
     /***
      * load ad
      */
@@ -44,15 +45,15 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
             public void onAdLoaded() {
                 isAdReady = true;
                 AdMobATInitManager.getInstance().addCache(getTrackingInfo().getmUnitGroupUnitId(), mInterstitialAd);
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(AdmobATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onAdFailedToLoad(int errorCode) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(AdmobATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, errorCode + "", ""));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode + "", "");
                 }
                 AdMobATInitManager.getInstance().removeCache(getTrackingInfo().getmUnitGroupUnitId());
             }
@@ -60,21 +61,22 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void onAdOpened() {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(AdmobATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdShow();
                 }
             }
 
             @Override
             public void onAdLeftApplication() {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked(AdmobATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClicked();
                 }
             }
 
             @Override
             public void onAdClosed() {
+                AdMobATInitManager.getInstance().removeCache(getTrackingInfo().getmUnitGroupUnitId());
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose(AdmobATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
         });
@@ -89,56 +91,50 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
+        try {
+            if (mInterstitialAd != null) {
+                mInterstitialAd.setAdListener(null);
+                mAdRequest = null;
+                mInterstitialAd = null;
+                extras = null;
+            }
+        } catch (Exception e) {
+        }
     }
 
-    @Override
-    public void onResume() {
-
-    }
 
     @Override
-    public void onPause() {
-    }
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
 
+        String appid = (String) serverExtras.get("app_id");
+        unitid = (String) serverExtras.get("unit_id");
 
-    @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitid)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "appid or unitId is empty.");
             }
             return;
         }
 
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid or unitid  is empty."));
-            }
-            return;
-        } else {
-
-            String appid = (String) serverExtras.get("app_id");
-            unitid = (String) serverExtras.get("unit_id");
-
-            if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitid)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid ,unitid or sdkkey is empty."));
-
-                }
-                return;
-            }
-        }
-
-        //初始化
+        //init
         AdMobATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras);
 
         extras = AdMobATInitManager.getInstance().getRequestBundle(context.getApplicationContext());
 
-        startLoadAd(context);
+        postOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    startLoadAd(context);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
+            }
+        });
+
 
     }
 
@@ -154,11 +150,16 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
         return isAdReady;
     }
 
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AdMobATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
     /***
      * Show Ad
      */
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         if (check()) {
             isAdReady = false;
             mInterstitialAd.show();
@@ -173,12 +174,17 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return AdmobATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return AdMobATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitid;
     }
 }

@@ -8,7 +8,6 @@ import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 
 import java.util.Map;
 
@@ -19,7 +18,7 @@ public class MaioATInterstitialAdapter extends CustomInterstitialAdapter impleme
     String mZoneId;
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String mMediaId = "";
         if (serverExtras.containsKey("media_id")) {
@@ -30,28 +29,25 @@ public class MaioATInterstitialAdapter extends CustomInterstitialAdapter impleme
             mZoneId = serverExtras.get("zone_id").toString();
         }
 
-        mLoadResultListener = customInterstitialListener;
         if (TextUtils.isEmpty(mMediaId) || TextUtils.isEmpty(mZoneId)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", " mediaid or zoneid  is empty.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " mediaid or zoneid  is empty.");
 
             }
             return;
         }
 
         if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Maio context must be activity.");
 
             }
             return;
         }
 
         if (MaioAds.canShow(mZoneId)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
             return;
         }
@@ -60,7 +56,7 @@ public class MaioATInterstitialAdapter extends CustomInterstitialAdapter impleme
     }
 
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras != null) {
             if (serverExtras.containsKey("zone_id")) {
                 mZoneId = serverExtras.get("zone_id").toString();
@@ -71,22 +67,13 @@ public class MaioATInterstitialAdapter extends CustomInterstitialAdapter impleme
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         if (MaioAds.canShow(mZoneId)) {
             MaioATInitManager.getInstance().addListener(mZoneId, this);
             MaioAds.show(mZoneId);
         }
     }
 
-    @Override
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onPause() {
-
-    }
 
     @Override
     public boolean isAdReady() {
@@ -94,12 +81,17 @@ public class MaioATInterstitialAdapter extends CustomInterstitialAdapter impleme
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return MaioATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
@@ -108,40 +100,45 @@ public class MaioATInterstitialAdapter extends CustomInterstitialAdapter impleme
         return MaioATInitManager.getInstance().getNetworkName();
     }
 
+    @Override
+    public String getNetworkPlacementId() {
+        return mZoneId;
+    }
+
 
     //internal callback
     @Override
     public void notifyLoaded() {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onInterstitialAdLoaded(this);
+        if (mLoadListener != null) {
+            mLoadListener.onAdCacheLoaded();
         }
     }
 
     @Override
     public void notifyLoadFail(String code, String msg) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, code, msg));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(code, msg);
         }
     }
 
     @Override
     public void notifyPlayStart() {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdShow(this);
+            mImpressListener.onInterstitialAdShow();
         }
     }
 
     @Override
     public void notifyClick() {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdClicked(this);
+            mImpressListener.onInterstitialAdClicked();
         }
     }
 
     @Override
     public void notifyClose() {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdClose(this);
+            mImpressListener.onInterstitialAdClose();
         }
     }
 

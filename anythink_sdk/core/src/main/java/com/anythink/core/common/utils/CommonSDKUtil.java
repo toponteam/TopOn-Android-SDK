@@ -6,12 +6,15 @@ import android.util.Log;
 
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.common.base.Const;
+import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.PlacementImpressionInfo;
 import com.anythink.core.strategy.PlaceStrategy;
 
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 /**
@@ -75,22 +78,22 @@ public class CommonSDKUtil {
      * @param requestId
      * @param placementId
      * @param format
-     * @param unitGroupInfo
      * @return
      */
-    public static JSONObject createRequestCustomData(Context context, String requestId, String placementId, int format, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+    public static JSONObject createRequestCustomData(Context context, String requestId, String placementId, int format, int requestPriority) {
         Map<String, PlacementImpressionInfo> impressionInfoMap = AdCapV2Manager.getInstance(context).getFormatShowTime(format);
         int formatDayShowTime = 0;
         int formatHourShowTime = 0;
 
+        PlacementImpressionInfo placementImpressionInfo = null;
         if (impressionInfoMap != null) {
             for (PlacementImpressionInfo impressionInfo : impressionInfoMap.values()) {
                 formatDayShowTime += impressionInfo.dayShowCount;
                 formatHourShowTime += impressionInfo.hourShowCount;
             }
-        }
 
-        PlacementImpressionInfo placementImpressionInfo = impressionInfoMap.get(placementId);
+            placementImpressionInfo = impressionInfoMap.get(placementId);
+        }
 
         /**TopOn Info to network**/
         JSONObject jsonObject = new JSONObject();
@@ -101,12 +104,64 @@ public class CommonSDKUtil {
             jsonObject.put("ahs", formatHourShowTime);
             jsonObject.put("pds", placementImpressionInfo != null ? placementImpressionInfo.dayShowCount : 0);
             jsonObject.put("phs", placementImpressionInfo != null ? placementImpressionInfo.hourShowCount : 0);
-            jsonObject.put("ap", unitGroupInfo.getRequestLayLevel());
+            jsonObject.put("ap", requestPriority);
             jsonObject.put("tpl", placementId);
 
         } catch (Exception e) {
 
         }
         return jsonObject;
+    }
+
+
+    /**
+     * Create Requestid
+     *
+     * @return
+     */
+    public static String createRequestId(Context context) {
+        String upId = SDKContext.getInstance().getUpId();
+
+        StringBuffer requestIdBuffer = new StringBuffer();
+        requestIdBuffer.append(CommonDeviceUtil.getAndroidID(context));
+        requestIdBuffer.append("&");
+        requestIdBuffer.append(CommonDeviceUtil.getGoogleAdId());
+        requestIdBuffer.append("&");
+        requestIdBuffer.append(upId);
+        requestIdBuffer.append("&");
+        requestIdBuffer.append(System.currentTimeMillis());
+        requestIdBuffer.append("&");
+        requestIdBuffer.append(new Random().nextInt(10000));
+
+        String requestId = CommonMD5.getMD5(requestIdBuffer.toString());
+
+        return requestId;
+    }
+
+    /**
+     * Insert to list by ecpm
+     */
+    public static void insertAdSourceByOrderEcpm(List<PlaceStrategy.UnitGroupInfo> unitGroupInfoList, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+        if (unitGroupInfoList == null) {
+            return;
+        }
+
+        if (unitGroupInfoList.size() == 0) {
+            unitGroupInfoList.add(unitGroupInfo);
+            return;
+        }
+
+        for (int i = 0; i < unitGroupInfoList.size(); i++) {
+            PlaceStrategy.UnitGroupInfo waitingItem = unitGroupInfoList.get(i);
+            if (unitGroupInfo.ecpm >= waitingItem.ecpm) {
+                unitGroupInfoList.add(i, unitGroupInfo);
+                break;
+            } else {
+                if (i == unitGroupInfoList.size() - 1) {
+                    unitGroupInfoList.add(unitGroupInfo);
+                    break;
+                }
+            }
+        }
     }
 }

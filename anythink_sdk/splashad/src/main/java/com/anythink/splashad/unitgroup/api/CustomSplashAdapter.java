@@ -1,27 +1,33 @@
 package com.anythink.splashad.unitgroup.api;
 
-import android.app.Activity;
-import android.view.View;
 import android.view.ViewGroup;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.common.base.AnyThinkBaseAdapter;
-
-import java.util.Map;
-
-public abstract class CustomSplashAdapter extends AnyThinkBaseAdapter {
-
-    public abstract void loadSplashAd(final Activity activity
-            , final ViewGroup constainer, final View skipView
-            , final Map<String, Object> serverExtras
-            , final ATMediationSetting mediationSetting
-            , final CustomSplashListener customSplashListener);
+import com.anythink.core.api.ATBaseAdAdapter;
 
 
-    public abstract void clean();
+public abstract class CustomSplashAdapter extends ATBaseAdAdapter {
+    protected ViewGroup mContainer;
+    protected CustomSplashEventListener mImpressionListener;
+
+    final public void initSplashImpressionListener(CustomSplashEventListener customSplashEventListener) {
+        mImpressionListener = customSplashEventListener;
+    }
+
+    final public void initAdContainer(ViewGroup viewGroup) {
+        mContainer = viewGroup;
+    }
 
     @Override
-    public boolean isAdReady() {
+    final public boolean isAdReady() {
         return false;
+    }
+
+//    @Override
+//    final public void releaseLoadResource() {
+//        super.releaseLoadResource();
+//    }
+
+    final public void cleanImpressionListener() {
+        mImpressionListener = null;
     }
 }

@@ -8,7 +8,6 @@ import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 
 import java.util.Map;
 
@@ -23,31 +22,22 @@ public class OguryATInterstitialAdapter extends CustomInterstitialAdapter {
     private PresageInterstitial mPresageInterstitial;
 
     @Override
-    public void loadInterstitialAd(final Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localsExtra) {
 
         String assetKey = "";
         String unitId = "";
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "service params is empty."));
+        if (serverExtras.containsKey("key")) {
+            assetKey = serverExtras.get("key").toString();
+        }
+        if (serverExtras.containsKey("unit_id")) {
+            unitId = serverExtras.get("unit_id").toString();
+        }
+
+        if (TextUtils.isEmpty(assetKey) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "asset_key、unit_id could not be null.");
             }
             return;
-        } else {
-            if (serverExtras.containsKey("key")) {
-                assetKey = serverExtras.get("key").toString();
-            }
-            if (serverExtras.containsKey("unit_id")) {
-                unitId = serverExtras.get("unit_id").toString();
-            }
-
-            if (TextUtils.isEmpty(assetKey) || TextUtils.isEmpty(unitId)) {
-                if (mLoadResultListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "asset_key、unit_id could not be null.");
-                    mLoadResultListener.onInterstitialAdLoadFail(this, adError);
-                }
-                return;
-            }
         }
         mUnitId = unitId;
 
@@ -55,43 +45,43 @@ public class OguryATInterstitialAdapter extends CustomInterstitialAdapter {
         OguryATInitManager.getInstance().initSDK(context, serverExtras, new OguryATInitManager.Callback() {
             @Override
             public void onSuccess() {
-                init(((Activity) context));
+                init(context);
             }
         });
     }
 
-    private void init(Activity activity) {
+    private void init(Context context) {
         AdConfig adConfig = new AdConfig(mUnitId);
-        mPresageInterstitial = new PresageInterstitial(activity.getApplicationContext(), adConfig);
+        mPresageInterstitial = new PresageInterstitial(context.getApplicationContext(), adConfig);
         mPresageInterstitial.setInterstitialCallback(new PresageInterstitialCallback() {
             @Override
-            public void onAdNotLoaded () {
+            public void onAdNotLoaded() {
 
             }
 
             @Override
-            public void onAdLoaded () {
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(OguryATInterstitialAdapter.this);
+            public void onAdLoaded() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
-            public void onAdNotAvailable () {
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(OguryATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "no ad available"));
+            public void onAdNotAvailable() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "onAdNotAvailable");
                 }
             }
 
             @Override
-            public void onAdAvailable () {
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdDataLoaded(OguryATInterstitialAdapter.this);
+            public void onAdAvailable() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
                 }
             }
 
             @Override
-            public void onAdError (int code) {
+            public void onAdError(int code) {
                 /*
                 code 0: load failed
                 code 1: phone not connected to internet.
@@ -100,22 +90,22 @@ public class OguryATInterstitialAdapter extends CustomInterstitialAdapter {
                 code 4: ad expires in 4 hours if it was not shown
                 code 5: start method not called
                 */
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(OguryATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + code, OguryATInitManager.getErrorMsg(code)));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("" + code, OguryATInitManager.getErrorMsg(code));
                 }
             }
 
             @Override
-            public void onAdClosed () {
-                if(mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose(OguryATInterstitialAdapter.this);
+            public void onAdClosed() {
+                if (mImpressListener != null) {
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
 
             @Override
-            public void onAdDisplayed () {
-                if(mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(OguryATInterstitialAdapter.this);
+            public void onAdDisplayed() {
+                if (mImpressListener != null) {
+                    mImpressListener.onInterstitialAdShow();
                 }
             }
         });
@@ -124,21 +114,12 @@ public class OguryATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
-        if(isAdReady()) {
+    public void show(Activity activity) {
+        if (isAdReady()) {
             mPresageInterstitial.show();
         }
     }
 
-    @Override
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onPause() {
-
-    }
 
     @Override
     public boolean isAdReady() {
@@ -146,17 +127,30 @@ public class OguryATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return OguryATConst.getSDKVersion();
     }
 
     @Override
-    public void clean() {
-        mPresageInterstitial = null;
+    public void destory() {
+        if (mPresageInterstitial != null) {
+            mPresageInterstitial.setInterstitialCallback(null);
+            mPresageInterstitial = null;
+        }
     }
 
     @Override
     public String getNetworkName() {
         return OguryATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mUnitId;
     }
 }

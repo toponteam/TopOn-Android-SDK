@@ -24,7 +24,9 @@ public class PermissionRequestManager {
      */
     public static void requestPermission(Context context, PermissionAuthorizeCallback callback, String... permissionList) {
         int requestCode = new Random().nextInt(1000000000);
-        TransparentActivity.permissionMap.put(requestCode, callback);
+        if (callback != null) {
+            TransparentActivity.permissionMap.put(requestCode, callback);
+        }
         Intent intent = new Intent(context, TransparentActivity.class);
         intent.putExtra(TransparentActivity.TYPE, TransparentActivity.PERMISSION_HANDLE_TYPE);
         intent.putExtra(TransparentActivity.REQUEST_CODE_KEY, requestCode);

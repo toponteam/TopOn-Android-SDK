@@ -6,6 +6,11 @@ public class OguryATConst {
     public static final int NETWORK_FIRM_ID = 36;
 
     public static String getSDKVersion() {
-        return PresageSdk.getAdsSdkVersion();
+        try {
+            return PresageSdk.getAdsSdkVersion();
+        } catch (Exception e) {
+
+        }
+        return "";
     }
 }

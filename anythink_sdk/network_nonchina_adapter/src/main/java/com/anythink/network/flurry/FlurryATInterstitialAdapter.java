@@ -1,12 +1,12 @@
 package com.anythink.network.flurry;
 
+import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.flurry.android.FlurryAgent;
 import com.flurry.android.ads.FlurryAdErrorType;
 import com.flurry.android.ads.FlurryAdInterstitial;
@@ -40,8 +40,8 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
                 if (applicationContext != null) {
                     FlurryAgent.onEndSession(applicationContext);
                 }
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(FlurryATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
@@ -53,7 +53,7 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void onDisplay(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(FlurryATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdShow();
                 }
 
             }
@@ -62,7 +62,7 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
             public void onClose(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressListener != null && mIsShow) {
                     mIsShow = false;
-                    mImpressListener.onInterstitialAdClose(FlurryATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
 
@@ -73,14 +73,14 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void onClicked(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked(FlurryATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClicked();
                 }
             }
 
             @Override
             public void onVideoCompleted(FlurryAdInterstitial pFlurryAdInterstitial) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoEnd(FlurryATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdVideoEnd();
                 }
             }
 
@@ -89,8 +89,8 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
                 if (applicationContext != null) {
                     FlurryAgent.onEndSession(applicationContext);
                 }
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(FlurryATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, pI + "", pFlurryAdErrorType.toString()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(pI + "", pFlurryAdErrorType.toString());
                 }
             }
         });
@@ -104,49 +104,27 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (check()) {
+            mFlurryAdInterstitial.setListener(null);
             mFlurryAdInterstitial.destroy();
+            mFlurryAdInterstitial = null;
         }
     }
 
-    @Override
-    public void onResume() {
-
-    }
 
     @Override
-    public void onPause() {
-
-    }
-
-
-    @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String sdkKey = "";
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid or unitid  is empty."));
+        sdkKey = ((String) serverExtras.get("sdk_key"));
+        placeid = ((String) serverExtras.get("ad_space"));
+
+        if (TextUtils.isEmpty(sdkKey) || TextUtils.isEmpty(placeid)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "sdkkey is empty.");
             }
             return;
-        } else {
-            sdkKey = ((String) serverExtras.get("sdk_key"));
-            placeid = ((String) serverExtras.get("ad_space"));
-
-            if (TextUtils.isEmpty(sdkKey) || TextUtils.isEmpty(placeid)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "  sdkkey is empty."));
-                }
-                return;
-            }
         }
         FlurryATInitManager.getInstance().initSDK(context, serverExtras);
         startLoad(context);
@@ -160,13 +138,18 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
         return false;
     }
 
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return FlurryATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
     /***
      * Whether to show
      */
     boolean mIsShow;
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         if (check() && isAdReady()) {
             mIsShow = true;
             mFlurryAdInterstitial.displayAd();
@@ -179,12 +162,17 @@ public class FlurryATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return FlurryATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return FlurryATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return placeid;
     }
 }

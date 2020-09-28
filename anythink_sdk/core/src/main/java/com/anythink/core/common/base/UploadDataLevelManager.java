@@ -11,11 +11,15 @@ import com.anythink.core.api.AdError;
 import com.anythink.core.api.NetTrafficeCallback;
 import com.anythink.core.common.net.NetTrafficCheckLoader;
 import com.anythink.core.common.net.OnHttpLoaderListener;
+import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.SPUtil;
+import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
 
 import org.json.JSONObject;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Z on 2018/4/27.
@@ -29,6 +33,8 @@ public class UploadDataLevelManager {
     private static UploadDataLevelManager sInstance;
 
     int mLevel = ATSDK.UNKNOWN;
+
+    private ConcurrentHashMap<Integer, Boolean> networkGDPRSettingStatus = new ConcurrentHashMap<>(5);
 
     private UploadDataLevelManager(Context context) {
         if (context != null) {
@@ -236,6 +242,38 @@ public class UploadDataLevelManager {
                 }
             }
         }
+    }
+
+    public void logGDPRSetting(final int networkFirmId) {
+        TaskManager.getInstance().run_proxy(new Runnable() {
+            @Override
+            public void run() {
+                if (!hasSetGDPR(networkFirmId)) {
+                    UploadDataLevelManager levelManager = UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext());
+
+                    AppStrategy appStrategy = AppStrategyManager.getInstance(SDKContext.getInstance().getContext()).getAppStrategyByAppId(SDKContext.getInstance().getAppId());
+
+                    //DataConcent=Unknown，gdpr_ia=true，set to NonPersonalized
+                    if (levelManager.getUploadDataLevel() == ATSDK.UNKNOWN && appStrategy.getGdprIa() == 1 && appStrategy.getUseNetworkDefaultGDPR() == 0) {
+                        AgentEventManager.appSettingGDPRUpdate(1, levelManager.getUploadDataLevel(), appStrategy.getGdprIa(), networkFirmId);
+                    }
+
+                    //DataConcent=Nonpersonalized，gdpr_ia=false，gdpr_so=0
+                    if (levelManager.getUploadDataLevel() == ATSDK.NONPERSONALIZED && appStrategy.getGdprSo() == 0 && appStrategy.getGdprIa() == 0) {
+                        AgentEventManager.appSettingGDPRUpdate(2, levelManager.getUploadDataLevel(), appStrategy.getGdprIa(), networkFirmId);
+                    }
+                    networkGDPRSettingStatus.put(networkFirmId, true);
+                }
+            }
+        });
+
+    }
+
+    public boolean hasSetGDPR(int networkFirmId) {
+        if (networkGDPRSettingStatus.get(networkFirmId) == null || !networkGDPRSettingStatus.get(networkFirmId)) {
+            return false;
+        }
+        return true;
     }
 
 

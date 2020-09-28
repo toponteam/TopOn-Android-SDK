@@ -6,15 +6,15 @@ import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
+import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.entity.AdTrackingInfo;
+import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.utils.CommonDeviceUtil;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
-import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.myoffer.network.base.MyOfferBaseAd;
 import com.anythink.myoffer.network.rewardvideo.MyOfferRewardVideoAd;
 import com.anythink.myoffer.network.rewardvideo.MyOfferRewardVideoAdListener;
+import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,27 +22,24 @@ import java.util.Map;
 public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     private String offer_id = "";
-    private String myoffer_setting = "";
+    private MyOfferSetting myofferSetting = null;
     private String placement_id = "";
     private MyOfferRewardVideoAd mMyOfferRewardVideoAd;
     private boolean isDefaultOffer = false; //用于判断兜底offer的
 
     /**
-     * @param activity
-     * @param serverExtras   key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
-     * @param mediationSetting
-     * @param customRewardVideoListener
+     * @param context
+     * @param serverExtras  key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
+     * @param localExtras
      */
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-
-        mLoadResultListener = customRewardVideoListener;
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
         if (serverExtras.containsKey("myoffer_setting")) {
-            myoffer_setting = serverExtras.get("myoffer_setting").toString();
+            myofferSetting = (MyOfferSetting) serverExtras.get("myoffer_setting");
         }
         if (serverExtras.containsKey("topon_placement")) {
             placement_id = serverExtras.get("topon_placement").toString();
@@ -50,62 +47,59 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
 
         if (TextUtils.isEmpty(offer_id) || TextUtils.isEmpty(placement_id)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this,
-                        ErrorCode.getErrorCode(ErrorCode.noADError, "", "my_oid、topon_placement can not be null!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "my_oid、topon_placement can not be null!");
             }
             return;
         }
 
-        initRewardedVideoObject(activity);
+        initRewardedVideoObject(context);
 
         mMyOfferRewardVideoAd.load();
     }
 
     private void initRewardedVideoObject(Context context) {
-        mMyOfferRewardVideoAd = new MyOfferRewardVideoAd(context, placement_id, offer_id, myoffer_setting, isDefaultOffer);
+        mMyOfferRewardVideoAd = new MyOfferRewardVideoAd(context, placement_id, offer_id, myofferSetting, isDefaultOffer);
         mMyOfferRewardVideoAd.setListener(new MyOfferRewardVideoAdListener() {
             @Override
             public void onVideoAdPlayStart() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(MyOfferATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
             @Override
             public void onVideoAdPlayEnd() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(MyOfferATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
             }
 
             @Override
             public void onVideoShowFailed(MyOfferError error) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayFailed(MyOfferATRewardedVideoAdapter.this,
-                            ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, error.getCode(), error.getDesc()));
+                    mImpressionListener.onRewardedVideoAdPlayFailed(error.getCode(), error.getDesc());
                 }
             }
 
             @Override
             public void onRewarded() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onReward(MyOfferATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
 
             @Override
             public void onAdLoaded() {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(MyOfferATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onAdLoadFailed(MyOfferError error) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(MyOfferATRewardedVideoAdapter.this,
-                            ErrorCode.getErrorCode(ErrorCode.noADError, error.getCode(), error.getDesc()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
                 }
             }
 
@@ -116,14 +110,14 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onAdClosed() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed(MyOfferATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
             }
 
             @Override
             public void onAdClick() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(MyOfferATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
         });
@@ -131,17 +125,17 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     /**
      * @param context
-     * @param serverExtras  key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
-     * @param mediationSetting
+     * @param serverExtras     key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
+     * @param localExtras
      * @return
      */
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String,Object> localExtras) {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
         if (serverExtras.containsKey("myoffer_setting")) {
-            myoffer_setting = serverExtras.get("myoffer_setting").toString();
+            myofferSetting = (MyOfferSetting) serverExtras.get("myoffer_setting");
         }
         if (serverExtras.containsKey("topon_placement")) {
             placement_id = serverExtras.get("topon_placement").toString();
@@ -175,16 +169,6 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
     public boolean isAdReady() {
         if (mMyOfferRewardVideoAd != null) {
             return mMyOfferRewardVideoAd.isReady();
@@ -193,17 +177,25 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return Const.SDK_VERSION_NAME;
     }
 
     @Override
-    public void clean() {
-
+    public void destory() {
+        if (mMyOfferRewardVideoAd != null) {
+            mMyOfferRewardVideoAd.setListener(null);
+            mMyOfferRewardVideoAd = null;
+        }
     }
 
     @Override
     public String getNetworkName() {
         return "MyOffer";
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return offer_id;
     }
 }

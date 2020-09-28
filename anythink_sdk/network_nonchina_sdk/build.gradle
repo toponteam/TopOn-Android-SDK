@@ -20,7 +20,9 @@ android {
         versionName "1.0"
 
     }
-
+    lintOptions {
+        abortOnError false
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -79,6 +81,7 @@ networkLibsPath.add("tapjoy");
 networkLibsPath.add("unityads");
 networkLibsPath.add("vungle");
 networkLibsPath.add("pangle");
+networkLibsPath.add("huawei");
 
 
 dependencies {

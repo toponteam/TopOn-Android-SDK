@@ -11,6 +11,7 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Looper;
+import android.provider.Settings;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -20,6 +21,7 @@ import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import com.anythink.core.common.base.AdvertisingIdClient;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.base.UploadDataLevelManager;
@@ -40,6 +42,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class CommonDeviceUtil {
 
@@ -678,5 +681,52 @@ public class CommonDeviceUtil {
         }
 
     }
+
+    /**
+     * init upid
+     */
+    public static synchronized void initUpId(Context context) {
+        String deviceId = "";
+        deviceId = getGaid(context);
+        CommonDeviceUtil.setGoogleAdId(deviceId);
+        if (TextUtils.isEmpty(deviceId) || isGaidInvalid(deviceId)) {
+            deviceId = Settings.Secure.getString(SDKContext.getInstance().getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
+        if (TextUtils.isEmpty(deviceId)) {
+            /**if deviceid is null，create the uuid**/
+            deviceId = UUID.randomUUID().toString();
+        }
+        SDKContext.getInstance().setUpId(CommonMD5.getMD5(deviceId));
+
+    }
+
+    private static String getGaid(Context context) {
+        try {
+            Class clz = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+            Class clzInfo = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient$Info");
+            Method m = clz.getMethod("getAdvertisingIdInfo", Context.class);
+            Object o = m.invoke(null, context);
+//                                Class<? extends Object> infoClass = o.getClass();
+
+            Method m2 = clzInfo.getMethod("getId");
+            return (String) m2.invoke(o);
+
+        } catch (Exception e) {
+            // try to get from google play app library
+            try {
+                AdvertisingIdClient.AdInfo adInfo = new AdvertisingIdClient().getAdvertisingIdInfo(context);
+                return adInfo.getId();
+
+            } catch (Exception e1) {
+            }
+        }
+        return "";
+    }
+
+    private static boolean isGaidInvalid(String deviceId) {
+//        deviceId = "00000000-0000-0000-0000-000000000000";//无效模拟数据
+        return Pattern.matches("^[0-]+$", deviceId);
+    }
+
 
 }

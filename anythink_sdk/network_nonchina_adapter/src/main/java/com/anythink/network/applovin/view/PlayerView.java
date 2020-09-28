@@ -356,6 +356,10 @@ public class PlayerView extends LinearLayout {
         }
     }
 
+    public void setListener(VideoFeedsPlayerListener listener) {
+        mvfpListener = listener;
+    }
+
     /**
      * release player resources
      */

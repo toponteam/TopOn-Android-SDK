@@ -3,12 +3,9 @@ package com.anythink.network.mintegral;
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.interstitialvideo.out.InterstitialVideoListener;
 import com.mintegral.msdk.interstitialvideo.out.MTGBidInterstitialVideoHandler;
@@ -38,6 +35,60 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
     String mPayload;
     String mCustomData = "{}";
 
+    @Override
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        mIsReady = false;
+        isVideo = false;
+
+        // appid,appkey,unitid
+        String appid = (String) serverExtra.get("appid");
+        String appkey = (String) serverExtra.get("appkey");
+        unitId = (String) serverExtra.get("unitid");
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "mintegral appid, appkey or unitid is empty!");
+            }
+            return;
+        }
+
+        if (serverExtra.containsKey("is_video")) {
+            if (serverExtra.get("is_video").toString().equals("1")) {
+                isVideo = true;
+            }
+        }
+
+        if (serverExtra.containsKey("payload")) {
+            mPayload = serverExtra.get("payload").toString();
+        }
+
+        if (serverExtra.containsKey("tp_info")) {
+            mCustomData = serverExtra.get("tp_info").toString();
+        }
+
+        if (serverExtra.containsKey("placement_id")) {
+            placementId = serverExtra.get("placement_id").toString();
+        }
+
+        MintegralATInitManager.getInstance().initSDK(context, serverExtra, new MintegralATInitManager.InitCallback() {
+            @Override
+            public void onSuccess() {
+                //init
+                init(context);
+                //load ad
+                startLoad();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.getMessage());
+                }
+            }
+        });
+    }
+
+
     /***
      * init
      */
@@ -48,40 +99,38 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
 
                 @Override
                 public void onLoadSuccess(String placementId, String unitId) {
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdDataLoaded(MintegralATInterstitialAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdDataLoaded();
                     }
                 }
 
                 @Override
                 public void onVideoLoadSuccess(String placementId, String unitId) {
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoaded(MintegralATInterstitialAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
                     }
 
                 }
 
                 @Override
                 public void onVideoLoadFail(String errorMsg) {
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoadFail(MintegralATInterstitialAdapter.this
-                                , ErrorCode.getErrorCode(ErrorCode.noADError, "", errorMsg));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", errorMsg);
                     }
                 }
 
                 @Override
                 public void onShowFail(String errorMsg) {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdVideoError(MintegralATInterstitialAdapter.this
-                                , ErrorCode.getErrorCode(ErrorCode.noADError, "", errorMsg));
+                        mImpressListener.onInterstitialAdVideoError("", errorMsg);
                     }
                 }
 
                 @Override
                 public void onAdShow() {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdShow(MintegralATInterstitialAdapter.this);
-                        mImpressListener.onInterstitialAdVideoStart(MintegralATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdShow();
+                        mImpressListener.onInterstitialAdVideoStart();
                     }
                 }
 
@@ -89,23 +138,23 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
                 public void onAdClose(boolean isCompleteView) {
                     if (mImpressListener != null) {
                         if (isCompleteView) {
-                            mImpressListener.onInterstitialAdVideoEnd(MintegralATInterstitialAdapter.this);
+                            mImpressListener.onInterstitialAdVideoEnd();
                         }
-                        mImpressListener.onInterstitialAdClose(MintegralATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClose();
                     }
                 }
 
                 @Override
                 public void onVideoAdClicked(String placementId, String unitId) {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClicked(MintegralATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClicked();
                     }
                 }
 
                 @Override
                 public void onVideoComplete(String placementId, String unitId) {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdVideoEnd(MintegralATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdVideoEnd();
                     }
                 }
 
@@ -135,22 +184,21 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
             HashMap<String, Object> hashMap = new HashMap<String, Object>();
             hashMap.put(MIntegralConstans.PROPERTIES_UNIT_ID, unitId);
             hashMap.put(MIntegralConstans.PLACEMENT_ID, placementId);
-            mMvInterstitialHandler = new MTGInterstitialHandler(context, hashMap);
+            mMvInterstitialHandler = new MTGInterstitialHandler(context.getApplicationContext(), hashMap);
             mMvInterstitialHandler.setInterstitialListener(new InterstitialListener() {
 
                 @Override
                 public void onInterstitialLoadSuccess() {
                     mIsReady = true;
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoaded(MintegralATInterstitialAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
                     }
                 }
 
                 @Override
                 public void onInterstitialLoadFail(String s) {
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoadFail(MintegralATInterstitialAdapter.this
-                                , ErrorCode.getErrorCode(ErrorCode.noADError, "", s));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", s);
                     }
                 }
 
@@ -158,109 +206,31 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
                 public void onInterstitialShowSuccess() {
                     mIsReady = false;
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdShow(MintegralATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdShow();
                     }
                 }
 
                 @Override
                 public void onInterstitialShowFail(String s) {
-                    log(TAG, "onInterstitialShowFail");
+                    Log.e(TAG, "onInterstitialShowFail");
                 }
 
                 @Override
                 public void onInterstitialClosed() {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClose(MintegralATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClose();
                     }
                 }
 
                 @Override
                 public void onInterstitialAdClick() {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClicked(MintegralATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClicked();
                     }
                 }
             });
         }
     }
-
-    @Override
-    public void loadInterstitialAd(final Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mIsReady = false;
-        isVideo = false;
-        mLoadResultListener = customInterstitialListener;
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context is null."));
-            }
-            return;
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        } else {
-            // appid,appkey,unitid
-            String appid = (String) serverExtras.get("appid");
-            String appkey = (String) serverExtras.get("appkey");
-            unitId = (String) serverExtras.get("unitid");
-
-            if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitId)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "mintegral appid, appkey or unitid is empty!"));
-                }
-                return;
-            }
-        }
-
-        if (serverExtras.containsKey("is_video")) {
-            if (serverExtras.get("is_video").toString().equals("1")) {
-                isVideo = true;
-            }
-        }
-
-        if (serverExtras.containsKey("payload")) {
-            mPayload = serverExtras.get("payload").toString();
-        }
-
-        if (serverExtras.containsKey("tp_info")) {
-            mCustomData = serverExtras.get("tp_info").toString();
-        }
-
-        if (serverExtras.containsKey("placement_id")) {
-            placementId = serverExtras.get("placement_id").toString();
-        }
-
-        if (isVideo) {
-            if (!(context instanceof Activity)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity."));
-                }
-                return;
-            }
-        }
-
-        MintegralATInitManager.getInstance().initSDK(context, serverExtras, new MintegralATInitManager.InitCallback() {
-            @Override
-            public void onSuccess() {
-                //init
-                init(context);
-                //load ad
-                startLoad();
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                if (mLoadResultListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                    mLoadResultListener.onInterstitialAdLoadFail(MintegralATInterstitialAdapter.this, adError);
-                }
-            }
-        });
-    }
-
 
     /***
      * load ad
@@ -290,20 +260,6 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void clean() {
-    }
-
-    @Override
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onPause() {
-
-    }
-
-    @Override
     public boolean isAdReady() {
         if (mMvInterstitialVideoHandler != null) {
             return mMvInterstitialVideoHandler.isReady();
@@ -317,7 +273,7 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         if (mMvInterstitialHandler != null) {
             mMvInterstitialHandler.show();
         }
@@ -331,14 +287,36 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
         }
     }
 
-
-    @Override
-    public String getSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
-    }
-
     @Override
     public String getNetworkName() {
         return MintegralATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void destory() {
+        if (mMvBidIntersititialVideoHandler != null) {
+            mMvBidIntersititialVideoHandler.setInterstitialVideoListener(null);
+            mMvBidIntersititialVideoHandler = null;
+        }
+
+        if (mMvInterstitialHandler != null) {
+            mMvInterstitialHandler.setInterstitialListener(null);
+            mMvInterstitialHandler = null;
+        }
+
+        if (mMvInterstitialVideoHandler != null) {
+            mMvInterstitialVideoHandler.setInterstitialVideoListener(null);
+            mMvInterstitialVideoHandler = null;
+        }
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return MintegralATConst.getNetworkVersion();
     }
 }

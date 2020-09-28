@@ -84,13 +84,9 @@ public class ApkDownloadManager implements IApkManager {
         }
     }
 
-    public static ApkDownloadManager getInstance(Context context) {
+    public static synchronized ApkDownloadManager getInstance(Context context) {
         if (sInstance == null) {
-            synchronized (ApkDownloadManager.class) {
-                if (sInstance == null) {
-                    sInstance = new ApkDownloadManager(context);
-                }
-            }
+            sInstance = new ApkDownloadManager(context);
         }
         return sInstance;
     }

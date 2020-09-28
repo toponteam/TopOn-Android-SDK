@@ -56,7 +56,6 @@ public class FlurryATNativeAd extends CustomNativeAd implements FlurryAdNativeLi
     }
 
     public void loadAd() {
-        log(TAG, "loadAd");
         if (mContext != null) {
             FlurryAgent.onStartSession(mContext.getApplicationContext());
         }
@@ -70,7 +69,6 @@ public class FlurryATNativeAd extends CustomNativeAd implements FlurryAdNativeLi
         if (view == null) {
             return;
         }
-        log(TAG, "prepare");
         if (mFlurryAdNative != null) {
             mFlurryAdNative.setTrackingView(view);
         }
@@ -83,7 +81,6 @@ public class FlurryATNativeAd extends CustomNativeAd implements FlurryAdNativeLi
 
     @Override
     public void clear(final View view) {
-        log(TAG, "clear");
         if (mFlurryAdNative != null) {
             mFlurryAdNative.removeTrackingView();
         }
@@ -108,10 +105,14 @@ public class FlurryATNativeAd extends CustomNativeAd implements FlurryAdNativeLi
 
     @Override
     public void destroy() {
-        log(TAG, "destory");
         if (mFlurryAdNative != null) {
+            mFlurryAdNative.setListener(null);
             mFlurryAdNative.destroy();
+            mFlurryAdNative = null;
         }
+
+        mCustonNativeListener = null;
+        mContext = null;
     }
 
     /**
@@ -121,7 +122,6 @@ public class FlurryATNativeAd extends CustomNativeAd implements FlurryAdNativeLi
 
     @Override
     public void onFetched(FlurryAdNative flurryAdNative) {
-        log(TAG, "FlurryAdNative.......(" + (flurryAdNative == null) + "");
 
         if (mContext != null) {
             FlurryAgent.onEndSession(mContext.getApplicationContext());
@@ -149,53 +149,48 @@ public class FlurryATNativeAd extends CustomNativeAd implements FlurryAdNativeLi
 
         setCallToActionText(mFlurryAdNative.getAsset(AD_ASSET_CALL_TO_ACTION).getValue());
 
-        mCustonNativeListener.onSuccess(this);
+        if (mCustonNativeListener != null) {
+            mCustonNativeListener.onSuccess(this);
+        }
     }
 
     @Override
     public void onShowFullscreen(FlurryAdNative flurryAdNative) {
-        log(TAG, "onShowFullscreen-------------");
     }
 
     @Override
     public void onCloseFullscreen(FlurryAdNative flurryAdNative) {
-        log(TAG, "onCloseFullscreen-------------");
     }
 
     @Override
     public void onAppExit(FlurryAdNative flurryAdNative) {
-        log(TAG, "onAppExit-------------");
     }
 
     @Override
     public void onClicked(FlurryAdNative flurryAdNative) {
-        log(TAG, "onClicked-------------");
         notifyAdClicked();
     }
 
     @Override
     public void onImpressionLogged(FlurryAdNative flurryAdNative) {
-        log(TAG, "onImpressionLogged-------------");
     }
 
     @Override
     public void onExpanded(FlurryAdNative flurryAdNative) {
-        log(TAG, "onExpanded-------------");
     }
 
     @Override
     public void onCollapsed(FlurryAdNative flurryAdNative) {
-        log(TAG, "onCollapsed-------------");
     }
 
     @Override
     public void onError(FlurryAdNative flurryAdNative, FlurryAdErrorType flurryAdErrorType, int i) {
-        log(TAG, "onError:code:" + i + "," + flurryAdErrorType);
         if (mContext != null) {
             FlurryAgent.onEndSession(mContext.getApplicationContext());
         }
-        AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, i + "", flurryAdErrorType.name());
-        mCustonNativeListener.onFail(adError);
+        if (mCustonNativeListener != null) {
+            mCustonNativeListener.onFail(i + "", flurryAdErrorType.name());
+        }
     }
 
 
@@ -207,8 +202,8 @@ public class FlurryATNativeAd extends CustomNativeAd implements FlurryAdNativeLi
 
 
     interface LoadCallbackListener {
-        public void onSuccess(CustomNativeAd customNativeAd);
+        void onSuccess(CustomNativeAd customNativeAd);
 
-        public void onFail(AdError adError);
+        void onFail(String errorCode, String errorMsg);
     }
 }

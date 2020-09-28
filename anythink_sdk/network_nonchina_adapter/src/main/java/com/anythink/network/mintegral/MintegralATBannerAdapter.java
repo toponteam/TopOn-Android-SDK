@@ -9,7 +9,6 @@ import android.widget.FrameLayout;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
@@ -29,12 +28,10 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
     String size;
     String mPayload;
     String mCustomData = "{}";
-    CustomBannerListener mCustomBannerListener;
     int mRefreshTime;
 
     @Override
-    public void loadBannerAd(final ATBannerView bannerView, final Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        mCustomBannerListener = customBannerListener;
+    public void loadCustomNetworkAd(final Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String appid = "";
         String appkey = "";
@@ -62,17 +59,15 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
         }
 
         if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitId)) {
-            if (mCustomBannerListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "appid、appkey or unitid is empty.");
-                mCustomBannerListener.onBannerAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "appid、appkey or unitid is empty.");
             }
             return;
         }
 
         if (!(activity instanceof Activity)) {
-            if (mCustomBannerListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "Context must be activity.");
-                mCustomBannerListener.onBannerAdLoadFail(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Context must be activity.");
             }
             return;
         }
@@ -90,20 +85,19 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
         MintegralATInitManager.getInstance().initSDK(activity, serverExtras, new MintegralATInitManager.InitCallback() {
             @Override
             public void onSuccess() {
-                startLoad(activity, bannerView);
+                startLoad(activity);
             }
 
             @Override
             public void onError(Throwable e) {
-                if (mCustomBannerListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                    mCustomBannerListener.onBannerAdLoadFail(MintegralATBannerAdapter.this, adError);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.getMessage());
                 }
             }
         });
     }
 
-    private void startLoad(Context activity, final ATBannerView bannerView) {
+    private void startLoad(Context activity) {
         mMTGBannerView = new MTGBannerView(activity);
         int bannerSize;
         int width;
@@ -139,19 +133,15 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
         mMTGBannerView.setBannerAdListener(new BannerAdListener() {
             @Override
             public void onLoadFailed(String s) {
-                if (bannerView != null) {
-                    bannerView.removeView(mMTGBannerView);
-                }
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdLoadFail(MintegralATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", s));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", s);
                 }
             }
 
             @Override
             public void onLoadSuccessed() {
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdLoaded(MintegralATBannerAdapter.this);
-                    mCustomBannerListener.onBannerAdShow(MintegralATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
@@ -162,8 +152,8 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onClick() {
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdClicked(MintegralATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
@@ -184,8 +174,8 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onCloseBanner() {
-                if (mCustomBannerListener != null) {
-                    mCustomBannerListener.onBannerAdClose(MintegralATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
                 }
             }
         });
@@ -194,10 +184,6 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
             mMTGBannerView.setRefreshTime(mRefreshTime);
         } else {
             mMTGBannerView.setRefreshTime(0);
-        }
-
-        if (bannerView != null) {
-            bannerView.addView(mMTGBannerView, lp);
         }
 
         if (!TextUtils.isEmpty(mPayload)) {
@@ -227,13 +213,14 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mMTGBannerView != null) {
+            mMTGBannerView.setBannerAdListener(null);
             mMTGBannerView.release();
             mMTGBannerView = null;
         }
@@ -242,5 +229,15 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
     @Override
     public String getNetworkName() {
         return MintegralATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MintegralATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
     }
 }

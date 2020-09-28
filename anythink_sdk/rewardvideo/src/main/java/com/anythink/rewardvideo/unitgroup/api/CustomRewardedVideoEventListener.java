@@ -1,17 +1,16 @@
 package com.anythink.rewardvideo.unitgroup.api;
 
-import com.anythink.core.api.AdError;
 
 public interface CustomRewardedVideoEventListener {
-    public void onRewardedVideoAdPlayStart(CustomRewardVideoAdapter customRewardVideoAd);
+    void onRewardedVideoAdPlayStart();
 
-    public void onRewardedVideoAdPlayEnd(CustomRewardVideoAdapter customRewardVideoAd);
+    void onRewardedVideoAdPlayEnd();
 
-    public void onRewardedVideoAdPlayFailed(CustomRewardVideoAdapter customRewardVideoAd, AdError errorCode);
+    void onRewardedVideoAdPlayFailed(String errorCode, String errorMsg);
 
-    public void onRewardedVideoAdClosed(CustomRewardVideoAdapter customRewardVideoAd);
+    void onRewardedVideoAdClosed();
 
-    public void onRewardedVideoAdPlayClicked(CustomRewardVideoAdapter customRewardVideoAd);
+    void onRewardedVideoAdPlayClicked();
 
-    public void onReward(CustomRewardVideoAdapter customRewardVideoAdapter);
+    void onReward();
 }

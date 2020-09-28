@@ -1,16 +1,18 @@
 package com.anythink.network.mopub;
 
 import android.app.Activity;
+import android.content.Context;
+import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.mopub.common.MoPub;
 import com.mopub.common.MoPubReward;
 import com.mopub.common.SdkConfiguration;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubRewardedVideoListener;
+import com.mopub.mobileads.MoPubRewardedVideoManager;
 import com.mopub.mobileads.MoPubRewardedVideos;
 
 import java.util.Map;
@@ -23,51 +25,50 @@ import java.util.Set;
 public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private final String TAG = MopubATRewardedVideoAdapter.class.getSimpleName();
 
-    MopubRewardedVideoSetting mMopubMediationSetting;
     String adUnitId;
     MoPubRewardedVideoListener mMoPubRewardedVideoListener;
 
     private void startLoad(Activity activity) {
         mMoPubRewardedVideoListener = new MoPubRewardedVideoListener() {
             @Override
-            public void onRewardedVideoLoadSuccess( String adUnitId) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(MopubATRewardedVideoAdapter.this);
+            public void onRewardedVideoLoadSuccess(String adUnitId) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
-            public void onRewardedVideoLoadFailure( String adUnitId,  MoPubErrorCode errorCode) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(MopubATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", errorCode.toString()));
+            public void onRewardedVideoLoadFailure(String adUnitId, MoPubErrorCode errorCode) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode.getIntCode() + "", errorCode.toString());
                 }
             }
 
             @Override
-            public void onRewardedVideoStarted( String adUnitId) {
+            public void onRewardedVideoStarted(String adUnitId) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(MopubATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
             @Override
-            public void onRewardedVideoPlaybackError( String adUnitId,  MoPubErrorCode errorCode) {
+            public void onRewardedVideoPlaybackError(String adUnitId, MoPubErrorCode errorCode) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayFailed(MopubATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", errorCode.toString()));
+                    mImpressionListener.onRewardedVideoAdPlayFailed(errorCode.getIntCode() + "", errorCode.toString());
                 }
             }
 
             @Override
-            public void onRewardedVideoClicked( String adUnitId) {
+            public void onRewardedVideoClicked(String adUnitId) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(MopubATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
 
             @Override
-            public void onRewardedVideoClosed( String adUnitId) {
+            public void onRewardedVideoClosed(String adUnitId) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed(MopubATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
                 if (mActivityRef != null) {
                     MoPub.onStop(mActivityRef.get());
@@ -76,13 +77,13 @@ public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             }
 
             @Override
-            public void onRewardedVideoCompleted( Set<String> adUnitIds,  MoPubReward reward) {
+            public void onRewardedVideoCompleted(Set<String> adUnitIds, MoPubReward reward) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(MopubATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
 
                 if (mImpressionListener != null) {
-                    mImpressionListener.onReward(MopubATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
         };
@@ -93,60 +94,54 @@ public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         MoPubRewardedVideos.setRewardedVideoListener(mMoPubRewardedVideoListener);
         MoPub.onCreate(activity);
         MoPub.onStart(activity);
-        MoPubRewardedVideos.loadRewardedVideo(adUnitId, mMopubMediationSetting != null ? mMopubMediationSetting.getRequestParameters(mUserId) : null);
+        MoPubRewardedVideos.loadRewardedVideo(adUnitId, new MoPubRewardedVideoManager.RequestParameters(mUserData, "", null, mUserId));
     }
 
     @Override
-    public void clean() {
-
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-        MoPub.onResume(activity);
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-        MoPub.onPause(activity);
+    public void destory() {
     }
 
 
     @Override
-    public void loadRewardVideoAd(final Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
+        if (serverExtras.containsKey("unitid")) {
+            adUnitId = (String) serverExtras.get("unitid");
 
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
-        if (mediationSetting != null && mediationSetting instanceof MopubRewardedVideoSetting) {
-            mMopubMediationSetting = (MopubRewardedVideoSetting) mediationSetting;
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
         } else {
-            if (serverExtras.containsKey("unitid")) {
-                adUnitId = (String) serverExtras.get("unitid");
-
-            } else {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "unitid is empty!"));
-                }
-                return;
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "unitid is empty!");
             }
+            return;
         }
 
-        MopubATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new MopubATInitManager.InitListener() {
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Mopub context must be activity.");
+            }
+            return;
+        }
+
+        postOnMainThread(new Runnable() {
             @Override
-            public void initSuccess() {
-                startLoad(activity);
+            public void run() {
+                try {
+                    MopubATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new MopubATInitManager.InitListener() {
+                        @Override
+                        public void initSuccess() {
+                            try {
+                                startLoad(((Activity) context));
+                            } catch (Throwable e) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError("", e.getMessage());
+                                }
+                            }
+                        }
+                    });
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
         });
     }
@@ -157,6 +152,11 @@ public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MopubATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
     public void show(Activity activity) {
         if (isAdReady()) {
             MoPubRewardedVideos.showRewardedVideo(adUnitId, mUserId);
@@ -164,7 +164,7 @@ public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MopubATConst.getNetworkVersion();
     }
 
@@ -172,4 +172,10 @@ public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     public String getNetworkName() {
         return MopubATInitManager.getInstance().getNetworkName();
     }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return adUnitId;
+    }
+
 }

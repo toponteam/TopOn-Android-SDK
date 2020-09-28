@@ -1,13 +1,13 @@
 package com.anythink.network.ironsource;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.ironsource.mediationsdk.IronSource;
 import com.ironsource.mediationsdk.integration.IntegrationHelper;
 import com.ironsource.mediationsdk.logger.IronSourceError;
@@ -15,13 +15,12 @@ import com.ironsource.mediationsdk.logger.IronSourceError;
 import java.util.Map;
 
 /**
- * Created by zhou on 2018/6/27.
+ * Created by Z on 2018/6/27.
  */
 
 
 public class IronsourceATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
-    IronsourceRewardedVideoSetting mIronsourceMediationSetting;
     String instanceId = "";
 
     /***
@@ -39,10 +38,16 @@ public class IronsourceATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         IronsourceATInitManager.getInstance().initSDK(activity, serverExtras, new IronsourceATInitManager.InitCallback() {
             @Override
             public void onFinish() {
-                if (IronSource.isISDemandOnlyRewardedVideoAvailable(instanceId)) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(IronsourceATRewardedVideoAdapter.this);
-                } else {
-                    IronsourceATInitManager.getInstance().loadRewardedVideo(instanceId, IronsourceATRewardedVideoAdapter.this);
+                try {
+                    if (IronSource.isISDemandOnlyRewardedVideoAvailable(instanceId)) {
+                        mLoadListener.onAdCacheLoaded();
+                    } else {
+                        IronsourceATInitManager.getInstance().loadRewardedVideo(instanceId, IronsourceATRewardedVideoAdapter.this);
+                    }
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
                 }
                 try {
                     if (activity != null) {
@@ -56,42 +61,37 @@ public class IronsourceATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+
+        String appkey = (String) serverExtras.get("app_key");
+        instanceId = (String) serverExtras.get("instance_id");
+
+        if (TextUtils.isEmpty(appkey) || TextUtils.isEmpty(instanceId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "ironsource app_key or instance_id is empty.");
             }
             return;
         }
-        if (mediationSetting != null && mediationSetting instanceof IronsourceRewardedVideoSetting) {
-            mIronsourceMediationSetting = (IronsourceRewardedVideoSetting) mediationSetting;
-        }
 
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Ironsource context must be activity.");
             }
             return;
-        } else {
-
-            String appkey = (String) serverExtras.get("app_key");
-            instanceId = (String) serverExtras.get("instance_id");
-
-            if (TextUtils.isEmpty(appkey) || TextUtils.isEmpty(instanceId)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "ironsource app_key or instance_id is empty."));
-                }
-                return;
-            }
         }
-        initAndLoad(activity, serverExtras);
+
+
+        initAndLoad(((Activity) context), serverExtras);
     }
 
     @Override
     public boolean isAdReady() {
         return IronSource.isISDemandOnlyRewardedVideoAvailable(instanceId);
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return IronsourceATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
     }
 
     @Override
@@ -104,20 +104,13 @@ public class IronsourceATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         IronSource.clearRewardedVideoServerParameters();
     }
 
-    @Override
-    public void onResume(Activity activity) {
-    }
 
     @Override
-    public void onPause(Activity activity) {
-    }
-
-    @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 
@@ -126,19 +119,24 @@ public class IronsourceATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         return IronsourceATInitManager.getInstance().getNetworkName();
     }
 
+    @Override
+    public String getNetworkPlacementId() {
+        return instanceId;
+    }
+
     /**
      * -------------------------------------------callback-------------------------------------------------------
      **/
     public void onRewardedVideoAdOpened() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayStart(IronsourceATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayStart();
         }
     }
 
     public void onRewardedVideoAdClosed() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayEnd(IronsourceATRewardedVideoAdapter.this);
-            mImpressionListener.onRewardedVideoAdClosed(IronsourceATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayEnd();
+            mImpressionListener.onRewardedVideoAdClosed();
         }
         try {
             if (mActivityRef.get() != null) {
@@ -150,32 +148,32 @@ public class IronsourceATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     public void onRewardedVideoAdLoadSuccess() {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdLoaded(IronsourceATRewardedVideoAdapter.this);
+        if (mLoadListener != null) {
+            mLoadListener.onAdCacheLoaded();
         }
     }
 
     public void onRewardedVideoAdLoadFailed(IronSourceError ironSourceError) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdFailed(IronsourceATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, ironSourceError.getErrorCode() + "", ironSourceError.getErrorMessage()));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(ironSourceError.getErrorCode() + "", ironSourceError.getErrorMessage());
         }
     }
 
     public void onRewardedVideoAdRewarded() {
         if (mImpressionListener != null) {
-            mImpressionListener.onReward(IronsourceATRewardedVideoAdapter.this);
+            mImpressionListener.onReward();
         }
     }
 
     public void onRewardedVideoAdShowFailed(IronSourceError pIronSourceError) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayFailed(IronsourceATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + pIronSourceError.getErrorCode(), " " + pIronSourceError.getErrorMessage()));
+            mImpressionListener.onRewardedVideoAdPlayFailed("" + pIronSourceError.getErrorCode(), " " + pIronSourceError.getErrorMessage());
         }
     }
 
     public void onRewardedVideoAdClicked() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayClicked(IronsourceATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayClicked();
         }
     }
 

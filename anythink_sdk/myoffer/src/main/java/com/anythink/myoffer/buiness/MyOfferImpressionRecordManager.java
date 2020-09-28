@@ -3,10 +3,11 @@ package com.anythink.myoffer.buiness;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.common.entity.MyOfferAd;
 import com.anythink.core.common.utils.task.TaskManager;
-import com.anythink.myoffer.db.MyOfferAdDao;
+import com.anythink.core.strategy.PlaceStrategy;
+import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.myoffer.db.MyOfferImpressionDao;
-import com.anythink.myoffer.entity.MyOfferAd;
 import com.anythink.myoffer.entity.MyOfferImpression;
 
 import org.json.JSONArray;
@@ -131,8 +132,14 @@ public class MyOfferImpressionRecordManager {
      * @return
      */
     public boolean checkOffersOutOfCap(String toponPlacementId) {
-        List<MyOfferAd> myOfferAdList = MyOfferAdDao.getInstance(mContext).queryAllGroupByOfferIdByPlacementId(toponPlacementId);
+
         boolean isAllOutCap = true;
+        PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(mContext).getPlaceStrategyByAppIdAndPlaceId(toponPlacementId);
+        if (placeStrategy == null) {
+            return false;
+        }
+
+        List<MyOfferAd> myOfferAdList = placeStrategy.getMyOfferAdList();
         /**If no offer, return no in cap.*/
         if (myOfferAdList == null || myOfferAdList.size() <= 0) {
             isAllOutCap = false;

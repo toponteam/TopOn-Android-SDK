@@ -5,7 +5,6 @@ import android.view.View;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.mopub.mobileads.MoPubErrorCode;
@@ -20,7 +19,6 @@ import java.util.Map;
 public class MopubATBannerAdapter extends CustomBannerAdapter {
     private final String TAG = MopubATBannerAdapter.class.getSimpleName();
 
-    CustomBannerListener mListener;
     String adUnitId;
     MoPubView mBannerView;
     int mRefreshTime;
@@ -39,39 +37,36 @@ public class MopubATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onBannerLoaded(MoPubView banner) {
                 mBannerView = banner;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(MopubATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onBannerFailed(MoPubView banner, MoPubErrorCode errorCode) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(MopubATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, errorCode.getIntCode() + "", errorCode.toString()));
-                }
-                if (banner != null) {
-                    banner.destroy();
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode.getIntCode() + "", errorCode.toString());
                 }
             }
 
             @Override
             public void onBannerClicked(MoPubView banner) {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(MopubATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
             @Override
             public void onBannerExpanded(MoPubView banner) {
-                if (mListener != null) {
-                    mListener.onBannerAdShow(MopubATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
                 }
             }
 
             @Override
             public void onBannerCollapsed(MoPubView banner) {
-                if (mListener != null) {
-                    mListener.onBannerAdClose(MopubATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
                 }
             }
         });
@@ -84,65 +79,66 @@ public class MopubATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mBannerView != null) {
+            mBannerView.setBannerAdListener(null);
             mBannerView.destroy();
             mBannerView = null;
         }
     }
 
     @Override
-    public void loadBannerAd(ATBannerView anythinkBannerView, final Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        mListener = customBannerListener;
+    public void loadCustomNetworkAd(final Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+        if (serverExtras.containsKey("unitid")) {
+            adUnitId = (String) serverExtras.get("unitid");
 
-        if (activity == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+        } else {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "unitid is empty!");
             }
             return;
         }
 
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
+        mRefreshTime = 0;
+        try {
+            if (serverExtras.containsKey("nw_rft")) {
+                mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
             }
-            return;
-        } else {
-            if (serverExtras.containsKey("unitid")) {
-                adUnitId = (String) serverExtras.get("unitid");
-
-            } else {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "unitid is empty!"));
-                }
-                return;
-            }
-
-            mRefreshTime = 0;
-            try {
-                if (serverExtras.containsKey("nw_rft")) {
-                    mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
 
         MopubATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new MopubATInitManager.InitListener() {
             @Override
             public void initSuccess() {
-                startLoad(activity);
+                try {
+                    startLoad(activity);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
         });
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MopubATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return MopubATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MopubATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return adUnitId;
     }
 }

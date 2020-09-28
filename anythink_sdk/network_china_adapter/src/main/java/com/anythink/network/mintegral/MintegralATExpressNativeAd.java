@@ -104,9 +104,12 @@ public class MintegralATExpressNativeAd extends CustomNativeAd {
     @Override
     public void destroy() {
         if (mtgNativeAdvancedHandler != null) {
-            mtgNativeAdvancedHandler.release();
+            mtgNativeAdvancedHandler.setAdListener(null);
             mtgNativeAdvancedHandler = null;
         }
+
+        listener = null;
+        mContext = null;
 
     }
 

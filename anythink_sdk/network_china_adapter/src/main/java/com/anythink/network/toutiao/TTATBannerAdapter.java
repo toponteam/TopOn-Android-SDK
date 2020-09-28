@@ -7,12 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.bytedance.sdk.openadsdk.AdSlot;
 import com.bytedance.sdk.openadsdk.TTAdDislike;
 import com.bytedance.sdk.openadsdk.TTAdManager;
@@ -28,10 +23,8 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
     private final String TAG = getClass().getSimpleName();
 
     String slotId = "";
-    private TTBannerAd mttBannerAd;
     private TTNativeExpressAd mTTNativeExpressAd;
     Context mActivity;
-    CustomBannerListener mListener;
     View mBannerView;
     int mBannerWidth;
     int mBannerHeight;
@@ -41,23 +34,23 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
     TTAdNative.BannerAdListener ttBannerAdListener = new TTAdNative.BannerAdListener() {
         @Override
         public void onError(int i, String s) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(TTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", s));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(i + "", s);
             }
         }
 
         @Override
         public void onBannerAdLoad(TTBannerAd ttBannerAd) {
             if (ttBannerAd == null) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(TTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "TTAD is null!"));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "TTAD is null!");
                 }
                 return;
             }
             View bannerView = ttBannerAd.getBannerView();
             if (bannerView == null) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(TTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "TTBannerView is null!"));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "TTBannerView is null!");
                 }
                 return;
             }
@@ -91,8 +84,8 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
 
             ttBannerAd.setBannerInteractionListener(interactionListener);
 
-            if (mListener != null) {
-                mListener.onBannerAdLoaded(TTATBannerAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
     };
@@ -102,15 +95,15 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
 
         @Override
         public void onAdClicked(View view, int i) {
-            if (mListener != null) {
-                mListener.onBannerAdClicked(TTATBannerAdapter.this);
+            if (mImpressionEventListener != null) {
+                mImpressionEventListener.onBannerAdClicked();
             }
         }
 
         @Override
         public void onAdShow(View view, int i) {
-            if (mListener != null) {
-                mListener.onBannerAdShow(TTATBannerAdapter.this);
+            if (mImpressionEventListener != null) {
+                mImpressionEventListener.onBannerAdShow();
             }
         }
     };
@@ -120,8 +113,8 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
     TTAdNative.NativeExpressAdListener expressAdListener = new TTAdNative.NativeExpressAdListener() {
         @Override
         public void onError(int i, String s) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(TTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", s));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(i + "", s);
             }
         }
 
@@ -143,8 +136,8 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
 
 
             } else {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(TTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "Return Ad list is empty."));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "Return Ad list is empty.");
                 }
             }
         }
@@ -154,112 +147,50 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
     TTNativeExpressAd.ExpressAdInteractionListener expressAdInteractionListener = new TTNativeExpressAd.ExpressAdInteractionListener() {
         @Override
         public void onAdClicked(View view, int type) {
-            if (mListener != null) {
-                mListener.onBannerAdClicked(TTATBannerAdapter.this);
+            if (mImpressionEventListener != null) {
+                mImpressionEventListener.onBannerAdClicked();
             }
         }
 
         @Override
         public void onAdShow(View view, int type) {
-            if (mListener != null) {
-                mListener.onBannerAdShow(TTATBannerAdapter.this);
+            if (mImpressionEventListener != null) {
+                mImpressionEventListener.onBannerAdShow();
             }
         }
 
         @Override
         public void onRenderFail(View view, String msg, int code) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(TTATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, code + "", msg));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(code + "", msg);
             }
         }
 
         @Override
         public void onRenderSuccess(View view, float width, float height) {
             mBannerView = view;
-            mBannerView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-                @Override
-                public void onViewAttachedToWindow(View v) {
-
-                }
-
-                @Override
-                public void onViewDetachedFromWindow(View v) {
-                    if (mTTNativeExpressAd != null) {
-                        mTTNativeExpressAd.destroy();
-                    }
-                }
-            });
-            if (mListener != null) {
-                mListener.onBannerAdLoaded(TTATBannerAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
     };
 
-
-    @Override
-    public void loadBannerAd(final ATBannerView anythinkBannerView, final Context activity, final Map<String, Object> serverExtras, ATMediationSetting mediationSetting, final CustomBannerListener customBannerListener) {
-        mActivity = activity;
-
-        mListener = customBannerListener;
-
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
-
-        String appId = (String) serverExtras.get("app_id");
-        slotId = (String) serverExtras.get("slot_id");
-
-        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id or slot_id is empty!"));
-            }
-            return;
-        }
-
-        if (!(activity instanceof Activity)) {
-            if (mListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "Context must be activity.");
-                mListener.onBannerAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        mRefreshTime = 0;
-        try {
-            if (serverExtras.containsKey("nw_rft")) {
-                mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        TTATInitManager.getInstance().initSDK(activity, serverExtras, new TTATInitManager.InitCallback() {
-            @Override
-            public void onFinish() {
-                startLoadBanner(anythinkBannerView, activity, serverExtras);
-            }
-        });
-    }
-
-    private void startLoadBanner(ATBannerView anythinkBannerView, Context activity, Map<String, Object> serverExtras) {
+    private void startLoadBanner(Context activity, Map<String, Object> serverExtra) {
         TTAdManager ttAdManager = TTAdSdk.getAdManager();
 
         String size = "";
-        if (serverExtras.containsKey("size")) {
-            size = serverExtras.get("size").toString();
+        if (serverExtra.containsKey("size")) {
+            size = serverExtra.get("size").toString();
         }
 
         int layoutType = 0;
-        if (serverExtras.containsKey("layout_type")) {
-            layoutType = Integer.parseInt(serverExtras.get("layout_type").toString());
+        if (serverExtra.containsKey("layout_type")) {
+            layoutType = Integer.parseInt(serverExtra.get("layout_type").toString());
         }
 
         int mediaSize = 0;
-        if (serverExtras.containsKey("media_size")) {
-            mediaSize = Integer.parseInt(serverExtras.get("media_size").toString());
+        if (serverExtra.containsKey("media_size")) {
+            mediaSize = Integer.parseInt(serverExtra.get("media_size").toString());
         }
 
         int bannerWidth = 0;
@@ -328,8 +259,8 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
         mBannerHeight = bannerHeight;
 
         //If BannerView has been configured for width, then use it directly in the template
-        int viewWidth = anythinkBannerView.getLayoutParams() != null ? (int) (anythinkBannerView.getLayoutParams().width / activity.getResources().getDisplayMetrics().density) : 0;
-        int viewHeight = anythinkBannerView.getLayoutParams() != null ? (int) (anythinkBannerView.getLayoutParams().height / activity.getResources().getDisplayMetrics().density) : 0;
+        int viewWidth = (mATBannerView != null && mATBannerView.getLayoutParams() != null) ? (int) (mATBannerView.getLayoutParams().width / activity.getResources().getDisplayMetrics().density) : 0;
+        int viewHeight = (mATBannerView != null && mATBannerView.getLayoutParams() != null) ? (int) (mATBannerView.getLayoutParams().height / activity.getResources().getDisplayMetrics().density) : 0;
 
         TTAdNative mTTAdNative = ttAdManager.createAdNative(activity);//baseContext is recommended for Activity
         AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
@@ -352,8 +283,8 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
         ad.setDislikeCallback(activity, new TTAdDislike.DislikeInteractionCallback() {
             @Override
             public void onSelected(int position, String value) {
-                if (mListener != null) {
-                    mListener.onBannerAdClose(TTATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
                 }
             }
 
@@ -374,28 +305,90 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
         return mBannerView;
     }
 
-
-    @Override
-    public void clean() {
-        mttBannerAd = null;
-        mBannerView = null;
-        if (mTTNativeExpressAd != null) {
-            mTTNativeExpressAd.destroy();
-        }
-    }
-
     public static int dip2px(Context context, float dpValue) {
         final float scale = context.getResources().getDisplayMetrics().density;
         return (int) (dpValue * scale + 0.5f);
     }
 
-    @Override
-    public String getSDKVersion() {
-        return TTATConst.getNetworkVersion();
+    private static int px2dip(Context context, float pxValue) {
+        final float scale = context.getResources().getDisplayMetrics().density;
+        return (int) (pxValue / (scale <= 0 ? 1 : scale) + 0.5f);
     }
 
     @Override
     public String getNetworkName() {
         return TTATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        String appId = (String) serverExtra.get("app_id");
+        slotId = (String) serverExtra.get("slot_id");
+
+        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id or slot_id is empty!");
+            }
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Context must be activity.");
+            }
+            return;
+        }
+
+        mActivity = context;
+
+        mRefreshTime = 0;
+        try {
+            if (serverExtra.containsKey("nw_rft")) {
+                mRefreshTime = Integer.valueOf((String) serverExtra.get("nw_rft"));
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                try {
+                    startLoadBanner(context, serverExtra);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
+
+            }
+        });
+    }
+
+    @Override
+    public void destory() {
+        mBannerView = null;
+
+        if (mTTNativeExpressAd != null) {
+            mTTNativeExpressAd.setExpressInteractionListener(null);
+            mTTNativeExpressAd.destroy();
+            mTTNativeExpressAd = null;
+        }
+
+        interactionListener = null;
+        ttBannerAdListener = null;
+        expressAdInteractionListener = null;
+        expressAdListener = null;
+        mActivity = null;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return slotId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return TTATConst.getNetworkVersion();
     }
 }

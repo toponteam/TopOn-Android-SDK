@@ -8,7 +8,6 @@ import android.widget.RelativeLayout;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.flurry.android.FlurryAgent;
@@ -25,7 +24,6 @@ import java.util.Map;
 public class FlurryATBannerAdapter extends CustomBannerAdapter {
     private static final String TAG = FlurryATBannerAdapter.class.getSimpleName();
 
-    CustomBannerListener mListener;
     String placeid = "";
 
     View mBannerView;
@@ -45,8 +43,8 @@ public class FlurryATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onFetched(FlurryAdBanner flurryAdBanner) {
                 mBannerView = relativeLayout;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(FlurryATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
                 mFlurryAdBanner.displayAd();
 
@@ -66,8 +64,8 @@ public class FlurryATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onCloseFullscreen(FlurryAdBanner flurryAdBanner) {
-                if (mListener != null) {
-                    mListener.onBannerAdClose(FlurryATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
                 }
             }
 
@@ -78,8 +76,8 @@ public class FlurryATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onClicked(FlurryAdBanner flurryAdBanner) {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(FlurryATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
@@ -93,8 +91,8 @@ public class FlurryATBannerAdapter extends CustomBannerAdapter {
                 if (applicationContext != null) {
                     FlurryAgent.onEndSession(applicationContext);
                 }
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(FlurryATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", flurryAdErrorType.toString()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(i + "", flurryAdErrorType.toString());
                 }
             }
         });
@@ -111,9 +109,10 @@ public class FlurryATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         mBannerView = null;
         if (mFlurryAdBanner != null) {
+            mFlurryAdBanner.setListener(null);
             mFlurryAdBanner.destroy();
             mFlurryAdBanner = null;
         }
@@ -121,44 +120,40 @@ public class FlurryATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        mListener = customBannerListener;
-        if (activity == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         String sdkKey = "";
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " serverExtras  is empty."));
+
+        sdkKey = ((String) serverExtras.get("sdk_key"));
+        placeid = ((String) serverExtras.get("ad_space"));
+
+        if (TextUtils.isEmpty(sdkKey) || TextUtils.isEmpty(placeid)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "sdkkey is empty.");
             }
             return;
-        } else {
-
-            sdkKey = ((String) serverExtras.get("sdk_key"));
-            placeid = ((String) serverExtras.get("ad_space"));
-
-            if (TextUtils.isEmpty(sdkKey) || TextUtils.isEmpty(placeid)) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "  sdkkey is empty."));
-                }
-                return;
-            }
         }
         FlurryATInitManager.getInstance().initSDK(activity, serverExtras);
         startLoad(activity);
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return FlurryATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return FlurryATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return FlurryATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return placeid;
     }
 }

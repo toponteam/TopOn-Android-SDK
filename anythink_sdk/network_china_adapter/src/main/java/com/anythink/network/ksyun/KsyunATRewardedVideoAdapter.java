@@ -1,13 +1,10 @@
 package com.anythink.network.ksyun;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.ksc.ad.sdk.IKsyunAdInitResultListener;
 import com.ksc.ad.sdk.IKsyunAdListener;
 import com.ksc.ad.sdk.IKsyunAdLoadListener;
@@ -27,21 +24,19 @@ public class KsyunATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     IKsyunAdLoadListener mAdLoadListener = new IKsyunAdLoadListener() {
         @Override
         public void onAdInfoSuccess() {
-            log(TAG, "onAdInfoSuccess");
         }
 
         @Override
         public void onAdInfoFailed(int i, String s) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(KsyunATRewardedVideoAdapter.this,
-                        ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(i), s));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(String.valueOf(i), s);
             }
         }
 
         @Override
         public void onAdLoaded(String s) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(KsyunATRewardedVideoAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
 
         }
@@ -54,36 +49,35 @@ public class KsyunATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         @Override
         public void onShowSuccess(String s) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayStart(KsyunATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayStart();
             }
         }
 
         @Override
         public void onShowFailed(String s, int i, String s1) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayFailed(KsyunATRewardedVideoAdapter.this,
-                        ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(i), s1));
+                mImpressionListener.onRewardedVideoAdPlayFailed(String.valueOf(i), s1);
             }
         }
 
         @Override
         public void onADComplete(String s) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayEnd(KsyunATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayEnd();
             }
         }
 
         @Override
         public void onADClick(String s) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayClicked(KsyunATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayClicked();
             }
         }
 
         @Override
         public void onADClose(String s) {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdClosed(KsyunATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdClosed();
             }
         }
     };
@@ -95,7 +89,7 @@ public class KsyunATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         @Override
         public void onAdAwardSuccess(String s) {
             if (mImpressionListener != null) {
-                mImpressionListener.onReward(KsyunATRewardedVideoAdapter.this);
+                mImpressionListener.onReward();
             }
         }
 
@@ -104,31 +98,54 @@ public class KsyunATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
     };
 
+    @Override
+    public boolean isAdReady() {
+        return KsyunAdSdk.getInstance().hasAd(mSlotid);
+    }
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
+    public void show(Activity activity) {
+        try {
+            if (activity != null) {
+                KsyunAdSdk.getInstance().showAd(activity, mSlotid);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
+    @Override
+    public String getNetworkName() {
+        return KsyunATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
         String mMediaId = "";
-        if (serverExtras.containsKey("media_id")) {
-            mMediaId = serverExtras.get("media_id").toString();
+        if (serverExtra.containsKey("media_id")) {
+            mMediaId = serverExtra.get("media_id").toString();
         }
 
-        if (serverExtras.containsKey("slot_id")) {
-            mSlotid = serverExtras.get("slot_id").toString();
+        if (serverExtra.containsKey("slot_id")) {
+            mSlotid = serverExtra.get("slot_id").toString();
         }
 
-
-        mLoadResultListener = customRewardVideoListener;
         if (TextUtils.isEmpty(mMediaId) || TextUtils.isEmpty(mSlotid)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "ksyun mediaid or slotid  is empty.");
-                mLoadResultListener.onRewardedVideoAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "ksyun mediaid or slotid  is empty.");
 
             }
             return;
         }
 
-        KsyunATInitManager.getInstance().initSDK(activity, serverExtras, new IKsyunAdInitResultListener() {
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "ksyun context must be activity.");
+            }
+            return;
+        }
+
+        KsyunATInitManager.getInstance().initSDK(((Activity) context), serverExtra, new IKsyunAdInitResultListener() {
             @Override
             public void onSuccess(Map<String, String> map) {
                 KsyunAdSdk.getInstance().setAdListener(mAdListener);
@@ -138,46 +155,30 @@ public class KsyunATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
             @Override
             public void onFailure(int i, String s) {
-                if(mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(KsyunATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, i + "", s));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(i + "", s);
                 }
             }
         });
     }
 
     @Override
-    public boolean isAdReady() {
-        return KsyunAdSdk.getInstance().hasAd(mSlotid);
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return KsyunATConst.getNetworkVersion();
-    }
-
-    @Override
-    public void show(Activity activity) {
-        KsyunAdSdk.getInstance().showAd(activity, mSlotid);
-    }
-
-    @Override
-    public void clean() {
+    public void destory() {
         KsyunAdSdk.getInstance().clearCache();
+
+        mAdLoadListener = null;
+        mAdListener = null;
+        mRewardListener = null;
     }
 
     @Override
-    public String getNetworkName() {
-        return KsyunATInitManager.getInstance().getNetworkName();
+    public String getNetworkPlacementId() {
+        return mSlotid;
     }
 
     @Override
-    public void onResume(Activity activity) {
-        KsyunAdSdk.getInstance().onResume(activity);
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-        KsyunAdSdk.getInstance().onPause(activity);
+    public String getNetworkSDKVersion() {
+        return KsyunATConst.getNetworkVersion();
     }
 
 }

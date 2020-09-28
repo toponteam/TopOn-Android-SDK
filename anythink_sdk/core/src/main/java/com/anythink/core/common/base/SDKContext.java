@@ -17,6 +17,7 @@ import com.anythink.core.api.ATCustomRuleKeys;
 import com.anythink.core.api.ATInitMediation;
 import com.anythink.core.api.IATChinaSDKHandler;
 import com.anythink.core.cap.AdCapV2Manager;
+import com.anythink.core.common.MsgManager;
 import com.anythink.core.common.OffLineTkManager;
 import com.anythink.core.common.track.Agent;
 import com.anythink.core.common.track.AgentEventManager;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -73,14 +75,20 @@ public class SDKContext {
 
 
     private String mUpId;
+    private String mSysId;
+    private String mBkId;
 
     private IATChinaSDKHandler mChinaHandler;
     private final String mLogPath;
     private boolean NETWORK_LOG_FILE_EXIST = false;
     private boolean DEVELOPER_NETWORK_LOG_DEBUG = false;
 
+    private long firstInitTime = 0;
+    private long initDays = 0;
 
-    public static SDKContext getInstance() {
+    private List<String> mPackageList;
+
+    public synchronized static SDKContext getInstance() {
         if (instance == null) {
             synchronized (SDKContext.class) {
                 instance = new SDKContext();
@@ -108,7 +116,7 @@ public class SDKContext {
         return mChinaHandler;
     }
 
-    public SDKContext() {
+    private SDKContext() {
         mHandler = new Handler(Looper.getMainLooper());
         mPlacementCustomMap = new ConcurrentHashMap<>();
         mCustomMap = new ConcurrentHashMap<>();
@@ -124,6 +132,14 @@ public class SDKContext {
         return mContext;
     }
 
+    public long getFirstInitTime() {
+        return firstInitTime;
+    }
+
+    public long getInitDays() {
+        return initDays;
+    }
+
 
     public void setAppCustomMap(Map<String, Object> customMap) {
         mCustomMap.clear();
@@ -134,6 +150,14 @@ public class SDKContext {
 
     public void setPlacementCustomMap(String placementId, Map<String, Object> customMap) {
         mPlacementCustomMap.put(placementId, customMap);
+    }
+
+    public void setExcludeMyOfferPkgList(List<String> packageList) {
+        mPackageList = packageList;
+    }
+
+    public List<String> getExcludeMyOfferPkgList() {
+        return mPackageList;
     }
 
     public Map<String, Object> getCustomMap() {
@@ -256,27 +280,27 @@ public class SDKContext {
 
                 try {
                     CommonDeviceUtil.initCommonDeviceInfo(mContext);// Init Device info
-                    try {
-                        //Get gaid
-                        Class clz = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
-                        Class clzInfo = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient$Info");
-                        Method m = clz.getMethod("getAdvertisingIdInfo", Context.class);
-                        Object o = m.invoke(null, mContext);
-//                                Class<? extends Object> infoClass = o.getClass();
-
-                        Method m2 = clzInfo.getMethod("getId");
-                        String googleAdvertisingId = (String) m2.invoke(o);
-                        CommonDeviceUtil.setGoogleAdId(googleAdvertisingId);
-
-                    } catch (Exception e) {
-//                                e.printStackTrace();
-                        // try to get from google play app library
-                        try {
-                            AdvertisingIdClient.AdInfo adInfo = new AdvertisingIdClient().getAdvertisingIdInfo(mContext);
-                            CommonDeviceUtil.setGoogleAdId(adInfo.getId());
-                        } catch (Exception e1) {
-                        }
-                    }
+//                    try {
+//                        //Get gaid
+//                        Class clz = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+//                        Class clzInfo = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient$Info");
+//                        Method m = clz.getMethod("getAdvertisingIdInfo", Context.class);
+//                        Object o = m.invoke(null, mContext);
+////                                Class<? extends Object> infoClass = o.getClass();
+//
+//                        Method m2 = clzInfo.getMethod("getId");
+//                        String googleAdvertisingId = (String) m2.invoke(o);
+//                        CommonDeviceUtil.setGoogleAdId(googleAdvertisingId);
+//
+//                    } catch (Exception e) {
+////                                e.printStackTrace();
+//                        // try to get from google play app library
+//                        try {
+//                            AdvertisingIdClient.AdInfo adInfo = new AdvertisingIdClient().getAdvertisingIdInfo(mContext);
+//                            CommonDeviceUtil.setGoogleAdId(adInfo.getId());
+//                        } catch (Exception e1) {
+//                        }
+//                    }
                 } catch (Exception e) {
                 }
 
@@ -302,6 +326,20 @@ public class SDKContext {
         }
 
         try {
+            long currentTime = System.currentTimeMillis();
+            firstInitTime = SPUtil.getLong(context, Const.SPU_NAME, Const.SPUKEY.SPU_FIRST_INIT_TIME, 0L);
+            if (firstInitTime == 0) {
+                /**Record first init time**/
+                firstInitTime = currentTime;
+                SPUtil.putLong(context, Const.SPU_NAME, Const.SPUKEY.SPU_FIRST_INIT_TIME, firstInitTime);
+            }
+
+            long currentDateTime = getDateTimeMillis(currentTime);
+            long initDateTime = getDateTimeMillis(firstInitTime);
+
+            /**first init days**/
+            initDays = (currentDateTime - initDateTime) / (24 * 60 * 60 * 1000L) + 1;
+
             coldModeCreatePsidTime = 0;
             AdCapV2Manager.getInstance(context.getApplicationContext()).cleanUseLessData();
 
@@ -313,13 +351,16 @@ public class SDKContext {
 
             registerNetworkChange();
 
+
             TaskManager.getInstance().run_proxy(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Agent.init(applicationContext);
+                        Agent.getInstance().init(applicationContext);
                         createPsid(applicationContext, appId, ApplicationLifecycleListener.COLD_LAUNCH_MODE);
                         registerApplicationLifecycle(context);
+
+                        CrashUtil.getInstance(applicationContext).init();//init Crash Util
                     } catch (Exception e) {
                         if (Const.DEBUG) {
                             e.printStackTrace();
@@ -378,10 +419,10 @@ public class SDKContext {
 
                 if (startTime != 0) { //Psid create time is not 0, send the lastest playtime
                     AgentEventManager.sendApplicationPlayTime(launchMode == ApplicationLifecycleListener.HOT_LAUNCH_MODE ? 4 : 2, recordStartTime, endTime, psid);
-                    CommonLogUtil.e(TAG, "Create new psid, SDKContext.init to send playTime:" + (endTime - recordStartTime)/ 1000);
+                    CommonLogUtil.e(TAG, "Create new psid, SDKContext.init to send playTime:" + (endTime - recordStartTime) / 1000);
                 } else {
                     startTime = recordStartTime; //psid is old, use the pervious start time
-                    CommonLogUtil.e(TAG, "Psid is old, use pervioud statime，close before:" + (endTime - recordStartTime)/1000);
+                    CommonLogUtil.e(TAG, "Psid is old, use pervioud statime，close before:" + (endTime - recordStartTime) / 1000);
                 }
                 SPUtil.putString(SDKContext.getInstance().getContext(), Const.SPU_NAME, SDKContext.getInstance().getAppId() + "playRecord", "");
             }
@@ -390,8 +431,12 @@ public class SDKContext {
             SPUtil.putString(SDKContext.getInstance().getContext(), Const.SPU_NAME, SDKContext.getInstance().getAppId() + "playRecord", "");
         }
 
-        if (startTime == 0) { //If stat time is 0,
+        if (startTime == 0) { //If start time is 0,
             startTime = SPUtil.getLong(context, Const.SPU_NAME, Const.SPUKEY.SPU_INIT_TIME_KEY, 0L);
+        }
+
+        if (startTime == 0) { //If start time is 0,
+            startTime = System.currentTimeMillis();
         }
 
         /**Register the application lifecycle**/
@@ -418,6 +463,8 @@ public class SDKContext {
                 public void onReceive(Context context, Intent intent) {
                     if (CommonUtil.isNetConnect(context)) {
                         OffLineTkManager.getInstance().tryToReSendRequest();
+                        Agent.getInstance().sendLogByTime();
+                        checkAppStrategy(context, getAppId(), getAppKey());
                     }
                 }
             };
@@ -527,9 +574,15 @@ public class SDKContext {
             @Override
             public void run() {
                 AppStrategy appStrategy = AppStrategyManager.getInstance(context.getApplicationContext()).getAppStrategyByAppId(mAppId);
-                if (appStrategy != null && !AppStrategyManager.getInstance(context.getApplicationContext()).isTimeToGetAppStrategy(mAppId)) {
-                    // Pre-init some Mediation
-                    AppStrategyManager.getInstance(context.getApplicationContext()).preInit(context, appStrategy);
+                if (appStrategy != null) {
+                    if (!appStrategy.isLocalStrategy()) {
+                        MsgManager.getInstance(mContext).handleInit(appStrategy);
+                    }
+
+                    if (!AppStrategyManager.getInstance(context.getApplicationContext()).isTimeToGetAppStrategy(mAppId)) {
+                        // Pre-init some Mediation
+                        AppStrategyManager.getInstance(context.getApplicationContext()).preInit(context, appStrategy);
+                    }
                 }
             }
         });
@@ -787,7 +840,11 @@ public class SDKContext {
     }
 
     public void runOnMainThread(Runnable runnable) {
-        mHandler.post(runnable);
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            runnable.run();
+        } else {
+            mHandler.post(runnable);
+        }
     }
 
     public void runOnThreadPool(Runnable runnable) {
@@ -812,6 +869,31 @@ public class SDKContext {
             mUpId = SPUtil.getString(mContext, Const.SPU_NAME, Const.SPUKEY.SPU_UP_ID_KEY, "");
         }
         return mUpId;
+    }
+
+
+    public String getSysId() {
+        if (TextUtils.isEmpty(mSysId)) {
+            mSysId = SPUtil.getString(mContext, Const.SPU_EXC_LOG_NAME, Const.SPUKEY.SPU_EXC_SYS, "");
+        }
+        return mSysId;
+    }
+
+    public String getBkId() {
+        if (TextUtils.isEmpty(mBkId)) {
+            mBkId = SPUtil.getString(mContext, Const.SPU_EXC_LOG_NAME, Const.SPUKEY.SPU_EXC_BK, "");
+        }
+        return mBkId;
+    }
+
+    public void saveSysId(String sysId) {
+        mSysId = sysId;
+        SPUtil.putString(mContext, Const.SPU_EXC_LOG_NAME, Const.SPUKEY.SPU_EXC_SYS, sysId);
+    }
+
+    public void saveBkId(String bkId) {
+        mBkId = bkId;
+        SPUtil.putString(mContext, Const.SPU_EXC_LOG_NAME, Const.SPUKEY.SPU_EXC_BK, bkId);
     }
 
 
@@ -882,6 +964,11 @@ public class SDKContext {
 //        printLine(tag, false);
         Log.i(tag, " \n" + jsonPrint);
 
+    }
+
+    public long getDateTimeMillis(long timeMillis) {
+        Date date = new Date(timeMillis);
+        return new Date(date.getYear(), date.getMonth(), date.getDate()).getTime();
     }
 
 

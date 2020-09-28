@@ -26,8 +26,8 @@ public class HeadBiddingKey {
     public final static String unitGroup_ClickTKSwitch = "c_sw"; //Click Tracking switch
     public final static String unitGroup_ecpm_level = "ecpm_level";//ecpm level
     public final static String unitGroup_precision = "precision";//ecpm precision
-    //TODO key name
     public final static String unitGroup_request_fail_interval = "nx_req_time"; //request fail interval
+    public final static String unitGroup_bid_fail_interval = "bid_fail_interval"; //bid fail interval
 
 
     //Delcare by AnyThink

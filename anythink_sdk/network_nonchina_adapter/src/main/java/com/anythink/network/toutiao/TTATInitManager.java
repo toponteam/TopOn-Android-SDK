@@ -33,6 +33,7 @@ public class TTATInitManager extends ATInitMediation {
         return sInstance;
     }
 
+
     @Override
     public synchronized void initSDK(Context context, Map<String, Object> serviceExtras) {
         initSDK(context, serviceExtras, null);
@@ -46,25 +47,16 @@ public class TTATInitManager extends ATInitMediation {
                 @Override
                 public void run() {
 
-                    TTAdConfig.Builder builder = new TTAdConfig.Builder()
-                            .appId(appId)
-                            .useTextureView(true) //Use the TextureView control to play the video. The default is SurfaceView. When there are conflicts in SurfaceView, you can use TextureView
+                    if (builder == null) {
+                        builder = new TTAdConfig.Builder();
+                    }
+
+                    builder.appId(appId)
+                            .useTextureView(false) //Use the TextureView control to play the video. The default is SurfaceView. When there are conflicts in SurfaceView, you can use TextureView
                             .appName(context.getPackageManager().getApplicationLabel(context.getApplicationInfo()).toString())
                             .titleBarTheme(TTAdConstant.TITLE_BAR_THEME_DARK)
                             .allowShowPageWhenScreenLock(true) //Whether to support display of landing pages in lock screen scenes
                             .supportMultiProcess(false); //Whether to support multiple processes, true support
-
-                    //GDPR
-                    if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                        //Whether to agree to collect data
-                        boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                        //Whether to set the GDPR of the network
-                        boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                        if (need_set_gdpr) {
-                            builder.setGDPR(gdp_consent ? 0 : 1);//Fields to indicate whether you are protected by GDPR,  the value of GDPR : 0 close GDRP Privacy protection ，1: open GDRP Privacy protection
-                        }
-                    }
 
 
                     TTAdSdk.init(context.getApplicationContext(),
@@ -86,6 +78,17 @@ public class TTATInitManager extends ATInitMediation {
                 callback.onFinish();
             }
         }
+    }
+
+    TTAdConfig.Builder builder = new TTAdConfig.Builder();
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        if (builder == null) {
+            builder = new TTAdConfig.Builder();
+        }
+        builder.setGDPR(isConsent ? 0 : 1);
+        return true;
     }
 
     interface InitCallback {

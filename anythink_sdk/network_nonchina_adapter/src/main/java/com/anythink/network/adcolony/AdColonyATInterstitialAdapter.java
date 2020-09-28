@@ -12,7 +12,6 @@ import com.adcolony.sdk.AdColonyZone;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 
 import org.json.JSONArray;
 
@@ -26,7 +25,7 @@ public class AdColonyATInterstitialAdapter extends CustomInterstitialAdapter {
     AdColonyInterstitial mAd;
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         String mAppId = "";
         if (serverExtras != null) {
             mAppId = (String) serverExtras.get("app_id");
@@ -43,19 +42,9 @@ public class AdColonyATInterstitialAdapter extends CustomInterstitialAdapter {
             }
         }
 
-        mLoadResultListener = customInterstitialListener;
-
-        if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity!"));
-            }
-            return;
-        }
-
         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mZoneId)) {
-            if (mLoadResultListener != null) {
-                log(TAG, "appid and zonid is empty!");
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid & mZoneId is empty."));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " appid & mZoneId is empty.");
             }
             return;
         }
@@ -64,7 +53,7 @@ public class AdColonyATInterstitialAdapter extends CustomInterstitialAdapter {
          * Configure AdColony in your launching Activity's onCreate() method so that cached ads can
          * be available as soon as possible.
          */
-        AdColonyATInitManager.getInstance().initSDK(context, serverExtras);
+        AdColonyATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras);
 
         AdColonyAdOptions adOptions = new AdColonyAdOptions();
         adOptions.enableConfirmationDialog(false)
@@ -77,63 +66,63 @@ public class AdColonyATInterstitialAdapter extends CustomInterstitialAdapter {
          * way to get an ad object.
          */
         AdColonyInterstitialListener listener = new AdColonyInterstitialListener() {
-            /** Ad passed back in request filled callback, ad can now be shown */
+            /**
+             * Ad passed back in request filled callback, ad can now be shown
+             */
             @Override
             public void onRequestFilled(AdColonyInterstitial ad) {
                 mAd = ad;
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(AdColonyATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             /** Ad request was not filled */
             @Override
             public void onRequestNotFilled(AdColonyZone zone) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(AdColonyATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "No Fill!"));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "No Fill!");
                 }
             }
 
             /** Ad opened, reset UI to reflect state change */
             @Override
             public void onOpened(AdColonyInterstitial ad) {
-                log(TAG, "onOpened");
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(AdColonyATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdShow();
                 }
             }
 
             /** Request a new ad if ad is expiring */
             @Override
             public void onExpiring(AdColonyInterstitial ad) {
-                log(TAG, "onExpiring");
             }
 
             @Override
             public void onClicked(AdColonyInterstitial ad) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked(AdColonyATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClicked();
                 }
             }
 
             @Override
             public void onClosed(AdColonyInterstitial ad) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose(AdColonyATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
 
             @Override
             public void onAudioStarted(AdColonyInterstitial ad) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoStart(AdColonyATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdVideoStart();
                 }
             }
 
             @Override
             public void onAudioStopped(AdColonyInterstitial ad) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoEnd(AdColonyATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdVideoEnd();
                 }
             }
         };
@@ -147,20 +136,36 @@ public class AdColonyATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AdColonyATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return AdColonyATConst.getNetworkVersion();
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         if (mAd != null && !mAd.isExpired()) {
             mAd.show();
         }
     }
 
     @Override
-    public void clean() {
-        AdColony.clearCustomMessageListeners();
+    public void destory() {
+        try {
+            AdColony.clearCustomMessageListeners();
+            if (mAd != null) {
+                try {
+                    mAd.setListener(null);
+                } catch (Throwable e) {
+                }
+                mAd.destroy();
+                mAd = null;
+            }
+        } catch (Exception e) {
+        }
 
     }
 
@@ -170,13 +175,8 @@ public class AdColonyATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onPause() {
-
+    public String getNetworkPlacementId() {
+        return mZoneId;
     }
 
 

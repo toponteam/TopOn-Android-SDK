@@ -21,7 +21,6 @@ import com.anythink.nativead.api.ATNativeNetworkListener;
 import com.anythink.nativead.api.ATNativeOpenSetting;
 import com.anythink.nativead.api.NativeAd;
 import com.anythink.nativead.banner.util.ATBannerRender;
-import com.anythink.nativead.bussiness.utils.CommonSDCardUtil;
 
 import java.util.Map;
 
@@ -83,7 +82,6 @@ public class ATNativeBannerView extends RelativeLayout {
         if (hasCallbackShow) {
             return;
         }
-        Log.i("ZSR", "AddNativeView-----------");
         hasCallbackShow = true;
         if (mATNative != null) {
             NativeAd nativeAd = mATNative.getNativeAd();
@@ -164,7 +162,6 @@ public class ATNativeBannerView extends RelativeLayout {
                 }
             }
         }
-        Log.i("ZSR", "AddNativeView end-----------");
     }
 
     ATNativeEventListener eventListener = new ATNativeEventListener() {
@@ -278,7 +275,6 @@ public class ATNativeBannerView extends RelativeLayout {
     }
 
     private void init() {
-        CommonSDCardUtil.init(getContext().getApplicationContext());
 
         mAdLogoTextView = new TextView(getContext());
         mAdLogoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 7);
@@ -335,7 +331,6 @@ public class ATNativeBannerView extends RelativeLayout {
 
     @Override
     public void setVisibility(int visibility) {
-        Log.i("ZSR", "setVisibility-----------");
         super.setVisibility(visibility);
         controlShow(visibility);
     }

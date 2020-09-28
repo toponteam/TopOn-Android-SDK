@@ -1,17 +1,10 @@
 package com.anythink.network.sigmob;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
-import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
-import com.anythink.splashad.unitgroup.api.CustomSplashListener;
 import com.sigmob.windad.Splash.WindSplashAD;
 import com.sigmob.windad.Splash.WindSplashADListener;
 import com.sigmob.windad.Splash.WindSplashAdRequest;
@@ -22,76 +15,71 @@ import java.util.Map;
 public class SigmobATSplashAdapter extends CustomSplashAdapter {
 
     private static final String TAG = SigmobATSplashAdapter.class.getSimpleName();
-    private CustomSplashListener mListener;
     private String mPlacementId = "";
 
     @Override
-    public void loadSplashAd(final Activity activity, final ViewGroup constainer, final View skipView, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomSplashListener customSplashListener) {
-        mListener = customSplashListener;
+    public String getNetworkName() {
+        return SigmobATInitManager.getInstance().getNetworkName();
+    }
 
+    @Override
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
         String appId = "";
         String appKey = "";
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onSplashAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "service params is empty."));
-            }
-            return;
-        } else {
-            if (serverExtras.containsKey("app_id")) {
-                appId = serverExtras.get("app_id").toString();
-            }
-            if (serverExtras.containsKey("app_key")) {
-                appKey = serverExtras.get("app_key").toString();
-            }
-            if (serverExtras.containsKey("placement_id")) {
-                mPlacementId = serverExtras.get("placement_id").toString();
-            }
-
-            if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(appKey) || TextUtils.isEmpty(mPlacementId)) {
-                if (mListener != null) {
-                    AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id、app_key、placement_id could not be null.");
-                    mListener.onSplashAdFailed(this, adError);
-                }
-                return;
-            }
+        if (serverExtra.containsKey("app_id")) {
+            appId = serverExtra.get("app_id").toString();
+        }
+        if (serverExtra.containsKey("app_key")) {
+            appKey = serverExtra.get("app_key").toString();
+        }
+        if (serverExtra.containsKey("placement_id")) {
+            mPlacementId = serverExtra.get("placement_id").toString();
         }
 
+        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(appKey) || TextUtils.isEmpty(mPlacementId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id、app_key、placement_id could not be null.");
+            }
+            return;
+        }
 
-        SigmobATInitManager.getInstance().initSDK(activity, serverExtras, new SigmobATInitManager.InitCallback() {
+        SigmobATInitManager.getInstance().initSDK(context, serverExtra, new SigmobATInitManager.InitCallback() {
             @Override
             public void onFinish() {
                 WindSplashAdRequest splashAdRequest = new WindSplashAdRequest(mPlacementId, "", null);
                 splashAdRequest.setDisableAutoHideAd(true);
 
                 //show ad
-                new WindSplashAD(activity, constainer, splashAdRequest, new WindSplashADListener() {
+                new WindSplashAD((Activity) context, mContainer, splashAdRequest, new WindSplashADListener() {
                     @Override
                     public void onSplashAdSuccessPresentScreen() {
-                        if (mListener != null) {
-                            mListener.onSplashAdLoaded(SigmobATSplashAdapter.this);
-                            mListener.onSplashAdShow(SigmobATSplashAdapter.this);
+                        if (mLoadListener != null) {
+                            mLoadListener.onAdCacheLoaded();
+                        }
+                        if (mImpressionListener != null) {
+                            mImpressionListener.onSplashAdShow();
                         }
 
                     }
 
                     @Override
                     public void onSplashAdFailToPresent(WindAdError windAdError, String s) {
-                        if (mListener != null) {
-                            mListener.onSplashAdFailed(SigmobATSplashAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + windAdError.getErrorCode(), windAdError.toString()));
+                        if (mLoadListener != null) {
+                            mLoadListener.onAdLoadError("" + windAdError.getErrorCode(), windAdError.toString());
                         }
                     }
 
                     @Override
                     public void onSplashAdClicked() {
-                        if (mListener != null) {
-                            mListener.onSplashAdClicked(SigmobATSplashAdapter.this);
+                        if (mImpressionListener != null) {
+                            mImpressionListener.onSplashAdClicked();
                         }
                     }
 
                     @Override
                     public void onSplashClosed() {
-                        if (mListener != null) {
-                            mListener.onSplashAdDismiss(SigmobATSplashAdapter.this);
+                        if (mImpressionListener != null) {
+                            mImpressionListener.onSplashAdDismiss();
                         }
                     }
                 });
@@ -100,18 +88,18 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public void destory() {
+
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mPlacementId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return SigmobATConst.getSDKVersion();
-    }
-
-    @Override
-    public void clean() {
-
-    }
-
-    @Override
-    public String getNetworkName() {
-        return SigmobATInitManager.getInstance().getNetworkName();
     }
 
 }

@@ -179,5 +179,14 @@ public class TTATNativeAd extends CustomNativeAd {
 
     @Override
     public void destroy() {
+        try {
+            if (mTTFeedAd != null) {
+                mTTFeedAd.setActivityForDownloadApp(null);
+            }
+        } catch (Exception e) {
+
+        }
+        mContext = null;
+        mTTFeedAd = null;
     }
 }

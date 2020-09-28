@@ -5,12 +5,14 @@ import com.anythink.core.common.base.SDKContext;
 import org.json.JSONObject;
 
 public abstract class TrackerInfo {
-    public static final int CAPPING_REASON = 1;
-    public static final int PACCING_REASON = 2;
+    public static final int CAPPING_REASON = 1; //For showing
+    public static final int PACCING_REASON = 2; //For showing
     public static final int LOADING_REASON = 3;
     public static final int HAS_OFFER_REASON = 4;
     public static final int PLACEMENT_STRATEGY_REASON = 5;
     public static final int NO_VAIL_ADSOURCE_REASON = 6;
+    public static final int LOAD_FAIL_PACING_REASON = 7;
+    public static final int LOAD_CAPPING_REASON = 8; //For loading
 
 
     //unitgroup fail reason
@@ -32,9 +34,6 @@ public abstract class TrackerInfo {
     protected String mRequestId;
     protected String mAdType; //Ad Type：0：native  1 video  2 banner  3 interstitial
     protected String mAsid = ""; //Asid
-
-    protected String mPsid;
-    protected String mSessionId;
 
     public String mClickTkUrl;//Click tracking
     public int mClickTkDelayMinTime;

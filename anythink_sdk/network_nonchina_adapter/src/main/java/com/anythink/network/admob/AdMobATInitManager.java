@@ -12,15 +12,13 @@ import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.internal.ClientApi;
 import com.google.android.gms.common.GoogleSignatureVerifier;
+import com.google.android.gms.internal.ads.zzb;
 import com.google.android.gms.internal.ads.zzdpt;
-import com.google.android.gms.internal.measurement.zzl;
+import com.google.android.gms.internal.measurement.zzfd;
 import com.google.android.gms.measurement.api.AppMeasurementSdk;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.internal.ads.zzdou;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,7 +50,6 @@ public class AdMobATInitManager extends ATInitMediation {
 
         if (!TextUtils.isEmpty(app_id)) {
             if (TextUtils.isEmpty(mAppId) || !mAppId.equals(app_id)) {
-                suportGDPR(context, serviceExtras);
                 MobileAds.initialize(context, app_id);
                 mAppId = app_id;
             }
@@ -62,23 +59,15 @@ public class AdMobATInitManager extends ATInitMediation {
     /***
      * GDPR
      */
-    private void suportGDPR(Context context, Map<String, Object> serviceExtras) {
-
-        if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-            //Whether to agree to collect data
-            boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-            //Whether to set the GDPR of the network
-            boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-            if (need_set_gdpr) {
-                ConsentInformation.getInstance(context)
-                        .setConsentStatus(gdp_consent ? ConsentStatus.PERSONALIZED : ConsentStatus.NON_PERSONALIZED);
-            }
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        try {
+            ConsentInformation.getInstance(context)
+                    .setConsentStatus(isConsent ? ConsentStatus.PERSONALIZED : ConsentStatus.NON_PERSONALIZED);
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-
-        logGDPRSetting(AdmobATConst.NETWORK_FIRM_ID);
-
-
+        return true;
     }
 
     public Bundle getRequestBundle(Context context) {
@@ -115,6 +104,10 @@ public class AdMobATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Admob";
+    }
+
+    public String getGoogleAdManagerName(){
+        return "Google Ad Manager";
     }
 
     @Override
@@ -188,14 +181,14 @@ public class AdMobATInitManager extends ATInitMediation {
         }
 
         try {
-            clazz = zzdou.class;
+            clazz = zzb.class;
             pluginMap.put("play-services-gass-*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = zzl.class;
+            clazz = zzfd.class;
             pluginMap.put("play-services-measurement-base-*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();

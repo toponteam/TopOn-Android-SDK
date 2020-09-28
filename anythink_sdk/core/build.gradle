@@ -1,5 +1,7 @@
 apply plugin: 'com.android.library'
 
+
+
 def SDK_DEBUG = "${SDK_DEBUG}" //SDK DEBUG日志打开状态
 def SDK_VERSION_NAME = "UA_${SDK_VERSION}" //版本号
 
@@ -12,18 +14,21 @@ android {
         versionCode 1
         versionName "1.0"
 
-        buildConfigField("String", "URL_APP_STRATEGY", '"' + "https://aa.toponad.com/v1/open/app" + '"')
-        buildConfigField("String", "URL_PLACE_STRATEGY", '"' + "https://aa.toponad.com/v1/open/placement" + '"')
-        buildConfigField("String", "URL_AGENT", '"' + "https://dd.toponad.com/v1/open/da" + '"')
-        buildConfigField("String", "URL_TRACKING_STRATEGY", '"' + "https://tt.toponad.com/v1/open/tk" + '"')
-        buildConfigField("String", "GDPR_URL", '"' + "http://img.toponad.com/gdpr/PrivacyPolicySetting.html" + '"')
-        buildConfigField("String", "URL_TRAFFIC_CHECK", '"' + "https://aa.toponad.com/v1/open/eu" + '"')
+        buildConfigField("String", "URL_APP_STRATEGY", '"' + "https://api.anythinktech.com/v1/open/app" + '"')
+        buildConfigField("String", "URL_PLACE_STRATEGY", '"' + "https://api.anythinktech.com/v1/open/placement" + '"')
+        buildConfigField("String", "URL_AGENT", '"' + "https://da.anythinktech.com/v1/open/da" + '"')
+        buildConfigField("String", "URL_TRACKING_STRATEGY", '"' + "https://tk.anythinktech.com/v1/open/tk" + '"')
+        buildConfigField("String", "GDPR_URL", '"' + "https://img.anythinktech.com/gdpr/PrivacyPolicySetting.html" + '"')
+        buildConfigField("String", "URL_TRAFFIC_CHECK", '"' + "https://api.anythinktech.com/v1/open/eu" + '"')
         SDK_VERSION_NAME = "UA_${SDK_VERSION}" //版本号
 
         buildConfigField("String", "SDK_VERSION_NAME", '"' + SDK_VERSION_NAME + '"')
         buildConfigField("boolean", "SDK_DEBUG", SDK_DEBUG) //DEBUG状态
 
 
+    }
+    lintOptions {
+        abortOnError false
     }
     buildTypes {
         release {
@@ -35,5 +40,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    compileOnly 'com.adjust.sdk:adjust-android:4.24.0'
+    compileOnly 'com.android.installreferrer:installreferrer:2.1'
 }
 

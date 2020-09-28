@@ -2,13 +2,9 @@ package com.anythink.nativead.api;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-
-import com.anythink.nativead.unitgroup.BaseNativeAd;
 
 /**
  * Created by Z on 2018/1/8.
@@ -16,13 +12,9 @@ import com.anythink.nativead.unitgroup.BaseNativeAd;
 
 public class ATNativeAdView extends FrameLayout {
     private static final String TAG = ATNativeAdView.class.getSimpleName();
-    ViewGroup mCustomAdView;
-
-    BaseNativeAd mBaseNativeAd;
-
-    boolean mHasSendImpression;
 
     boolean mIsInWindow;
+    int mNativeAdId;
 
     public ATNativeAdView(Context context) {
         super(context);
@@ -36,40 +28,29 @@ public class ATNativeAdView extends FrameLayout {
         super(context, attrs, defStyleAttr);
     }
 
-    NativeAd mNativeAd;
+    View mAdView;
+    NativeAd.ImpressionEventListener mImpressionEventListener;
 
-    protected void renderView(NativeAd nativeAd, View developerView) {
-        unregisterView(this);
-
-        if (mCustomAdView != null) {
-            mCustomAdView.removeAllViews();
-        }
-        removeAllViews();
-        //Clear previous Ad before render current Ad
-        try {
-            if (mBaseNativeAd != null) {
-                mBaseNativeAd.clear(this);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    protected void renderView(int nativeAdId, View adView, NativeAd.ImpressionEventListener impressionEventListener) {
+        if (mAdView != null) {
+            unregisterView((ViewGroup) mAdView);
+            removeView(mAdView);
         }
 
-        mNativeAd = nativeAd;
-        mBaseNativeAd = nativeAd.mBaseNativeAd;
+        mAdView = adView;
+        mNativeAdId = nativeAdId;
+        mImpressionEventListener = impressionEventListener;
 
-        mCustomAdView = mBaseNativeAd.getCustomAdContainer();
-
-        if (mCustomAdView == null) {
-            addView(developerView);
-        } else {
-            mCustomAdView.addView(developerView);
-            addView(mCustomAdView);
+        addView(mAdView);
+        if (mIsInWindow && getVisibility() == VISIBLE) {
+            callbackImpression();
         }
+    }
 
-        mHasSendImpression = false;
 
-        if (mIsInWindow && mNativeAd != null && getVisibility() == VISIBLE) {
-            mNativeAd.recordImpression(this);
+    public void clearImpressionListener(int hashCode) {
+        if (mNativeAdId == hashCode) {
+            mImpressionEventListener = null;
         }
     }
 
@@ -89,8 +70,8 @@ public class ATNativeAdView extends FrameLayout {
     @Override
     protected void onVisibilityChanged(View changedView, int visibility) {
         super.onVisibilityChanged(changedView, visibility);
-        if (mNativeAd != null && visibility == VISIBLE && getVisibility() == VISIBLE) {
-            mNativeAd.recordImpression(this);
+        if (visibility == VISIBLE && getVisibility() == VISIBLE) {
+            callbackImpression();
         }
     }
 
@@ -98,8 +79,8 @@ public class ATNativeAdView extends FrameLayout {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         mIsInWindow = true;
-        if (mNativeAd != null && getVisibility() == VISIBLE) {
-            mNativeAd.recordImpression(this);
+        if (getVisibility() == VISIBLE) {
+            callbackImpression();
         }
     }
 
@@ -109,5 +90,13 @@ public class ATNativeAdView extends FrameLayout {
         mIsInWindow = false;
     }
 
+    private void callbackImpression() {
+        if (mImpressionEventListener != null) {
+            mImpressionEventListener.onImpression();
+        }
+    }
 
+    public void destory() {
+        mImpressionEventListener = null;
+    }
 }

@@ -6,10 +6,10 @@ import android.util.Log;
 import com.anythink.china.api.ApkError;
 import com.anythink.china.api.ApkErrorCode;
 import com.anythink.china.common.download.task.TaskManager;
-import com.anythink.china.common.download.task.Worker;
 import com.anythink.china.common.resource.FileUtils;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.utils.CommonLogUtil;
+import com.anythink.core.common.utils.task.Worker;
 
 import org.apache.http.conn.ConnectTimeoutException;
 
@@ -362,6 +362,10 @@ public abstract class ApkBaseLoader {
                 if (tempRaf != null) {
                     tempRaf.close();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
                 if (logRaf != null) {
                     logRaf.close();
                 }

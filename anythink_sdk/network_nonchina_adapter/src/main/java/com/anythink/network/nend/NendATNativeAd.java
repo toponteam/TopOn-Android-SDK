@@ -8,7 +8,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 
@@ -58,13 +57,15 @@ public class NendATNativeAd extends CustomNativeAd {
                     if (mListener != null) {
                         mListener.onSuccess(NendATNativeAd.this);
                     }
+                    mListener = null;
                 }
 
                 @Override
                 public void onFailure(NendAdNativeClient.NendError nendError) {
                     if (mListener != null) {
-                        mListener.onFail(ErrorCode.getErrorCode(ErrorCode.noADError, nendError.getCode() + "", nendError.getMessage()));
+                        mListener.onFail(nendError.getCode() + "", nendError.getMessage());
                     }
+                    mListener = null;
                 }
             });
         } else {
@@ -76,13 +77,15 @@ public class NendATNativeAd extends CustomNativeAd {
                     if (mListener != null) {
                         mListener.onSuccess(NendATNativeAd.this);
                     }
+                    mListener = null;
                 }
 
                 @Override
                 public void onFailure(int i) {
                     if (mListener != null) {
-                        mListener.onFail(ErrorCode.getErrorCode(ErrorCode.noADError, i + "", ""));
+                        mListener.onFail(i + "", "");
                     }
+                    mListener = null;
                 }
             });
         }
@@ -224,6 +227,11 @@ public class NendATNativeAd extends CustomNativeAd {
         if (mNendAdNativeVideo != null) {
             mNendAdNativeVideo.unregisterInteractionViews();
         }
+
+        if (mMediaView != null) {
+            mMediaView.setMediaViewListener(null);
+            mMediaView = null;
+        }
     }
 
 
@@ -244,11 +252,30 @@ public class NendATNativeAd extends CustomNativeAd {
 
     @Override
     public void destroy() {
-        mMediaView = null;
+        if (mMediaView != null) {
+            mMediaView.setMediaViewListener(null);
+            mMediaView = null;
+        }
+
+        if (mNendAdNativeVideo != null) {
+            mNendAdNativeVideo.setListener(null);
+            mNendAdNativeVideo.unregisterInteractionViews();
+            mNendAdNativeVideo = null;
+        }
+        mNendAdNative = null;
+        if (mVideoLoader != null) {
+            mVideoLoader.releaseLoader();
+            mVideoLoader = null;
+        }
+        mClient = null;
+        mContext = null;
+        mListener = null;
+
     }
 
     interface LoadCallbackListener {
         public void onSuccess(CustomNativeAd customNativeAd);
-        public void onFail(AdError adError);
+
+        public void onFail(String errorCode, String errorMsg);
     }
 }

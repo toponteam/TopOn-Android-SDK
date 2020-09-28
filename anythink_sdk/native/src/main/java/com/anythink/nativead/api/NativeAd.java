@@ -4,13 +4,17 @@ package com.anythink.nativead.api;
 import android.content.Context;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.AdCacheManager;
 import com.anythink.core.common.CommonAdManager;
+import com.anythink.core.common.PlacementAdManager;
+import com.anythink.core.common.ShowWaterfallManager;
 import com.anythink.core.common.base.Const;
+import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.net.TrackingV2Loader;
@@ -105,7 +109,8 @@ public class NativeAd {
         }
 
         mNativeView = view;
-        final View developerView = mAdRender.createView(mContext, mBaseNativeAd.getNetworkType());
+        final AdTrackingInfo adTrackingInfo = mBaseNativeAd.getDetail();
+        final View developerView = mAdRender.createView(mContext, adTrackingInfo != null ? adTrackingInfo.getmNetworkType() : 0);
 
         if (developerView == null) {
             throw new Exception("not set render view!");
@@ -117,9 +122,9 @@ public class NativeAd {
                 /**Mark ad has been showed**/
                 mAdCacheInfo.setShowTime(mAdCacheInfo.getShowTime() + 1);
 
-                CommonAdManager adManager = CommonAdManager.getInstance(mAdUnitId);
+                CommonAdManager adManager = PlacementAdManager.getInstance().getAdManager(mAdUnitId);
                 if (adManager != null) {
-                    adManager.cancelReturnCache(mAdCacheInfo);
+                    adManager.notifyNewestCacheHasBeenShow(mAdCacheInfo);
                     adManager.cancelCountdown();
                 }
             }
@@ -127,14 +132,14 @@ public class NativeAd {
             TaskManager.getInstance().run_proxy(new Runnable() {
                 @Override
                 public void run() {
+                    if (mIsDestroyed) {
+                        return;
+                    }
                     if (mBaseNativeAd != null) {
-                        AdTrackingInfo adTrackingInfo = null;
-
-                        adTrackingInfo = mBaseNativeAd.getDetail();
 
                         /**synchronized to fill show time**/
-                        CommonAdManager commonAdManager = CommonAdManager.getInstance(mAdUnitId);
-                        String currentRequestId = commonAdManager != null ? commonAdManager.getCurrentRequestId() : "";
+                        String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(mAdUnitId);
+
                         fillNativeTrackinInfoShowTime(adTrackingInfo, currentRequestId);
 
                         /**Show Tracking**/
@@ -165,9 +170,36 @@ public class NativeAd {
 
     private void renderViewToWindow(final View developerView) {
         ATSDK.apiLog(mAdUnitId, Const.LOGKEY.API_NATIVE, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
-        mNativeView.renderView(NativeAd.this, developerView);
-        mAdRender.renderAdView(developerView, mBaseNativeAd);
 
+        //Clear previous Ad before render current Ad
+//        try {
+//            if (mBaseNativeAd != null) {
+//                mBaseNativeAd.clear(mNativeView);
+//            }
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+
+        ViewGroup mCustomAdView = mBaseNativeAd.getCustomAdContainer();
+
+        int hashCode = this.hashCode();
+
+        if (mCustomAdView != null) {
+            mCustomAdView.addView(developerView);
+        }
+
+        View adView = mCustomAdView == null ? developerView : mCustomAdView;
+
+
+        mNativeView.renderView(hashCode, adView, new ImpressionEventListener() {
+            @Override
+            public void onImpression() {
+                recordImpression(mNativeView);
+            }
+        });
+
+        mAdRender.renderAdView(developerView, mBaseNativeAd);
     }
 
 
@@ -215,18 +247,31 @@ public class NativeAd {
         if (mIsDestroyed) {
             return;
         }
+        if (mNativeView != null) {
+            mNativeView.clearImpressionListener(hashCode());
+            mNativeView = null;
+        }
         mBaseNativeAd.clear(view);
+
     }
 
     public synchronized void destory() {
         if (mIsDestroyed) {
             return;
         }
-        mIsDestroyed = true;
         clear(mNativeView);
-        mBaseNativeAd = null;
+        mIsDestroyed = true;
         mNativeEventListener = null;
+        mDislikeListener = null;
+        mNativeView = null;
 
+        if (mBaseNativeAd != null) {
+            mBaseNativeAd.destroy();
+            mBaseNativeAd = null;
+        }
+
+        mAdCacheInfo = null;
+        mContext = null;
     }
 
 
@@ -252,8 +297,7 @@ public class NativeAd {
                         mBaseNativeAd.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
                         /**synchronized to fill show time**/
-                        CommonAdManager commonAdManager = CommonAdManager.getInstance(mAdUnitId);
-                        String currentRequestId = commonAdManager != null ? commonAdManager.getCurrentRequestId() : "";
+                        String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(mAdUnitId);
                         fillNativeTrackinInfoShowTime(adTrackingInfo, currentRequestId);
 
                         long timestamp = System.currentTimeMillis();
@@ -264,20 +308,21 @@ public class NativeAd {
                         /**Impression Tracking**/
                         AdTrackingManager.getInstance(mContext.getApplicationContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
 
+                        SDKContext.getInstance().runOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mNativeEventListener != null) {
+                                    mNativeEventListener.onAdImpressed(view,
+                                            ATAdInfo.fromAdTrackingInfo(mBaseNativeAd != null ? mBaseNativeAd.getDetail() : null));
+                                }
+                            }
+                        });
                     }
                 } catch (Exception e) {
                     Log.e("NativeAd", "BaseNativeAd has been destotyed.");
                 }
             }
         });
-
-
-        if (mNativeEventListener != null) {
-            mNativeEventListener.onAdImpressed(view,
-                    ATAdInfo.fromAdTrackingInfo(mBaseNativeAd != null ? mBaseNativeAd.getDetail() : null));
-        }
-
-
     }
 
     synchronized void handleClick(ATNativeAdView view) {
@@ -372,6 +417,10 @@ public class NativeAd {
          * @param progrees
          */
         void onDwonLoadProprees(int status, String description, int progrees);
+    }
+
+    public interface ImpressionEventListener {
+        void onImpression();
     }
 
     public void onPause() {

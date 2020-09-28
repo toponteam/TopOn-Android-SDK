@@ -8,10 +8,14 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.rewardvideo.api.ATRewardVideoAd;
 import com.anythink.rewardvideo.api.ATRewardVideoListener;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RewardVideoAdActivity extends Activity {
 
@@ -21,9 +25,6 @@ public class RewardVideoAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_rewardvideo_mintegral
             , DemoApplicaion.mPlacementId_rewardvideo_GDT
             , DemoApplicaion.mPlacementId_rewardvideo_toutiao
-            , DemoApplicaion.mPlacementId_rewardvideo_uniplay
-            , DemoApplicaion.mPlacementId_rewardvideo_oneway
-            , DemoApplicaion.mPlacementId_rewardvideo_ksyun
             , DemoApplicaion.mPlacementId_rewardvideo_baidu
             , DemoApplicaion.mPlacementId_rewardvideo_ks
             , DemoApplicaion.mPlacementId_rewardvideo_sigmob
@@ -32,16 +33,13 @@ public class RewardVideoAdActivity extends Activity {
 
     String unitGroupName[] = new String[]{
             "All network",
-            "mintegral",
-            "gdt",
-            "toutiao",
-            "uniplay",
-            "oneway",
-            "Ksyun",
-            "baidu",
-            "kuaishou",
-            "sigmob",
-            "myoffer"
+            "Mintegral",
+            "GDT",
+            "Toutiao",
+            "Baidu",
+            "Kuaishou",
+            "Sigmob",
+            "Myoffer"
     };
 
     RadioGroup mRadioGroup;
@@ -109,7 +107,12 @@ public class RewardVideoAdActivity extends Activity {
     private void init() {
         mRewardVideoAd = new ATRewardVideoAd(this, unitIds[mCurrentSelectIndex]);
         String userid = "test_userid_001";
-        mRewardVideoAd.setUserData(userid, "");
+        String userdata = "test_userdata_001";
+//        mRewardVideoAd.setUserData(userid, userdata);
+        Map<String, Object> localMap = new HashMap<>();
+        localMap.put(ATAdConst.KEY.USER_ID, userid);
+        localMap.put(ATAdConst.KEY.USER_CUSTOM_DATA, userdata);
+        mRewardVideoAd.setLocalExtra(localMap);
         mRewardVideoAd.setAdListener(new ATRewardVideoListener() {
             @Override
             public void onRewardedVideoAdLoaded() {

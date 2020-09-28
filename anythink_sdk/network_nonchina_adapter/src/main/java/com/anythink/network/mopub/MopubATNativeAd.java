@@ -58,17 +58,17 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
 
         mMoPubNative.registerAdRenderer(new MoPubAdRenderer() {
             @Override
-            public View createAdView( Context context,  ViewGroup parent) {
+            public View createAdView(Context context, ViewGroup parent) {
                 return null;
             }
 
             @Override
-            public void renderAdView( View view,  BaseNativeAd ad) {
+            public void renderAdView(View view, BaseNativeAd ad) {
 
             }
 
             @Override
-            public boolean supports( BaseNativeAd nativeAd) {
+            public boolean supports(BaseNativeAd nativeAd) {
                 return true;
             }
         });
@@ -76,7 +76,6 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
     }
 
     public void loadAd() {
-        log(TAG, "loadAd");
         mMoPubNative.makeRequest(mRequestParameters);
     }
 
@@ -86,7 +85,6 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
         if (view == null) {
             return;
         }
-        log(TAG, "prepare");
         if (mNativeAd != null) {
             mNativeAd.prepare(view);
         }
@@ -99,7 +97,6 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
 
     @Override
     public void clear(final View view) {
-        log(TAG, "clear");
         if (mNativeAd != null) {
             mNativeAd.clear(view);
         }
@@ -118,10 +115,20 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
 
     @Override
     public void destroy() {
-        log(TAG, "destory");
         if (mNativeAd != null) {
+            mNativeAd.setMoPubNativeEventListener(null);
             mNativeAd.destroy();
+            mNativeAd = null;
         }
+
+        if (mMoPubNative != null) {
+            mMoPubNative.destroy();
+            mMoPubNative = null;
+        }
+
+        mCustonNativeListener = null;
+        mRequestParameters = null;
+        mContext = null;
     }
 
     boolean mIsAutoPlay;
@@ -132,7 +139,6 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
 
     @Override
     public void onNativeLoad(NativeAd nativeAd) {
-        log(TAG, "onAdloaded");
         mNativeAd = nativeAd;
         if (nativeAd.getBaseNativeAd() instanceof StaticNativeAd) {
             StaticNativeAd staticNativeAd = (StaticNativeAd) nativeAd.getBaseNativeAd();
@@ -173,21 +179,21 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
         if (mCustonNativeListener != null) {
             mCustonNativeListener.onSuccess(this);
         }
+        mCustonNativeListener = null;
 
     }
 
     @Override
-    public void onNativeFail(NativeErrorCode errorCode) {
-        log(TAG, "onloadFail:" + errorCode.toString());
+    public void onNativeFail(NativeErrorCode error) {
         if (mCustonNativeListener != null) {
-            AdError adUpError = ErrorCode.getErrorCode(ErrorCode.noADError, errorCode.name() + "", errorCode.toString());
-            mCustonNativeListener.onFail(adUpError);
+            mCustonNativeListener.onFail(error.getIntCode() + "", error.toString());
         }
-
+        mCustonNativeListener = null;
     }
 
     interface LoadCallbackListener {
         public void onSuccess(CustomNativeAd customNativeAd);
-        public void onFail(AdError adError);
+
+        public void onFail(String errorCode, String errorMsg);
     }
 }

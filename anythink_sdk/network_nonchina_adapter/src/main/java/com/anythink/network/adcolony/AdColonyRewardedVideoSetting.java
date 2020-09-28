@@ -2,6 +2,7 @@ package com.anythink.network.adcolony;
 
 import com.anythink.core.api.ATMediationSetting;
 
+@Deprecated
 public class AdColonyRewardedVideoSetting implements ATMediationSetting {
 
     boolean enableConfirmationDialog;

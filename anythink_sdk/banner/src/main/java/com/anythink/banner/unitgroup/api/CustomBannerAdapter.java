@@ -1,23 +1,32 @@
 package com.anythink.banner.unitgroup.api;
 
-import android.content.Context;
+import android.view.View;
 
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.banner.api.ATBannerView;
-import com.anythink.banner.business.BaseBannerAdapter;
+import com.anythink.core.api.ATBaseAdAdapter;
 
-import java.util.Map;
+public abstract class CustomBannerAdapter extends ATBaseAdAdapter {
 
-public abstract class CustomBannerAdapter extends BaseBannerAdapter {
-
-    public abstract void loadBannerAd(final ATBannerView bannerView, final Context activity
-            , final Map<String, Object> serverExtras
-            , final ATMediationSetting mediationSetting
-            , final CustomBannerListener customBannerListener);
-
+    protected CustomBannerEventListener mImpressionEventListener;
+    protected ATBannerView mATBannerView;
 
     @Override
-    public boolean isAdReady() {
+    final public boolean isAdReady() {
         return getBannerView() != null;
+    }
+
+    public abstract View getBannerView();
+
+    public void setAdEventListener(CustomBannerEventListener impressionEventListener) {
+        mImpressionEventListener = impressionEventListener;
+    }
+
+    final public void setATBannerView(ATBannerView atBannerView) {
+        this.mATBannerView = atBannerView;
+    }
+
+    final public void releaseLoadResource() {
+        super.releaseLoadResource();
+        this.mATBannerView = null;
     }
 }

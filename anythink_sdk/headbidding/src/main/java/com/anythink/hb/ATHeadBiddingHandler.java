@@ -2,11 +2,10 @@ package com.anythink.hb;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.anythink.core.common.HeadBiddingFactory;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.HiBidCache;
-import com.anythink.core.common.hb.HeadBiddingCacheManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.NetworkLogUtil;
 import com.anythink.core.strategy.PlaceStrategy;
@@ -21,6 +20,7 @@ import com.anythink.hb.data.BiddingResponse;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,15 +31,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ATHeadBiddingHandler implements HeadBiddingFactory.IHeadBiddingHandler {
 
     Context mApplicationContext;
-    List<PlaceStrategy.UnitGroupInfo> mNormalUnitInfoList = new ArrayList<>();
     List<PlaceStrategy.UnitGroupInfo> mHBUnitInfoList = new ArrayList<>();
+    List<PlaceStrategy.UnitGroupInfo> mFailedUnitInfoList;
 
     ConcurrentHashMap<BidRequestInfo, PlaceStrategy.UnitGroupInfo> mRequestUnitObjectMap = new ConcurrentHashMap<>();
 
-    String mUnitId;
+    String mPlacementId;
     int mFormat;
     String mAdType;
     String mRequestId;
+    long mHBWaitingToRequestTime;
+    long mHBBidTimeout;
 
     @Override
     public void setTestMode(boolean isTest) {
@@ -47,14 +49,13 @@ public class ATHeadBiddingHandler implements HeadBiddingFactory.IHeadBiddingHand
     }
 
     @Override
-    public void initHbInfo(Context context, String requestId, String unitId, int format, List<PlaceStrategy.UnitGroupInfo> normalUnitInfoList, List<PlaceStrategy.UnitGroupInfo> hbUnitInfoList) {
+    public void initHbInfo(Context context, String requestId, String placementId, int format, long hbWaitingToReqeustTime, long hbBidTimeout, List<PlaceStrategy.UnitGroupInfo> hbUnitInfoList) {
         mApplicationContext = context.getApplicationContext();
 
         mFormat = format;
         mRequestId = requestId;
-        if (normalUnitInfoList != null) {
-            mNormalUnitInfoList.addAll(normalUnitInfoList);
-        }
+        mHBWaitingToRequestTime = hbWaitingToReqeustTime;
+        mHBBidTimeout = hbBidTimeout;
 
         if (hbUnitInfoList != null) {
             mHBUnitInfoList.addAll(hbUnitInfoList);
@@ -63,18 +64,20 @@ public class ATHeadBiddingHandler implements HeadBiddingFactory.IHeadBiddingHand
 
         HeaderBiddingAggregator.init(mApplicationContext);
 
-        mUnitId = unitId;
-        if (format == 0) { //native
-            mAdType = ADType.NATIVE;
-        }
-        if (format == 1) { //rv
-            mAdType = ADType.REWARDED_VIDEO;
-        }
-        if (format == 2) { //banner
-            mAdType = ADType.BANNER;
-        }
-        if (format == 3) { //interstitial
-            mAdType = ADType.INTERSTITIAL;
+        mPlacementId = placementId;
+        switch (format) {
+            case 0:  //native
+                mAdType = ADType.NATIVE;
+                break;
+            case 1:  //rv
+                mAdType = ADType.REWARDED_VIDEO;
+                break;
+            case 2:  //banner
+                mAdType = ADType.BANNER;
+                break;
+            case 3:  //interstitial
+                mAdType = ADType.INTERSTITIAL;
+                break;
         }
 
     }
@@ -85,18 +88,33 @@ public class ATHeadBiddingHandler implements HeadBiddingFactory.IHeadBiddingHand
         HBContext.getInstance().runOnMainThread(new Runnable() {
             @Override
             public void run() {
-                List<BidRequestInfo> bidderReqs = new ArrayList<BidRequestInfo>();
+                List<BidRequestInfo> bidderReqs = new ArrayList<>();
 
-                long timeOut = 0;
+                long waitingToRequestTime = 0;
+                long biddingTimeOut = 0;
+
+                if (mHBWaitingToRequestTime > waitingToRequestTime) {
+                    waitingToRequestTime = mHBWaitingToRequestTime;
+                }
+
+                if (mHBBidTimeout > biddingTimeOut) {
+                    biddingTimeOut = mHBBidTimeout;
+                }
+
+                LogUtil.i("HeadBidding", "hbStartTime: " + waitingToRequestTime + ", hbBidTimeout: " + biddingTimeOut);
+
                 try {
 
                     for (PlaceStrategy.UnitGroupInfo headBiddingObject : mHBUnitInfoList) {
                         JSONObject contentObject = new JSONObject(headBiddingObject.content);
 
-                        long hbTimeOut = headBiddingObject.hbTimeout;
-                        if (hbTimeOut > timeOut) {
-                            timeOut = hbTimeOut;
-                        }
+                        String adsourceId = headBiddingObject.unitId;
+                        long bidTokenAvailTime = headBiddingObject.getBidTokenAvailTime();
+
+                        BidRequestInfo requestInfo = new BidRequestInfo();
+                        requestInfo.put(BidRequestInfo.KEY_ADSOURCE_ID, adsourceId);
+                        requestInfo.put(BidRequestInfo.KEY_BID_TOKEN_AVAIL_TIME, bidTokenAvailTime);
+
 
                         if (headBiddingObject.networkType == 6) { //Mintegral
                             String appid = contentObject.optString("appid");
@@ -104,39 +122,37 @@ public class ATHeadBiddingHandler implements HeadBiddingFactory.IHeadBiddingHand
                             String appkey = contentObject.optString("appkey");
                             String placementId = contentObject.optString("placement_id");
 
-                            BidRequestInfo mtg = new BidRequestInfo();
-                            mtg.put(BidRequestInfo.KEY_APP_ID, appid);
-                            mtg.put(BidRequestInfo.KEY_APP_KEY, appkey);
-                            mtg.put(BidRequestInfo.KEY_UNIT_PLACEMENT_ID, placementId);
-                            mtg.put(BidRequestInfo.KEY_PLACEMENT_ID, unitid);
-                            mtg.put(BidRequestInfo.KEY_CUSTOM_INFO, CommonSDKUtil.createRequestCustomData(mApplicationContext, mRequestId, mUnitId, mFormat, headBiddingObject).toString());
-                            mtg.put(BidRequestInfo.KEY_BIDDER_CLASS, MtgBidder.class);
+                            requestInfo.put(BidRequestInfo.KEY_APP_ID, appid);
+                            requestInfo.put(BidRequestInfo.KEY_APP_KEY, appkey);
+                            requestInfo.put(BidRequestInfo.KEY_UNIT_PLACEMENT_ID, placementId);
+                            requestInfo.put(BidRequestInfo.KEY_PLACEMENT_ID, unitid);
+                            requestInfo.put(BidRequestInfo.KEY_CUSTOM_INFO, CommonSDKUtil.createRequestCustomData(mApplicationContext, mRequestId, mPlacementId, mFormat, 0).toString());
+                            requestInfo.put(BidRequestInfo.KEY_BIDDER_CLASS, MtgBidder.class);
                             if (TextUtils.equals(mAdType, ADType.BANNER)) { //Banner
                                 String size = contentObject.optString("size");
-                                mtg.put(BidRequestInfo.KEY_BANNER_SIZE, size);
+                                requestInfo.put(BidRequestInfo.KEY_BANNER_SIZE, size);
                             }
 
-                            bidderReqs.add(mtg);
+                            bidderReqs.add(requestInfo);
 
-                            mRequestUnitObjectMap.put(mtg, headBiddingObject);
-                        }
+                            mRequestUnitObjectMap.put(requestInfo, headBiddingObject);
 
-                        if (headBiddingObject.networkType == 1) { //Facebook
+                        } else if (headBiddingObject.networkType == 1) { //Facebook
                             String unitid = contentObject.optString("unit_id");
                             String appid = contentObject.optString("app_id");
-                            BidRequestInfo fb = new BidRequestInfo();
-                            fb.put(BidRequestInfo.KEY_APP_ID, appid);
-                            fb.put(BidRequestInfo.KEY_PLACEMENT_ID, unitid);
-                            fb.put(BidRequestInfo.KEY_BIDDER_CLASS, FacebookBidder.class);
-                            fb.put(BidRequestInfo.KEY_PLATFORM_ID, appid);
+
+                            requestInfo.put(BidRequestInfo.KEY_APP_ID, appid);
+                            requestInfo.put(BidRequestInfo.KEY_PLACEMENT_ID, unitid);
+                            requestInfo.put(BidRequestInfo.KEY_BIDDER_CLASS, FacebookBidder.class);
+                            requestInfo.put(BidRequestInfo.KEY_PLATFORM_ID, appid);
                             if (TextUtils.equals(mAdType, ADType.BANNER)) { //Banner
                                 String size = contentObject.optString("size");
-                                fb.put(BidRequestInfo.KEY_BANNER_SIZE, size);
+                                requestInfo.put(BidRequestInfo.KEY_BANNER_SIZE, size);
                             }
 //                            fb.put("isTest", true);
-                            bidderReqs.add(fb);
+                            bidderReqs.add(requestInfo);
 
-                            mRequestUnitObjectMap.put(fb, headBiddingObject);
+                            mRequestUnitObjectMap.put(requestInfo, headBiddingObject);
                         }
                     }
 
@@ -147,29 +163,57 @@ public class ATHeadBiddingHandler implements HeadBiddingFactory.IHeadBiddingHand
                 //If no bid list, it will return the normal list
                 if (bidderReqs.size() == 0) {
                     if (callback != null) {
-                        List<PlaceStrategy.UnitGroupInfo> resultList = new ArrayList<>();
-                        resultList.addAll(mNormalUnitInfoList);
-                        callback.onResultCallback(resultList, null);
+                        callback.onFailed(mRequestId, mHBUnitInfoList);
+                        callback.onFinished(mRequestId);
                     }
                     return;
                 }
 
 
-                List<HeaderBiddingTransaction> transactionList = new ArrayList<HeaderBiddingTransaction>();
+                List<HeaderBiddingTransaction> transactionList = new ArrayList<>();
 
                 try {
-                    HeaderBiddingTransaction transaction = HeaderBiddingAggregator.requestBid(bidderReqs,
-                            mUnitId, mAdType, timeOut, new BidRequestCallback() {
+                    HeaderBiddingTransaction transaction = HeaderBiddingAggregator.requestBid(bidderReqs, mRequestId,
+                            mPlacementId, mAdType, waitingToRequestTime, biddingTimeOut, new BidRequestCallback() {
                                 @Override
-                                public void onBidRequestCallback(String unitId, AuctionResult auctionResult) {
+                                public void onError(String placementId, BidRequestInfo bidRequestInfo, Throwable e) {
+                                    Log.e("HeadBidding", "onError: " + e.getMessage());
+                                    if (mFailedUnitInfoList == null) {
+                                        mFailedUnitInfoList = new ArrayList<>();
+                                    }
+
+                                    PlaceStrategy.UnitGroupInfo unitGroupInfo = mRequestUnitObjectMap.get(bidRequestInfo);
+                                    if (unitGroupInfo != null) {
+                                        unitGroupInfo.setErrorMsg(e.getMessage());
+                                        mFailedUnitInfoList.add(unitGroupInfo);
+                                    }
+                                }
+
+                                @Override
+                                public void onBidResultWhenWaitingTimeout(String placementId, AuctionResult auctionResult) {
                                     handleResult(auctionResult, callback);
+                                }
+
+                                @Override
+                                public void onBidEachResult(String placementId, AuctionResult auctionResult) {
+                                    handleResult(auctionResult, callback);
+                                }
+
+                                @Override
+                                public void onBidRequestFinished(String placementId, AuctionResult auctionResult) {
+                                    handleResult(auctionResult, callback);
+
+                                    if (callback != null) {
+                                        callback.onFinished(mRequestId);
+                                    }
                                 }
                             });
                     transactionList.add(transaction);
                 } catch (Exception e) {
                     e.printStackTrace();
                     if (callback != null) {
-                        callback.onResultCallback(mNormalUnitInfoList, null);
+                        callback.onFailed(mRequestId, mHBUnitInfoList);
+                        callback.onFinished(mRequestId);
                     }
                 }
             }
@@ -180,136 +224,81 @@ public class ATHeadBiddingHandler implements HeadBiddingFactory.IHeadBiddingHand
         List<PlaceStrategy.UnitGroupInfo> successObjectList = new ArrayList<>();
         List<PlaceStrategy.UnitGroupInfo> failObjectList = new ArrayList<>();
 
-        BiddingResponse winner = auctionResult.getWinner();
-
-        if (auctionResult.getWinner() != null) {
-
-            BidRequestInfo bidRequestInfo = winner.getBidRequestInfo();
-            PlaceStrategy.UnitGroupInfo winnerUnitInfo = mRequestUnitObjectMap.get(bidRequestInfo);
-            if (winnerUnitInfo != null) {
-                try {
-                    winnerUnitInfo.ecpm = winner.getBiddingPriceUSD();
-                    winnerUnitInfo.payload = winner.getPayload().toString();
-                    winnerUnitInfo.sortType = 0;//normal bidrequest
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                String adSourceId = winnerUnitInfo.unitId;
-                /**Add Bid Cache**/
-                HiBidCache hiBidCache = new HiBidCache();
-                hiBidCache.payLoad = winner.getPayload().toString();
-                hiBidCache.price = winner.getBiddingPriceUSD();
-                hiBidCache.outDateTime = winnerUnitInfo.getBidTokenAvailTime() + System.currentTimeMillis();
-                //save hb cache
-                HeadBiddingCacheManager.getInstance().addCache(adSourceId, hiBidCache);
-
-                successObjectList.add(winnerUnitInfo);
-            }
-
-            LogUtil.i("bidding", "winner bidding succsess......：" + winner.getPayload());
-        } else {
-            LogUtil.i("bidding", "bidding fail......");
+        if (mFailedUnitInfoList != null && mFailedUnitInfoList.size() > 0) {
+            failObjectList.addAll(mFailedUnitInfoList);
+            mFailedUnitInfoList.clear();
         }
 
-        List<BiddingResponse> otherBidders = auctionResult.getOtherBidders();
+        List<BiddingResponse> successBidders = auctionResult.getSuccessBidders();
+        List<BiddingResponse> failedBidders = auctionResult.getFailedBidders();
 
-        if (otherBidders != null) {
-            for (BiddingResponse biddingResponse : otherBidders) {
-                BidRequestInfo otherBidRequestInfo = biddingResponse.getBidRequestInfo();
-                PlaceStrategy.UnitGroupInfo otherUnitInfo = mRequestUnitObjectMap.get(otherBidRequestInfo);
+        int successSize = successBidders != null ? successBidders.size() : 0;
+        int failedSize = failedBidders != null ? failedBidders.size() : 0;
 
-                if (biddingResponse.getBiddingPriceUSD() == 0) {
+        BiddingResponse biddingResponse;
+        BidRequestInfo bidRequestInfo;
+        PlaceStrategy.UnitGroupInfo unitGroupInfo;
+        for (int i = 0; i < successSize; i++) {
+            biddingResponse = successBidders.get(i);
 
-                    String adsourceId = otherUnitInfo.unitId;
-                    /**HB Cache exist？**/
-                    HiBidCache bidCache = HeadBiddingCacheManager.getInstance().getCache(adsourceId);
-                    if (bidCache != null) {
-                        try {
-                            otherUnitInfo.ecpm = bidCache.price;
-                            otherUnitInfo.payload = bidCache.payLoad;
-                            otherUnitInfo.sortType = 2; //use cache token
+            if (biddingResponse != null) {
+                bidRequestInfo = biddingResponse.getBidRequestInfo();
 
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        successObjectList.add(otherUnitInfo);
-                        LogUtil.i("bidding", "use cache......payload:" + biddingResponse.getErrorMessage());
-                    } else {
-                        try {
-                            otherUnitInfo.setErrorMsg(biddingResponse.getErrorMessage());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                unitGroupInfo = mRequestUnitObjectMap.get(bidRequestInfo);
 
-                        NetworkLogUtil.headbidingLog(Const.LOGKEY.FAIL, mUnitId, CommonSDKUtil.getFormatString(String.valueOf(mFormat)), otherUnitInfo);
-
-                        failObjectList.add(otherUnitInfo);
-                        LogUtil.i("bidding", "bidding fail......payload:" + biddingResponse.getErrorMessage());
-                    }
-
-                } else {
-                    LogUtil.i("bidding", "other bidding succsess......：" + biddingResponse.getPayload());
+                if (unitGroupInfo != null) {
                     try {
-//                        otherObject.put(unitGroup_bidtype, 1);
-                        otherUnitInfo.ecpm = biddingResponse.getBiddingPriceUSD();
-                        otherUnitInfo.payload = biddingResponse.getPayload().toString();
-                        otherUnitInfo.sortType = 0;
+                        unitGroupInfo.bidEndTime = biddingResponse.getBiddingEndTime();//bid end time
+                        unitGroupInfo.bidUseTime = biddingResponse.getBiddingEndTime() - biddingResponse.getBiddingStartTime();//bid use time
+                        unitGroupInfo.ecpm = biddingResponse.getBiddingPriceUSD();
+                        unitGroupInfo.payload = biddingResponse.getPayload().toString();
+                        unitGroupInfo.sortType = 0;//normal bidrequest
 
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    successObjectList.add(otherUnitInfo);
 
-                    String adSourceId = otherUnitInfo.unitId;
-                    /**Add HB Cache**/
-                    HiBidCache hiBidCache = new HiBidCache();
-                    hiBidCache.payLoad = winner.getPayload().toString();
-                    hiBidCache.price = winner.getBiddingPriceUSD();
-                    hiBidCache.outDateTime = otherUnitInfo.getBidTokenAvailTime() + System.currentTimeMillis();
-                    HeadBiddingCacheManager.getInstance().addCache(adSourceId, hiBidCache);
+                    NetworkLogUtil.headbidingLog(Const.LOGKEY.SUCCESS, mPlacementId, CommonSDKUtil.getFormatString(String.valueOf(mFormat)), unitGroupInfo);
 
+                    successObjectList.add(unitGroupInfo);
                 }
             }
         }
+        for (int i = 0; i < failedSize; i++) {
+            biddingResponse = failedBidders.get(i);
 
-        for (PlaceStrategy.UnitGroupInfo successObject : successObjectList) {
-            if (mNormalUnitInfoList.size() == 0) {
-                NetworkLogUtil.headbidingLog(Const.LOGKEY.SUCCESS, mUnitId, CommonSDKUtil.getFormatString(String.valueOf(mFormat)), successObject);
-                mNormalUnitInfoList.add(successObject);
-                continue;
-            }
+            if (biddingResponse != null && biddingResponse.getBiddingPriceUSD() == 0) {
+                bidRequestInfo = biddingResponse.getBidRequestInfo();
 
-            for (int i = 0; i < mNormalUnitInfoList.size(); i++) {
-                PlaceStrategy.UnitGroupInfo normalObject = mNormalUnitInfoList.get(i);
-                try {
-                    if (successObject.ecpm >= normalObject.ecpm) {
-                        NetworkLogUtil.headbidingLog(Const.LOGKEY.SUCCESS, mUnitId, CommonSDKUtil.getFormatString(String.valueOf(mFormat)), successObject);
-                        mNormalUnitInfoList.add(i, successObject);
-                        break;
+                unitGroupInfo = mRequestUnitObjectMap.get(bidRequestInfo);
+
+                if (unitGroupInfo != null) {
+                    try {
+                        unitGroupInfo.bidEndTime = biddingResponse.getBiddingEndTime();//bid end time
+                        unitGroupInfo.bidUseTime = biddingResponse.getBiddingEndTime() - biddingResponse.getBiddingStartTime();//bid use time
+                        unitGroupInfo.ecpm = 0;
+                        unitGroupInfo.level = -1;
+                        unitGroupInfo.setErrorMsg(biddingResponse.getErrorMessage());
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+
+                    NetworkLogUtil.headbidingLog(Const.LOGKEY.FAIL, mPlacementId, CommonSDKUtil.getFormatString(String.valueOf(mFormat)), unitGroupInfo);
+
+                    failObjectList.add(unitGroupInfo);
                 }
             }
-
-            if (mNormalUnitInfoList.indexOf(successObject) < 0) {
-                NetworkLogUtil.headbidingLog(Const.LOGKEY.SUCCESS, mUnitId, CommonSDKUtil.getFormatString(String.valueOf(mFormat)), successObject);
-                mNormalUnitInfoList.add(successObject);
-            }
-        }
-
-        List<PlaceStrategy.UnitGroupInfo> finalResultList = new ArrayList<>();
-        for (int i = 0; i < mNormalUnitInfoList.size(); i++) {
-            PlaceStrategy.UnitGroupInfo unitGroupInfo = mNormalUnitInfoList.get(i);
-//            unitGroupInfo.level = i;
-            finalResultList.add(unitGroupInfo);
         }
 
         if (callback != null) {
-            callback.onResultCallback(finalResultList, failObjectList);
+            if (successObjectList.size() > 0) {
+                Collections.sort(successObjectList);
+                callback.onSuccess(mRequestId, successObjectList);
+            }
+            if (failObjectList.size() > 0) {
+                callback.onFailed(mRequestId, failObjectList);
+            }
         }
-
     }
+
 }

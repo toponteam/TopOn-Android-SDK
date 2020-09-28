@@ -6,7 +6,6 @@ import android.view.View;
 
 import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.inmobi.ads.AdMetaInfo;
@@ -23,7 +22,6 @@ import java.util.Map;
 public class InmobiATBannerAdapter extends CustomBannerAdapter {
     private static final String TAG = InmobiATBannerAdapter.class.getSimpleName();
 
-    CustomBannerListener mListener;
     Long placeId;
     View mBannerView;
 
@@ -41,13 +39,19 @@ public class InmobiATBannerAdapter extends CustomBannerAdapter {
         InmobiATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new InmobiATInitManager.OnInitCallback() {
             @Override
             public void onSuccess() {
-                startLoadAd(context);
+                try {
+                    startLoadAd(context);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
 
             @Override
             public void onError(String errorMsg) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(InmobiATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "Inmobi " + errorMsg));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "Inmobi " + errorMsg);
                 }
             }
         });
@@ -70,37 +74,37 @@ public class InmobiATBannerAdapter extends CustomBannerAdapter {
             @Override
             public void onAdLoadSucceeded(InMobiBanner inMobiBanner, AdMetaInfo adMetaInfo) {
                 mBannerView = inMobiBanner;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(InmobiATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onAdLoadFailed(InMobiBanner inMobiBanner, InMobiAdRequestStatus inMobiAdRequestStatus) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(InmobiATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, inMobiAdRequestStatus.getStatusCode().name(), inMobiAdRequestStatus.getMessage()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(inMobiAdRequestStatus.getStatusCode().name(), inMobiAdRequestStatus.getMessage());
                 }
             }
 
             @Override
             public void onAdDisplayed(InMobiBanner inMobiBanner) {
-                if (mListener != null) {
-                    mListener.onBannerAdShow(InmobiATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
 
                 }
             }
 
             @Override
             public void onAdDismissed(InMobiBanner inMobiBanner) {
-                if (mListener != null) {
-                    mListener.onBannerAdClose(InmobiATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
                 }
             }
 
             @Override
             public void onAdClicked(InMobiBanner inMobiBanner, Map<Object, Object> map) {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(InmobiATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
@@ -111,41 +115,27 @@ public class InmobiATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public void loadBannerAd(ATBannerView anythinkBannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        mListener = customBannerListener;
-        if (activity == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+
+        String accountId = (String) serverExtras.get("app_id");
+        String unitId = (String) serverExtras.get("unit_id");
+
+        if (TextUtils.isEmpty(accountId) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "inmobi account_id or unit_id is empty!");
             }
             return;
         }
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "inmobi serverExtras is null!"));
-            }
-            return;
-        } else {
+        placeId = Long.parseLong(unitId);
 
-            String accountId = (String) serverExtras.get("app_id");
-            String unitId = (String) serverExtras.get("unit_id");
-
-            if (TextUtils.isEmpty(accountId) || TextUtils.isEmpty(unitId)) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "inmobi account_id or unit_id is empty!"));
-                }
-                return;
+        mRefreshTime = 0;
+        try {
+            if (serverExtras.containsKey("nw_rft")) {
+                mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
+                mRefreshTime /= 1000f;
             }
-            placeId = Long.parseLong(unitId);
-
-            mRefreshTime = 0;
-            try {
-                if (serverExtras.containsKey("nw_rft")) {
-                    mRefreshTime = Integer.valueOf((String) serverExtras.get("nw_rft"));
-                    mRefreshTime /= 1000f;
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
         mClickCallbackType = 0;
         initAndLoad(activity, serverExtras);
@@ -158,8 +148,17 @@ public class InmobiATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         mBannerView = null;
+
+        if (bannerAdLoader != null) {
+            try {
+                bannerAdLoader.setListener(null);
+            } catch (Throwable e) {
+            }
+            bannerAdLoader.destroy();
+            bannerAdLoader = null;
+        }
     }
 
 
@@ -169,12 +168,27 @@ public class InmobiATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return InmobiATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return InmobiATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return InmobiATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        try {
+            return String.valueOf(placeId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

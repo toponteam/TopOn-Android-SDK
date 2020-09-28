@@ -1,21 +1,23 @@
 package com.anythink.rewardvideo.api;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
+import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.rewardvideo.bussiness.AdLoadManager;
-import com.anythink.rewardvideo.bussiness.RewardedVideoEventListener;
 
 import java.util.Map;
 
@@ -25,7 +27,7 @@ public class ATRewardVideoAd {
     ATRewardVideoListener mListener;
     AdLoadManager mAdLoadManager;
 
-    Activity mActivity;
+    Context mContext;
 
     private ATRewardVideoListener mInterListener = new ATRewardVideoListener() {
         @Override
@@ -43,6 +45,9 @@ public class ATRewardVideoAd {
 
         @Override
         public void onRewardedVideoAdFailed(final AdError errorCode) {
+            if (mAdLoadManager != null) {
+                mAdLoadManager.setLoadFail(errorCode);
+            }
             SDKContext.getInstance().runOnMainThread(new Runnable() {
                 @Override
                 public void run() {
@@ -135,10 +140,10 @@ public class ATRewardVideoAd {
         }
     };
 
-    public ATRewardVideoAd(Activity activity, String placementId) {
+    public ATRewardVideoAd(Context context, String placementId) {
         mPlacementId = placementId;
-        mActivity = activity;
-        mAdLoadManager = AdLoadManager.getInstance(activity, placementId);
+        mContext = context;
+        mAdLoadManager = AdLoadManager.getInstance(context, placementId);
     }
 
     @Deprecated
@@ -151,8 +156,8 @@ public class ATRewardVideoAd {
 
     private void load(final boolean isAutoRefresh) {
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
-        mAdLoadManager.refreshContext(mActivity);
-        mAdLoadManager.startLoadAd(mActivity, isAutoRefresh, mInterListener);
+        mAdLoadManager.refreshContext(mContext);
+        mAdLoadManager.startLoadAd(mContext, isAutoRefresh, mInterListener);
     }
 
     private boolean isNeedAutoLoadAfterClose() {
@@ -163,8 +168,12 @@ public class ATRewardVideoAd {
         return false;
     }
 
+    @Deprecated
     public void addSetting(int networkType, ATMediationSetting setting) {
-        mAdLoadManager.addSetting(networkType, setting);
+    }
+
+    public void setLocalExtra(Map<String, Object> map) {
+        PlacementAdManager.getInstance().putPlacementLocalSettingMap(mPlacementId, map);
     }
 
     public void setAdListener(ATRewardVideoListener listener) {
@@ -179,13 +188,15 @@ public class ATRewardVideoAd {
             return false;
         }
 
-        boolean isAdReady = mAdLoadManager.isAdReady(mActivity);
+        boolean isAdReady = mAdLoadManager.isAdReady(mContext);
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_ISREADY, String.valueOf(isAdReady), "");
         return isAdReady;
     }
 
+    @Deprecated
     public void setUserData(String userId, String customData) {
-        mAdLoadManager.setUserData(userId, customData);
+        PlacementAdManager.getInstance().addExtraInfoToLocalMap(mPlacementId, ATAdConst.KEY.USER_ID, userId);
+        PlacementAdManager.getInstance().addExtraInfoToLocalMap(mPlacementId, ATAdConst.KEY.USER_CUSTOM_DATA, customData);
     }
 
     public void show(Activity activity, String scenario) {
@@ -200,6 +211,7 @@ public class ATRewardVideoAd {
         controlShow(activity, "");
     }
 
+    @Deprecated
     public void show(String scenario) {
         String realScenario = "";
         if (CommonSDKUtil.isVailScenario(scenario)) {
@@ -208,15 +220,13 @@ public class ATRewardVideoAd {
         controlShow(null, realScenario);
     }
 
+    @Deprecated
     public void show() {
         controlShow(null, "");
     }
 
+
     private void controlShow(Activity activity, String scenario) {
-        Activity showActivity = activity;
-        if (showActivity == null) {
-            showActivity = mActivity;
-        }
 
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
         if (SDKContext.getInstance().getContext() == null
@@ -230,7 +240,16 @@ public class ATRewardVideoAd {
             return;
         }
 
-        mAdLoadManager.show(showActivity, scenario, new RewardedVideoEventListener(mInterListener));
+        Activity showActivity = activity;
+        if (showActivity == null && mContext instanceof Activity) {
+            showActivity = (Activity) mContext;
+        }
+
+        if (showActivity == null) {
+            Log.e(TAG, "RewardedVideo Show Activity is null.");
+        }
+
+        mAdLoadManager.show(showActivity, scenario, mInterListener);
     }
 
     @Deprecated
@@ -240,17 +259,14 @@ public class ATRewardVideoAd {
 
     @Deprecated
     public void onPause() {
-        mAdLoadManager.onPause();
     }
 
     @Deprecated
     public void onResume() {
-        mAdLoadManager.onResume();
     }
 
     @Deprecated
     public void onDestory() {
-        mAdLoadManager.onDestory();
     }
 
 }

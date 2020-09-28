@@ -7,7 +7,6 @@ import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,14 +21,14 @@ public class FlurryATAdapter extends CustomNativeAdapter {
     private final static String TAG = FlurryATAdapter.class.getSimpleName();
     int mCallbackCount;
 
-    List<CustomNativeAd> adList = new ArrayList<>();
+    private String adSpace;
 
     @Override
-    public void loadNativeAd(final Context context, final CustomNativeListener customNativeListener
+    public void loadCustomNetworkAd(final Context context
             , final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
 
         String sdkKey = "";
-        String adSpace = "";
+        adSpace = "";
         try {
             if (serverExtras.containsKey("sdk_key")) {
                 sdkKey = serverExtras.get("sdk_key").toString();
@@ -42,12 +41,13 @@ public class FlurryATAdapter extends CustomNativeAdapter {
         }
 
         if (TextUtils.isEmpty(sdkKey) || TextUtils.isEmpty(adSpace)) {
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "flurry sdkkey or adspace is empty.");
-                customNativeListener.onNativeAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "flurry sdkkey or adspace is empty.");
             }
             return;
         }
+
+        final List<CustomNativeAd> adList = new ArrayList<>();
 
         int requestNum = 1;
         try {
@@ -74,76 +74,67 @@ public class FlurryATAdapter extends CustomNativeAdapter {
             @Override
             public void onSuccess(CustomNativeAd nativeAd) {
                 synchronized (FlurryATAdapter.this) {
-                    mCallbackCount++;
-                    adList.add(nativeAd);
-                    finishLoad(null);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded(nativeAd);
+                    }
                 }
             }
 
             @Override
-            public void onFail(AdError error) {
+            public void onFail(String errorCode, String errorMsg) {
                 synchronized (FlurryATAdapter.this) {
-                    mCallbackCount++;
-                    finishLoad(error);
-                }
-            }
-
-            private void finishLoad(AdError adError) {
-                if (mCallbackCount >= finalRequestNum) {
-                    if (adList.size() > 0) {
-                        if (customNativeListener != null) {
-                            customNativeListener.onNativeAdLoaded(FlurryATAdapter.this, adList);
-                        }
-                    } else {
-                        if (mCallbackCount >= finalRequestNum) {
-                            if (adError == null) {
-                                adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "");
-                            }
-                            customNativeListener.onNativeAdFailed(FlurryATAdapter.this, adError);
-                        }
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(errorCode, errorMsg);
                     }
                 }
             }
+
         };
 
-        try {
-            final String tmpSapce = adSpace;
-            FlurryATInitManager.getInstance().initSDK(context, serverExtras);
-            FlurryATInitManager.getInstance().postDelay(new Runnable() {
-                @Override
-                public void run() {
 
-                    for (int i = 0; i < finalRequestNum; i++) {
-                        FlurryATNativeAd flurryNativeAd = new FlurryATNativeAd(context, selfListener, tmpSapce, localExtras);
-                        flurryNativeAd.setIsAutoPlay(finalIsAutoPlay);
-                        flurryNativeAd.loadAd();
+        final String tmpSapce = adSpace;
+        FlurryATInitManager.getInstance().initSDK(context, serverExtras);
+        FlurryATInitManager.getInstance().postDelay(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    FlurryATNativeAd flurryNativeAd = new FlurryATNativeAd(context, selfListener, tmpSapce, localExtras);
+                    flurryNativeAd.setIsAutoPlay(finalIsAutoPlay);
+                    flurryNativeAd.loadAd();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
                     }
-
                 }
-            }, 5000);
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                customNativeListener.onNativeAdFailed(this, adError);
             }
-        }
+        }, 5000);
+
+
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return FlurryATConst.getNetworkVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
     @Override
     public String getNetworkName() {
         return FlurryATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return FlurryATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return adSpace;
     }
 }

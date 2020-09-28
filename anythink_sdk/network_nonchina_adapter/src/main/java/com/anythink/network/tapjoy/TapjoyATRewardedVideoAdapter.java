@@ -1,13 +1,13 @@
 package com.anythink.network.tapjoy;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.tapjoy.TJActionRequest;
 import com.tapjoy.TJConnectListener;
 import com.tapjoy.TJError;
@@ -22,14 +22,13 @@ import java.util.Hashtable;
 import java.util.Map;
 
 /**
- * Created by zhou on 2018/6/27.
+ * Created by Z on 2018/6/27.
  */
 
 
 public class TapjoyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private static final String TAG = TapjoyATRewardedVideoAdapter.class.getSimpleName();
 
-    TapjoyRewardedVideoSetting mTapjoyMediationSetting;
     String unitid = "";
     private TJPlacement directPlayPlacement;
     boolean isConnonted = false;
@@ -44,9 +43,6 @@ public class TapjoyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
         TapjoyLog.setDebugEnabled(ATSDK.isNetworkLogDebug());
 
-        if (mTapjoyMediationSetting != null) {
-            Tapjoy.setGcmSender(mTapjoyMediationSetting.getGcmSender());
-        }
         connectFlags.put(TapjoyConnectFlag.USER_ID, mUserId);
 
         Tapjoy.setActivity(activity);
@@ -54,97 +50,103 @@ public class TapjoyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         TapjoyATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new TJConnectListener() {
             @Override
             public void onConnectSuccess() {
-                isConnonted = Tapjoy.isConnected();
-                Tapjoy.setUserID(mUserId);
-                directPlayPlacement = Tapjoy.getPlacement(unitid, new TJPlacementListener() {
+                try {
+                    isConnonted = Tapjoy.isConnected();
+                    Tapjoy.setUserID(mUserId);
+                    directPlayPlacement = Tapjoy.getPlacement(unitid, new TJPlacementListener() {
 
-                    @Override
-                    public void onRequestSuccess(TJPlacement pTJPlacement) {
-                        if (!pTJPlacement.isContentAvailable()) {
-                            if (mLoadResultListener != null) {
-                                mLoadResultListener.onRewardedVideoAdFailed(TapjoyATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "No content available for placement " + pTJPlacement.getName()));
+                        @Override
+                        public void onRequestSuccess(TJPlacement pTJPlacement) {
+                            if (!pTJPlacement.isContentAvailable()) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError("", "No content available for placement " + pTJPlacement.getName());
+                                }
+                            } else {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdDataLoaded();
+                                }
                             }
-                        } else {
-                            if (mLoadResultListener != null) {
-                                mLoadResultListener.onRewardedVideoAdDataLoaded(TapjoyATRewardedVideoAdapter.this);
+                        }
+
+                        @Override
+                        public void onRequestFailure(TJPlacement pTJPlacement, TJError pTJError) {
+                            if (mLoadListener != null) {
+                                mLoadListener.onAdLoadError("" + pTJError.code, " " + pTJError.message);
                             }
                         }
-                    }
 
-                    @Override
-                    public void onRequestFailure(TJPlacement pTJPlacement, TJError pTJError) {
-                        if (mLoadResultListener != null) {
-                            mLoadResultListener.onRewardedVideoAdFailed(TapjoyATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "" + pTJError.code, " " + pTJError.message));
-                        }
-                    }
-
-                    @Override
-                    public void onContentReady(TJPlacement pTJPlacement) {
-                        if (mLoadResultListener != null) {
-                            mLoadResultListener.onRewardedVideoAdLoaded(TapjoyATRewardedVideoAdapter.this);
-                        }
-                    }
-
-                    @Override
-                    public void onContentShow(TJPlacement pTJPlacement) {
-
-                    }
-
-                    @Override
-                    public void onContentDismiss(TJPlacement pTJPlacement) {
-                        if (mImpressionListener != null) {
-                            mImpressionListener.onRewardedVideoAdClosed(TapjoyATRewardedVideoAdapter.this);
-                        }
-                    }
-
-                    @Override
-                    public void onPurchaseRequest(TJPlacement pTJPlacement, TJActionRequest pTJActionRequest, String pS) {
-                    }
-
-                    @Override
-                    public void onRewardRequest(TJPlacement pTJPlacement, TJActionRequest pTJActionRequest, String pS, int pI) {
-                    }
-
-                    @Override
-                    public void onClick(TJPlacement tjPlacement) {
-                        if (mImpressionListener != null) {
-                            mImpressionListener.onRewardedVideoAdPlayClicked(TapjoyATRewardedVideoAdapter.this);
-                        }
-                    }
-                });
-
-                // Set Video Listener to anonymous callback
-                directPlayPlacement.setVideoListener(new TJPlacementVideoListener() {
-                    @Override
-                    public void onVideoStart(TJPlacement placement) {
-                        if (mImpressionListener != null) {
-                            mImpressionListener.onRewardedVideoAdPlayStart(TapjoyATRewardedVideoAdapter.this);
-                        }
-                    }
-
-                    @Override
-                    public void onVideoError(TJPlacement placement, String message) {
-                        if (mImpressionListener != null) {
-                            mImpressionListener.onRewardedVideoAdPlayFailed(TapjoyATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", " " + message));
-                        }
-                    }
-
-                    @Override
-                    public void onVideoComplete(TJPlacement placement) {
-                        if (mImpressionListener != null) {
-                            mImpressionListener.onRewardedVideoAdPlayEnd(TapjoyATRewardedVideoAdapter.this);
+                        @Override
+                        public void onContentReady(TJPlacement pTJPlacement) {
+                            if (mLoadListener != null) {
+                                mLoadListener.onAdCacheLoaded();
+                            }
                         }
 
-                        if (mImpressionListener != null) {
-                            mImpressionListener.onReward(TapjoyATRewardedVideoAdapter.this);
+                        @Override
+                        public void onContentShow(TJPlacement pTJPlacement) {
+
                         }
+
+                        @Override
+                        public void onContentDismiss(TJPlacement pTJPlacement) {
+                            if (mImpressionListener != null) {
+                                mImpressionListener.onRewardedVideoAdClosed();
+                            }
+                        }
+
+                        @Override
+                        public void onPurchaseRequest(TJPlacement pTJPlacement, TJActionRequest pTJActionRequest, String pS) {
+                        }
+
+                        @Override
+                        public void onRewardRequest(TJPlacement pTJPlacement, TJActionRequest pTJActionRequest, String pS, int pI) {
+                        }
+
+                        @Override
+                        public void onClick(TJPlacement tjPlacement) {
+                            if (mImpressionListener != null) {
+                                mImpressionListener.onRewardedVideoAdPlayClicked();
+                            }
+                        }
+                    });
+
+                    // Set Video Listener to anonymous callback
+                    directPlayPlacement.setVideoListener(new TJPlacementVideoListener() {
+                        @Override
+                        public void onVideoStart(TJPlacement placement) {
+                            if (mImpressionListener != null) {
+                                mImpressionListener.onRewardedVideoAdPlayStart();
+                            }
+                        }
+
+                        @Override
+                        public void onVideoError(TJPlacement placement, String message) {
+                            if (mImpressionListener != null) {
+                                mImpressionListener.onRewardedVideoAdPlayFailed("", " " + message);
+                            }
+                        }
+
+                        @Override
+                        public void onVideoComplete(TJPlacement placement) {
+                            if (mImpressionListener != null) {
+                                mImpressionListener.onRewardedVideoAdPlayEnd();
+                            }
+
+                            if (mImpressionListener != null) {
+                                mImpressionListener.onReward();
+                            }
+                        }
+
+                    });
+
+                    //load ad
+                    if (directPlayPlacement != null) {
+                        directPlayPlacement.requestContent();
                     }
-
-                });
-
-                //load ad
-                if (directPlayPlacement != null) {
-                    directPlayPlacement.requestContent();
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
                 }
             }
 
@@ -157,53 +159,36 @@ public class TapjoyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localsExtras) {
+
+
+        String appkey = (String) serverExtras.get("sdk_key");
+        unitid = (String) serverExtras.get("placement_name");
+
+        if (TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitid)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Tapjoy sdk_key or placement_name is empty!");
             }
             return;
         }
-        if (mediationSetting != null && mediationSetting instanceof TapjoyRewardedVideoSetting) {
-            mTapjoyMediationSetting = (TapjoyRewardedVideoSetting) mediationSetting;
 
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Tapjoy context must be activity.");
             }
             return;
-        } else {
-
-            String appkey = (String) serverExtras.get("sdk_key");
-            unitid = (String) serverExtras.get("placement_name");
-
-            if (TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitid)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "tapjoy sdk_key or placement_name is empty!"));
-                }
-                return;
-            }
         }
 
         //init and load
-        initAndLoad(activity, serverExtras);
+        initAndLoad(((Activity) context), serverExtras);
     }
 
     @Override
-    public void clean() {
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
+    public void destory() {
+        if (directPlayPlacement != null) {
+            directPlayPlacement.setVideoListener(null);
+            directPlayPlacement = null;
+        }
     }
 
     @Override
@@ -216,28 +201,36 @@ public class TapjoyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return TapjoyATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
     public void show(Activity activity) {
-        if (directPlayPlacement != null) {
+        if (directPlayPlacement != null && activity != null) {
+            Tapjoy.setActivity(activity);
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     directPlayPlacement.showContent();
                 }
             });
-
-        } else if (directPlayPlacement != null) {
-            directPlayPlacement.showContent();
         }
 
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return TapjoyATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return TapjoyATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitid;
     }
 }

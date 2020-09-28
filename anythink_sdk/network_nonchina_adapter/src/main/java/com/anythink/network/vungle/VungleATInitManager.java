@@ -17,10 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import okio.Okio;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class VungleATInitManager extends ATInitMediation {
 
@@ -61,25 +58,7 @@ public class VungleATInitManager extends ATInitMediation {
 
                 mIsIniting = true;
 
-                try {
-                    if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                        //GDPR Consent
-                        boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                        //Need to set GDPR
-                        boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                        if (need_set_gdpr) {
-                            Vungle.updateConsentStatus(gdp_consent ? Vungle.Consent.OPTED_IN : Vungle.Consent.OPTED_OUT, "1.0.0");
-                        }
-                    }
-
-                    logGDPRSetting(VungleATConst.NETWORK_FIRM_ID);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-
-                Vungle.init(appId, context, new InitCallback() {
+                Vungle.init(appId, context.getApplicationContext(), new InitCallback() {
                     @Override
                     public void onSuccess() {
                         callbackResult(true, null);
@@ -126,6 +105,12 @@ public class VungleATInitManager extends ATInitMediation {
         initSDK(context, serviceExtras, null);
     }
 
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        Vungle.updateConsentStatus(isConsent ? Vungle.Consent.OPTED_IN : Vungle.Consent.OPTED_OUT, "1.0.0");
+        return true;
+    }
+
     public interface InitListener {
         void onSuccess();
 
@@ -148,12 +133,9 @@ public class VungleATInitManager extends ATInitMediation {
         pluginMap.put("play-services-ads-identifier-*.aar", false);
         pluginMap.put("play-services-basement-*.aar", false);
 
-        pluginMap.put("converter-gson-*.aar", false);
         pluginMap.put("gson-*.aar", false);
-        pluginMap.put("logging-interceptor-*.aar", false);
         pluginMap.put("okhttp-*.jar", false);
         pluginMap.put("okio-*.jar", false);
-        pluginMap.put("retrofit-*.jar", false);
         pluginMap.put("vng-moat-mobile-app-kit-*.jar", false);
 
 
@@ -172,23 +154,10 @@ public class VungleATInitManager extends ATInitMediation {
             e.printStackTrace();
         }
 
-        try {
-            clazz = GsonConverterFactory.class;
-            pluginMap.put("converter-gson-*.aar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
 
         try {
             clazz = Gson.class;
             pluginMap.put("gson-*.aar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        try {
-            clazz = HttpLoggingInterceptor.Logger.class;
-            pluginMap.put("logging-interceptor-*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -203,13 +172,6 @@ public class VungleATInitManager extends ATInitMediation {
         try {
             clazz = Okio.class;
             pluginMap.put("okio-*.jar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        try {
-            clazz = Retrofit.class;
-            pluginMap.put("retrofit-*.jar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }

@@ -3,16 +3,16 @@ package com.anythink.core.common.track;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.common.InstantUpLoadManager;
+import com.anythink.core.common.MonitoringPlatformManager;
 import com.anythink.core.common.MsgManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.entity.AdTrackingLogBean;
-import com.anythink.core.common.entity.PlacementImpressionInfo;
 import com.anythink.core.common.entity.TrackerInfo;
 import com.anythink.core.common.net.TrackingV2Loader;
+import com.anythink.core.common.net.socket.TrackingSocketData;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
@@ -62,10 +62,16 @@ public class AdTrackingManager extends InstantUpLoadManager<AdTrackingLogBean> {
                     String formatArrays = tkNoTFtMap.get(String.valueOf(businessType));
 
                     if (!TextUtils.isEmpty(formatArrays) && formatArrays.contains(adTrackingInfo.getmAdType())) {
-                        //不上报
+                        //do not upload tracking
                         return;
                     }
                 }
+
+                // report impression revenue
+                if (TrackingV2Loader.AD_SHOW_TYPE == businessType && adTrackingInfo instanceof AdTrackingInfo) {
+                    MonitoringPlatformManager.getInstance().reportImpressionRevenue((AdTrackingInfo) adTrackingInfo);
+                }
+
 
                 if (Const.DEBUG) {
                     SDKContext.getInstance().printJson("AnyThinkTracking", logBean.toJSONObject().toString());
@@ -80,17 +86,40 @@ public class AdTrackingManager extends InstantUpLoadManager<AdTrackingLogBean> {
 
     @Override
     protected void sendLoggerToServer(List<AdTrackingLogBean> sendInfo) {
-        new TrackingV2Loader(mApplicationContext, sendInfo).start(0, null);
+        AppStrategy appStrategy = AppStrategyManager.getInstance(SDKContext.getInstance().getContext()).getAppStrategyByAppId(SDKContext.getInstance().getAppId());
+        if (appStrategy != null) {
+            switch (appStrategy.getTcpSwitchType()) {
+                case 1: //Only TCP
+                    TrackingSocketData trackingSocketData = new TrackingSocketData(sendInfo);
+                    trackingSocketData.setTcpInfo(1, appStrategy.getTcpRate());
+                    trackingSocketData.startToUpload(null);
+                    break;
+                case 2: //HTTP(s) & TCP
+                    new TrackingV2Loader(mApplicationContext, appStrategy.getTcpSwitchType(), sendInfo).start(0, null);
+
+                    TrackingSocketData trackingSocketData2 = new TrackingSocketData(sendInfo);
+                    trackingSocketData2.setTcpInfo(2, appStrategy.getTcpRate());
+                    trackingSocketData2.startToUpload(null);
+                    break;
+                default: //HTTP(s)
+                    new TrackingV2Loader(mApplicationContext, appStrategy.getTcpSwitchType(), sendInfo).start(0, null);
+                    break;
+            }
+        } else {
+            new TrackingV2Loader(mApplicationContext, 0, sendInfo).start(0, null);
+        }
+
+
     }
 
-    public void sendClickLoggerToServerDelay(final AdTrackingLogBean sendInfo, int delay) {
-        SDKContext.getInstance().runOnMainThreadDelayed(new Runnable() {
-            @Override
-            public void run() {
-                new TrackingV2Loader(mApplicationContext, sendInfo).start(0, null);
-            }
-        }, delay);
-    }
+//    public void sendClickLoggerToServerDelay(final AdTrackingLogBean sendInfo, int delay) {
+//        SDKContext.getInstance().runOnMainThreadDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                new TrackingV2Loader(mApplicationContext, sendInfo).start(0, null);
+//            }
+//        }, delay);
+//    }
 
 
 }

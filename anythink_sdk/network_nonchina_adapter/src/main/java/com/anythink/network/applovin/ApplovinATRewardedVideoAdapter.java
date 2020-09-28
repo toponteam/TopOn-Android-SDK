@@ -3,10 +3,7 @@ package com.anythink.network.applovin;
 import android.app.Activity;
 import android.content.Context;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.applovin.adview.AppLovinIncentivizedInterstitial;
 import com.applovin.sdk.AppLovinAd;
 import com.applovin.sdk.AppLovinAdClickListener;
@@ -33,7 +30,6 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     AppLovinAdClickListener mAppLovinAdClickListener;
 
     String sdkkey = "", zoneid = "";
-    ApplovinRewardedVideoSetting mApplovinMediationSetting;
 
     boolean isReward = false;
 
@@ -73,17 +69,17 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void videoPlaybackBegan(AppLovinAd appLovinAd) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(ApplovinATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
             @Override
             public void videoPlaybackEnded(AppLovinAd appLovinAd, double v, boolean b) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(ApplovinATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
                 if (mImpressionListener != null && b) {
-                    mImpressionListener.onReward(ApplovinATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
         };
@@ -96,7 +92,7 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void adHidden(AppLovinAd appLovinAd) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed(ApplovinATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
                 isReward = false;
             }
@@ -105,7 +101,7 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void adClicked(AppLovinAd appLovinAd) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(ApplovinATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
         };
@@ -122,15 +118,15 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             mInterstitial.preload(new AppLovinAdLoadListener() {
                 @Override
                 public void adReceived(AppLovinAd appLovinAd) {
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onRewardedVideoAdLoaded(ApplovinATRewardedVideoAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
                     }
                 }
 
                 @Override
                 public void failedToReceiveAd(int errorCode) {
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onRewardedVideoAdFailed(ApplovinATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " " + errorCode));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(String.valueOf(errorCode), "");
                     }
                 }
             });
@@ -138,54 +134,29 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
-
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
+    public void destory() {
+        mInterstitial = null;
+        mAppLovinAdClickListener = null;
+        mAppLovinAdDisplayListener = null;
+        mAppLovinAdRewardListener = null;
+        mAppLovinAdVideoPlaybackListener = null;
     }
 
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
-        if (mediationSetting != null && mediationSetting instanceof ApplovinRewardedVideoSetting) {
-            mApplovinMediationSetting = (ApplovinRewardedVideoSetting) mediationSetting;
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
-        }
-
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "service info  is empty."));
-            }
-            return;
+        if (serverExtras.containsKey("sdkkey") && serverExtras.containsKey("zone_id")) {
+            sdkkey = (String) serverExtras.get("sdkkey");
+            zoneid = (String) serverExtras.get("zone_id");
         } else {
-            if (serverExtras.containsKey("sdkkey") && serverExtras.containsKey("zone_id")) {
-                sdkkey = (String) serverExtras.get("sdkkey");
-                zoneid = (String) serverExtras.get("zone_id");
-            } else {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "sdkkey or zone_id is empty!"));
-                }
-                return;
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "sdkkey or zone_id is empty!");
             }
+            return;
         }
 
-        init(activity.getApplicationContext(), serverExtras);
+        init(context.getApplicationContext(), serverExtras);
         startload();
     }
 
@@ -195,6 +166,11 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             return mInterstitial.isAdReadyToDisplay();
         }
         return false;
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return ApplovinATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
     }
 
     @Override
@@ -210,13 +186,18 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return ApplovinATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return ApplovinATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return zoneid;
     }
 
 }

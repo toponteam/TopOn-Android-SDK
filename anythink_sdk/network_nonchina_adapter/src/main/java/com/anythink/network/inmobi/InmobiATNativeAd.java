@@ -5,8 +5,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.inmobi.ads.InMobiAdRequestStatus;
 import com.inmobi.ads.InMobiNative;
@@ -40,12 +38,17 @@ public class InmobiATNativeAd extends CustomNativeAd {
                 setMainImageUrl(mInMobiNative.getAdLandingPageUrl());
                 setStarRating((double) mInMobiNative.getAdRating());
 
-                mCustonNativeListener.onSuccess(InmobiATNativeAd.this);
+                if (mCustonNativeListener != null) {
+                    mCustonNativeListener.onSuccess(InmobiATNativeAd.this);
+                }
+                mCustonNativeListener = null;
             }
 
             public void onAdLoadFailed(InMobiNative inMobiNative, InMobiAdRequestStatus inMobiAdRequestStatus) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, inMobiAdRequestStatus.getStatusCode() + "", inMobiAdRequestStatus.getMessage());
-                mCustonNativeListener.onFail(adError);
+                if (mCustonNativeListener != null) {
+                    mCustonNativeListener.onFail(inMobiAdRequestStatus.getStatusCode() + "", inMobiAdRequestStatus.getMessage());
+                }
+                mCustonNativeListener = null;
             }
 
             public void onAdClicked(InMobiNative inMobiNative) {
@@ -58,14 +61,12 @@ public class InmobiATNativeAd extends CustomNativeAd {
     }
 
     public void loadAd() {
-        log(TAG, "loadad");
         mInMobiNative.load();
     }
 
     // Lifecycle Handlers
     @Override
     public void prepare(final View view, FrameLayout.LayoutParams layoutParams) {
-        log(TAG, "prepare");
         registerView(view, new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -114,7 +115,6 @@ public class InmobiATNativeAd extends CustomNativeAd {
 
     @Override
     public void clear(final View view) {
-        log(TAG, "clear");
         if (mMediaView != null && mMediaView instanceof ViewGroup) {
             mMediaView = null;
         }
@@ -129,7 +129,7 @@ public class InmobiATNativeAd extends CustomNativeAd {
     public View getAdMediaView(Object... object) {
         try {
             if (mInMobiNative != null) {
-                View mMediaView = mInMobiNative.getPrimaryViewOfWidth((View) object[0], (ViewGroup) object[0], (int) object[1]);
+                mMediaView = mInMobiNative.getPrimaryViewOfWidth((View) object[0], (ViewGroup) object[0], (int) object[1]);
                 return mMediaView;
             }
         } catch (Exception e) {
@@ -140,12 +140,7 @@ public class InmobiATNativeAd extends CustomNativeAd {
 
     @Override
     public void destroy() {
-        log(TAG, "destory");
-        if (mMediaView != null && mMediaView instanceof ViewGroup) {
-            ((ViewGroup) mMediaView).removeAllViews();
-            mMediaView = null;
-
-        }
+        mMediaView = null;
 
         if (mInMobiNative != null) {
             mInMobiNative.destroy();
@@ -161,8 +156,8 @@ public class InmobiATNativeAd extends CustomNativeAd {
     }
 
     interface LoadCallbackListener {
-        public void onSuccess(CustomNativeAd customNativeAd);
+        void onSuccess(CustomNativeAd customNativeAd);
 
-        public void onFail(AdError adError);
+        void onFail(String errorCode, String errorMsg);
     }
 }

@@ -1,12 +1,12 @@
 package com.anythink.network.awesome;
 
 import android.app.Activity;
+import android.content.Context;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 
 import java.util.Map;
 
@@ -18,9 +18,7 @@ public class AwesomeATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     boolean isReward;
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-
-        mLoadResultListener = customRewardVideoListener;
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         if (serverExtras.containsKey("placement_id")) {
             try {
@@ -31,14 +29,13 @@ public class AwesomeATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
 
         if (mPlacementId == 0) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "placement_id could not be null.");
-                mLoadResultListener.onRewardedVideoAdFailed(this, adError);
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "placement_id could not be null.");
             }
             return;
         }
 
-        AwesomeATInitManager.getInstance().initSDK(activity, serverExtras);
+        AwesomeATInitManager.getInstance().initSDK(context, serverExtras);
 
 //        // to display test ads
 //        SAVideoAd.enableTestMode ();
@@ -64,7 +61,7 @@ public class AwesomeATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
         AwesomeATInitManager.getInstance().putLoadResultAdapter(String.valueOf(mPlacementId), this);
         // start loading ad data for a placement
-        SAVideoAd.load(mPlacementId, activity);
+        SAVideoAd.load(mPlacementId, context);
     }
 
 
@@ -76,15 +73,6 @@ public class AwesomeATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         SAVideoAd.play(mPlacementId, activity);
     }
 
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
 
     @Override
     public boolean isAdReady() {
@@ -92,12 +80,17 @@ public class AwesomeATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return AwesomeATConst.getSDKVersion();
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
@@ -108,55 +101,65 @@ public class AwesomeATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     public void onRewardedVideoAdLoaded() {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdLoaded(this);
+        if (mLoadListener != null) {
+            mLoadListener.onAdCacheLoaded();
         }
     }
 
     public void onRewardedVideoAdFailed(String code, String msg) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, code, msg));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(code, msg);
         }
     }
 
     public void onRewardedVideoAdPlayStart() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayStart(this);
+            mImpressionListener.onRewardedVideoAdPlayStart();
         }
     }
 
     public void onRewardedVideoAdPlayEnd() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayEnd(this);
+            mImpressionListener.onRewardedVideoAdPlayEnd();
         }
     }
 
     public void onRewardedVideoAdPlayFailed(String code, String msg) {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayFailed(this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, code, msg));
+            mImpressionListener.onRewardedVideoAdPlayFailed(code, msg);
         }
     }
 
     public void onRewardedVideoAdClosed() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdClosed(this);
+            mImpressionListener.onRewardedVideoAdClosed();
         }
     }
 
     public void onRewardedVideoAdPlayClicked() {
         if (mImpressionListener != null) {
-            mImpressionListener.onRewardedVideoAdPlayClicked(this);
+            mImpressionListener.onRewardedVideoAdPlayClicked();
         }
     }
 
     public void onReward() {
         if (mImpressionListener != null) {
-            mImpressionListener.onReward(this);
+            mImpressionListener.onReward();
         }
     }
 
     @Override
     public String getNetworkName() {
         return AwesomeATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        try {
+            return String.valueOf(mPlacementId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

@@ -71,7 +71,10 @@ public abstract class InstantUpLoadManager<T extends LoggerInfoInterface> {
         if (isTimeUp) {
             ArrayList<T> sendInfo = new ArrayList<>();
             sendInfo.addAll(mTrackingQueue);
-            sendLoggerToServer(sendInfo);
+            if (sendInfo.size() > 0) {
+                sendLoggerToServer(sendInfo);
+            }
+
             mTrackingQueue.clear();
         } else {
             ArrayList<T> sendInfo = new ArrayList<>();
@@ -80,7 +83,9 @@ public abstract class InstantUpLoadManager<T extends LoggerInfoInterface> {
                     sendInfo.add(mTrackingQueue.get(i));
                     mTrackingQueue.remove(i);
                 }
-                sendLoggerToServer(sendInfo);
+                if (sendInfo.size() > 0) {
+                    sendLoggerToServer(sendInfo);
+                }
             }
         }
 

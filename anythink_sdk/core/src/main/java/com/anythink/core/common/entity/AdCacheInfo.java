@@ -1,12 +1,13 @@
 package com.anythink.core.common.entity;
 
-import com.anythink.core.common.base.AnyThinkBaseAdapter;
+import com.anythink.core.api.ATBaseAdAdapter;
+import com.anythink.core.api.BaseAd;
 
 public class AdCacheInfo {
 
-    private int level; //AdSource level
+    private int level; //AdSource requestLevel
     private long updateTime; //AdSource updateTime
-    private AnyThinkBaseAdapter baseAdapter; //AdSource Adapter
+    private ATBaseAdAdapter baseAdapter; //AdSource Adapter
     private BaseAd adObject; //Ad object(just use for NativeAd)
     private int showTime; //Show Time
     private boolean isLast; //Last offer?
@@ -70,11 +71,11 @@ public class AdCacheInfo {
         }
     }
 
-    public int getLevel() {
+    public int getRequestLevel() {
         return level;
     }
 
-    public void setLevel(int level) {
+    public void setRequestLevel(int level) {
         this.level = level;
     }
 
@@ -87,11 +88,11 @@ public class AdCacheInfo {
         this.updateTime = updateTime;
     }
 
-    public AnyThinkBaseAdapter getBaseAdapter() {
+    public ATBaseAdAdapter getBaseAdapter() {
         return baseAdapter;
     }
 
-    public void setBaseAdapter(AnyThinkBaseAdapter baseAdapter) {
+    public void setBaseAdapter(ATBaseAdAdapter baseAdapter) {
         this.baseAdapter = baseAdapter;
     }
 
@@ -118,4 +119,5 @@ public class AdCacheInfo {
         }
         return false;
     }
+
 }

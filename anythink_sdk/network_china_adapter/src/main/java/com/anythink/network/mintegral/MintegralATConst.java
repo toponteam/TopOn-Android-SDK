@@ -11,7 +11,9 @@ import java.lang.reflect.Modifier;
 
 public class MintegralATConst {
     public static final int NETWORK_FIRM_ID = 6;
+    @Deprecated
     public static final String AUTO_RENDER_NATIVE_WIDTH = "mintegral_auto_render_native_width";
+    @Deprecated
     public static final String AUTO_RENDER_NATIVE_HEIGHT = "mintegral_auto_render_native_height";
 
     public static String getNetworkVersion() {

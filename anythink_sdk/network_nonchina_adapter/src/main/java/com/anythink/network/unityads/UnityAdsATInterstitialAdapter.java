@@ -4,10 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.unity3d.ads.UnityAds;
 
 import java.util.Map;
@@ -18,44 +15,30 @@ public class UnityAdsATInterstitialAdapter extends CustomInterstitialAdapter {
     String placement_id = "";
 
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context is null."));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity."));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "UnityAds context must be activity.");
             }
             return;
         }
 
 
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
+        String game_id = (String) serverExtras.get("game_id");
+        placement_id = (String) serverExtras.get("placement_id");
+
+        if (TextUtils.isEmpty(game_id) || TextUtils.isEmpty(placement_id)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "unityads game_id, placement_id is empty!");
             }
             return;
-        } else {
-            String game_id = (String) serverExtras.get("game_id");
-            placement_id = (String) serverExtras.get("placement_id");
-
-            if (TextUtils.isEmpty(game_id) || TextUtils.isEmpty(placement_id)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "unityads game_id, placement_id is empty!"));
-                }
-                return;
-            }
         }
 
         UnityAds.PlacementState placementState = UnityAds.getPlacementState(placement_id);
         if (UnityAds.PlacementState.READY == placementState) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         } else {
             UnityAdsATInitManager.getInstance().putLoadResultAdapter(placement_id, this);
@@ -70,20 +53,25 @@ public class UnityAdsATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return UnityAdsATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
         return UnityAdsATConst.getNetworkVersion();
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         UnityAdsATInitManager.getInstance().putAdapter(placement_id, this);
-        if (context instanceof Activity) {
-            UnityAds.show(((Activity) context), placement_id);
+        if (activity != null) {
+            UnityAds.show((activity), placement_id);
         }
     }
 
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras != null) {
             if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
                 placement_id = (String) serverExtras.get("placement_id");
@@ -95,38 +83,38 @@ public class UnityAdsATInterstitialAdapter extends CustomInterstitialAdapter {
 
     void notifyLoaded(String placementId) {
         if (placementId.equals(placement_id)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(UnityAdsATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
     }
 
     void notifyLoadFail(String code, String msg) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onInterstitialAdLoadFail(UnityAdsATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, code, msg));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(code, msg);
         }
     }
 
     void notifyStart(String placementId) {
         if (mImpressListener != null && placement_id.equals(placementId)) {
-            mImpressListener.onInterstitialAdShow(UnityAdsATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdShow();
         }
     }
 
     void notifyFinish(String placementId, UnityAds.FinishState finishState) {
         if (mImpressListener != null && placement_id.equals(placementId)) {
-            mImpressListener.onInterstitialAdClose(UnityAdsATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdClose();
         }
     }
 
     void notifyClick(String placementId) {
         if (mImpressListener != null && placement_id.equals(placementId)) {
-            mImpressListener.onInterstitialAdClicked(UnityAdsATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdClicked();
         }
     }
 
     @Override
-    public void clean() {
+    public void destory() {
 
     }
 
@@ -136,12 +124,8 @@ public class UnityAdsATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void onResume() {
-
+    public String getNetworkPlacementId() {
+        return placement_id;
     }
 
-    @Override
-    public void onPause() {
-
-    }
 }

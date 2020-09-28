@@ -13,7 +13,6 @@ import com.anythink.core.common.db.ConfigInfoDao;
 import com.anythink.core.common.entity.SDKConfigInfo;
 import com.anythink.core.common.net.AppStrategyLoader;
 import com.anythink.core.common.net.OnHttpLoaderListener;
-import com.anythink.core.common.utils.CommonBase64Util;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.SPUtil;
 
@@ -140,6 +139,9 @@ public class AppStrategyManager {
 
         appStrategy.setRecreatePsidIntervalWhenHotBoot(30000);
         appStrategy.setUseCountDownSwitchAfterLeaveApp(0);
+
+        appStrategy.setCrashList("[\"com.anythink\"]");
+        appStrategy.setCrashSwitch(1);
         return appStrategy;
     }
 
@@ -177,22 +179,19 @@ public class AppStrategyManager {
         return appStrategy;
     }
 
-    public void startRequest(String appid, String appkey, OnHttpLoaderListener listener) {
-        if (isLoading) {
-            return;
-        }
-        AppStrategyLoader appStrategyLoader = new AppStrategyLoader(mContext, appid, appkey);
-        appStrategyLoader.start(0, listener);
-    }
 
     /***
      * Appsetting request
      */
-    public void startRequest(final String appid, final String appkey) {
-        startRequest(appid, appkey, new OnHttpLoaderListener() {
+    public synchronized void startRequest(final String appid, final String appkey) {
+        if (isLoading) {
+            return;
+        }
+        isLoading = true;
+        AppStrategyLoader appStrategyLoader = new AppStrategyLoader(mContext, appid, appkey);
+        appStrategyLoader.start(0, new OnHttpLoaderListener() {
             @Override
             public void onLoadStart(int reqCode) {
-                isLoading = true;
             }
 
             @Override
@@ -202,6 +201,10 @@ public class AppStrategyManager {
                     String json = result.toString();
                     appStrategy = AppStrategyManager.saveStrategy(mContext, appid, json);
                     if (appStrategy != null) {
+                        String sysId = appStrategy.getSystemId();
+                        if (!TextUtils.isEmpty(sysId) && TextUtils.isEmpty(SDKContext.getInstance().getSysId())) {
+                            SDKContext.getInstance().saveSysId(sysId);
+                        }
                         MsgManager.getInstance(mContext).handleInit(appStrategy);
                         preInit(mContext, appStrategy);
                     }

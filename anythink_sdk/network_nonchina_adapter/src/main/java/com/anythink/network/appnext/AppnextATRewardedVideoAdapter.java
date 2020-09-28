@@ -1,11 +1,11 @@
 package com.anythink.network.appnext;
 
 import android.app.Activity;
+import android.content.Context;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.appnext.ads.fullscreen.RewardedVideo;
 import com.appnext.core.AppnextAdCreativeType;
 import com.appnext.core.callbacks.OnAdClicked;
@@ -25,37 +25,28 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     RewardedVideo mRewardedVideo;
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-
-        mLoadResultListener = customRewardVideoListener;
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(AppnextATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         if (serverExtras.containsKey("placement_id")) {
             mPlacementId = (String) serverExtras.get("placement_id");
 
         } else {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(AppnextATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "placement_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "placement_id is empty!");
             }
             return;
         }
 
-        AppnextATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras);
+        AppnextATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras);
 
-        mRewardedVideo = new RewardedVideo(activity.getApplicationContext(), mPlacementId);
+        mRewardedVideo = new RewardedVideo(context.getApplicationContext(), mPlacementId);
         mRewardedVideo.setRewardsUserId(mUserId);
         // Get callback for ad loaded
         mRewardedVideo.setOnAdLoadedCallback(new OnAdLoaded() {
             @Override
             public void adLoaded(String s, AppnextAdCreativeType appnextAdCreativeType) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(AppnextATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
 
             }
@@ -64,9 +55,8 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         mRewardedVideo.setOnAdErrorCallback(new OnAdError() {
             @Override
             public void adError(String error) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(AppnextATRewardedVideoAdapter.this
-                            , ErrorCode.getErrorCode(ErrorCode.noADError, "", error));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", error);
                 }
             }
         });
@@ -77,7 +67,7 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void adOpened() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(AppnextATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
 
             }
@@ -87,7 +77,7 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void adClicked() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(AppnextATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
         });
@@ -97,7 +87,7 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onAdClosed() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed(AppnextATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
             }
         });
@@ -108,11 +98,11 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void videoEnded() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(AppnextATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
 
                 if (mImpressionListener != null) {
-                    mImpressionListener.onReward(AppnextATRewardedVideoAdapter.this);
+                    mImpressionListener.onReward();
                 }
             }
         });
@@ -131,6 +121,11 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AppnextATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
     public void show(Activity activity) {
         if (mRewardedVideo != null) {
             mRewardedVideo.showAd();
@@ -138,29 +133,25 @@ public class AppnextATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mRewardedVideo != null) {
             mRewardedVideo.destroy();
+            mRewardedVideo = null;
         }
     }
 
     @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
     }
 
     @Override
     public String getNetworkName() {
         return AppnextATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mPlacementId;
     }
 }

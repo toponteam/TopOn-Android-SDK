@@ -52,7 +52,7 @@ public class AppStrategyLoader extends AbsHttpLoader {
 
     @Override
     protected int onPrepareType() {
-        return AbsHttpLoader.POST;
+        return ApiRequestParam.POST;
     }
 
     @Override
@@ -111,15 +111,25 @@ public class AppStrategyLoader extends AbsHttpLoader {
 
     @Override
     protected JSONObject getBaseInfoObject() {
-        if (TextUtils.isEmpty(SDKContext.getInstance().getUpId())) {
-            initUpId();
-        }
 
         JSONObject temp = super.getBaseInfoObject();
         try {
             temp.put("app_id", appid);
-            temp.put(JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
-            temp.put(JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
+            temp.put(ApiRequestParam.JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
+            temp.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
+
+            String sysId = SDKContext.getInstance().getSysId();
+            if (!TextUtils.isEmpty(sysId)) {
+                temp.put("sy_id", sysId);
+            }
+
+            String bkId = SDKContext.getInstance().getBkId();
+            if (!TextUtils.isEmpty(bkId)) {
+                temp.put("bk_id", bkId);
+            } else {
+                SDKContext.getInstance().saveBkId(SDKContext.getInstance().getUpId());
+                temp.put("bk_id", SDKContext.getInstance().getUpId());
+            }
 
         } catch (JSONException e) {
             if (Const.DEBUG) {
@@ -136,56 +146,6 @@ public class AppStrategyLoader extends AbsHttpLoader {
     }
 
 
-    /**
-     * init upid
-     */
-    protected void initUpId() {
-        String deviceId = "";
-        if (UploadDataLevelManager.getInstance(mContext).getUploadDataLevel() == ATSDK.PERSONALIZED) {
-            deviceId = getGaid();
-            CommonDeviceUtil.setGoogleAdId(deviceId);
-            if (TextUtils.isEmpty(deviceId) || isGaidInvalid(deviceId)) {
-                deviceId = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
-            }
-            if (TextUtils.isEmpty(deviceId)) {
-                /**if deviceid is null，create the uuid**/
-                deviceId = UUID.randomUUID().toString();
-            }
-        } else {
-            /** GDPRLevel==NONPERSONALIZED **/
-            deviceId = UUID.randomUUID().toString();
-        }
-        SDKContext.getInstance().setUpId(CommonMD5.getMD5(deviceId));
-    }
-
-    private String getGaid() {
-        try {
-            Class clz = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
-            Class clzInfo = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient$Info");
-            Method m = clz.getMethod("getAdvertisingIdInfo", Context.class);
-            Object o = m.invoke(null, mContext);
-//                                Class<? extends Object> infoClass = o.getClass();
-
-            Method m2 = clzInfo.getMethod("getId");
-            return (String) m2.invoke(o);
-
-        } catch (Exception e) {
-            // try to get from google play app library
-            try {
-                AdvertisingIdClient.AdInfo adInfo = new AdvertisingIdClient().getAdvertisingIdInfo(mContext);
-                return adInfo.getId();
-
-            } catch (Exception e1) {
-            }
-        }
-        return "";
-    }
-
-    private boolean isGaidInvalid(String deviceId) {
-//        deviceId = "00000000-0000-0000-0000-000000000000";//无效模拟数据
-        return Pattern.matches("^[0-]+$", deviceId);
-    }
-
     @Override
     protected Object onParseResponse(Map<String, List<String>> headers, String jsonString) throws IOException {
         jsonString = jsonString.trim();
@@ -200,7 +160,7 @@ public class AppStrategyLoader extends AbsHttpLoader {
 
     @Override
     protected void onErrorAgent(String msg, AdError adError) {
-        AgentEventManager.sendErrorAgent("app", adError.getPlatformCode(), adError.getPlatformMSG(), null, "", "");
+        AgentEventManager.sendErrorAgent("app", adError.getPlatformCode(), adError.getPlatformMSG(), null, "", "", "");
     }
 
 

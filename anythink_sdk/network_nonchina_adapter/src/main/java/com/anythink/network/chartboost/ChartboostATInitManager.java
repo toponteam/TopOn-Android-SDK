@@ -236,21 +236,7 @@ public class ChartboostATInitManager extends ATInitMediation {
         Chartboost.setDelegate(delegate);
 
         if (TextUtils.isEmpty(mAppId) || !mAppId.equals(appId) || !mAppKey.equals(appKey)) {
-            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                //Whether to agree to collect data
-                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                //Whether to set the GDPR of the network
-                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                if (need_set_gdpr) {
-                    Chartboost.setPIDataUseConsent(context, gdp_consent ? Chartboost.CBPIDataUseConsent.YES_BEHAVIORAL : Chartboost.CBPIDataUseConsent.NO_BEHAVIORAL);
-                }
-
-            }
-
-            logGDPRSetting(ChartboostATConst.NETWORK_FIRM_ID);
-
-            Chartboost.startWithAppId(context, appId, appKey);
+            Chartboost.startWithAppId(context.getApplicationContext(), appId, appKey);
             mAppId = appId;
             mAppKey = appKey;
         } else {
@@ -261,13 +247,14 @@ public class ChartboostATInitManager extends ATInitMediation {
     }
 
     @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        Chartboost.setPIDataUseConsent(context.getApplicationContext(), isConsent ? Chartboost.CBPIDataUseConsent.YES_BEHAVIORAL : Chartboost.CBPIDataUseConsent.NO_BEHAVIORAL);
+        return true;
+    }
+
+    @Override
     public void initSDK(Context context, Map<String, Object> serviceExtras) {
-        if (!(context instanceof Activity)) {
-            return;
-        }
-
-        initSDK((Activity) context, serviceExtras, null);
-
+        initSDK(context, serviceExtras, null);
     }
 
     public interface InitCallback {

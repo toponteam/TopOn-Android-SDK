@@ -4,10 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.bytedance.sdk.openadsdk.AdSlot;
 import com.bytedance.sdk.openadsdk.TTAdConstant;
 import com.bytedance.sdk.openadsdk.TTAdManager;
@@ -27,17 +27,16 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     TTAdNative.RewardVideoAdListener ttRewardAdListener = new TTAdNative.RewardVideoAdListener() {
         @Override
         public void onError(int code, String message) {
-            log(TAG, "onError: code :" + code + "--message:" + message);
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(TTATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(code), message));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(String.valueOf(code), message);
             }
         }
 
         //Callback of cached video file resources to local after video ad loading
         @Override
         public void onRewardVideoCached() {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(TTATRewardedVideoAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
             try {
                 TTATInitManager.getInstance().put(getTrackingInfo().getmUnitGroupUnitId(), mttRewardVideoAd);
@@ -50,8 +49,8 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         @Override
         public void onRewardVideoAdLoad(TTRewardVideoAd ad) {
             mttRewardVideoAd = ad;
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdDataLoaded(TTATRewardedVideoAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdDataLoaded();
             }
         }
     };
@@ -62,21 +61,21 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         @Override
         public void onAdShow() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayStart(TTATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayStart();
             }
         }
 
         @Override
         public void onAdVideoBarClick() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayClicked(TTATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayClicked();
             }
         }
 
         @Override
         public void onAdClose() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdClosed(TTATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdClosed();
 
             }
             try {
@@ -89,11 +88,11 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         @Override
         public void onVideoComplete() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayEnd(TTATRewardedVideoAdapter.this);
+                mImpressionListener.onRewardedVideoAdPlayEnd();
             }
 
             if (mImpressionListener != null) {
-                mImpressionListener.onReward(TTATRewardedVideoAdapter.this);
+                mImpressionListener.onReward();
             }
         }
 
@@ -109,51 +108,12 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
         public void onVideoError() {
             if (mImpressionListener != null) {
-                mImpressionListener.onRewardedVideoAdPlayFailed(TTATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", "Callback VideoError"));
+                mImpressionListener.onRewardedVideoAdPlayFailed("", "Callback VideoError");
             }
         }
     };
 
-    @Override
-    public void loadRewardVideoAd(final Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, final CustomRewardVideoListener customRewardVideoListener) {
-
-        mLoadResultListener = customRewardVideoListener;
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
-
-        String appId = (String) serverExtras.get("app_id");
-        slotId = (String) serverExtras.get("slot_id");
-        final String personalized_template = (String) serverExtras.get("personalized_template");
-
-        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "app_id or slot_id is empty!"));
-            }
-            return;
-        }
-
-
-        TTRewardedVideoSetting rewardedVideoSetting = null;
-        if (mediationSetting != null && mediationSetting instanceof TTRewardedVideoSetting) {
-            rewardedVideoSetting = (TTRewardedVideoSetting) mediationSetting;
-        }
-
-
-        final TTRewardedVideoSetting finalRewardedVideoSetting = rewardedVideoSetting;
-        TTATInitManager.getInstance().initSDK(activity, serverExtras, new TTATInitManager.InitCallback() {
-            @Override
-            public void onFinish() {
-                startLoad(activity, finalRewardedVideoSetting, personalized_template);
-            }
-        });
-    }
-
-    private void startLoad(Context activity, TTRewardedVideoSetting rewardedVideoSetting, String personalized_template) {
+    private void startLoad(Context activity, Map<String, Object> localExtra, String personalized_template) {
         TTAdManager ttAdManager = TTAdSdk.getAdManager();
 
         TTAdNative mTTAdNative = ttAdManager.createAdNative(activity);//baseContext is recommended for activity
@@ -171,14 +131,26 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
 
 
-        if (rewardedVideoSetting != null) {
-            adSlotBuilder = adSlotBuilder.setSupportDeepLink(rewardedVideoSetting.getSoupportDeepLink());
-            if (rewardedVideoSetting.getVideoOrientation() == 1) {
-                adSlotBuilder.setOrientation(TTAdConstant.VERTICAL);
-            } else if (rewardedVideoSetting.getVideoOrientation() == 2) {
-                adSlotBuilder.setOrientation(TTAdConstant.HORIZONTAL);
+        if (localExtra != null) {
+            try {
+                adSlotBuilder.setSupportDeepLink((Boolean) localExtra.get(ATAdConst.KEY.AD_IS_SUPPORT_DEEP_LINK));
+            } catch (Exception e) {
+            }
+
+            try {
+                int orientation = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_ORIENTATION).toString());
+                switch (orientation) {
+                    case ATAdConst.ORIENTATION_HORIZONTAL:
+                        adSlotBuilder.setOrientation(TTAdConstant.HORIZONTAL);
+                        break;
+                    case ATAdConst.ORIENTATION_VERTICAL:
+                        adSlotBuilder.setOrientation(TTAdConstant.VERTICAL);
+                        break;
+                }
+            } catch (Exception e) {
             }
         }
+
         if (!TextUtils.isEmpty(mUserId)) {
             adSlotBuilder.setUserID(mUserId);
         }
@@ -200,36 +172,63 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public void show(Activity activity) {
-        if (mttRewardVideoAd != null) {
+        if (activity != null && mttRewardVideoAd != null) {
             mttRewardVideoAd.setRewardAdInteractionListener(interactionListener);
             mttRewardVideoAd.showRewardVideoAd(activity);
         }
-
-    }
-
-    @Override
-    public void clean() {
-        mttRewardVideoAd = null;
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return TTATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return TTATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, final Map<String, Object> localExtra) {
+        String appId = (String) serverExtra.get("app_id");
+        slotId = (String) serverExtra.get("slot_id");
+        final String personalized_template = (String) serverExtra.get("personalized_template");
+
+        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id or slot_id is empty!");
+            }
+            return;
+        }
+
+        TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                try {
+                    startLoad(context, localExtra, personalized_template);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void destory() {
+        if (mttRewardVideoAd != null) {
+            mttRewardVideoAd.setRewardAdInteractionListener(null);
+            mttRewardVideoAd = null;
+        }
+
+        ttRewardAdListener = null;
+        interactionListener = null;
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return slotId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return TTATConst.getNetworkVersion();
     }
 
     private static int px2dip(Context context, float pxValue) {

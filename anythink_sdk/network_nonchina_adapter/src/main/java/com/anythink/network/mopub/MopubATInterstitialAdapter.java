@@ -6,7 +6,6 @@ import android.content.Context;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.mopub.common.MoPub;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
@@ -27,36 +26,36 @@ public class MopubATInterstitialAdapter extends CustomInterstitialAdapter {
         mInterstitial.setInterstitialAdListener(new MoPubInterstitial.InterstitialAdListener() {
             @Override
             public void onInterstitialLoaded(MoPubInterstitial interstitial) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(MopubATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onInterstitialFailed(MoPubInterstitial interstitial, MoPubErrorCode errorCode) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(MopubATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, errorCode.getIntCode() + "", errorCode.toString()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode.getIntCode() + "", errorCode.toString());
                 }
             }
 
             @Override
             public void onInterstitialShown(MoPubInterstitial interstitial) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(MopubATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdShow();
                 }
             }
 
             @Override
             public void onInterstitialClicked(MoPubInterstitial interstitial) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked(MopubATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClicked();
                 }
             }
 
             @Override
             public void onInterstitialDismissed(MoPubInterstitial interstitial) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose(MopubATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
         });
@@ -73,84 +72,83 @@ public class MopubATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MopubATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public void show(Activity activity) {
         if (mInterstitial != null) {
             mInterstitial.show();
         }
     }
 
     @Override
-    public void clean() {
+    public void destory() {
         if (mInterstitial != null) {
             mInterstitial.destroy();
+            mInterstitial = null;
         }
     }
 
-    @Override
-    public void onResume() {
-        if (mActivityRef.get() != null) {
-            MoPub.onResume(mActivityRef.get());
-        }
-    }
 
     @Override
-    public void onPause() {
-        if (mActivityRef.get() != null) {
-            MoPub.onPause(mActivityRef.get());
-        }
-    }
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
+        if (serverExtras.containsKey("unitid")) {
+            adUnitId = (String) serverExtras.get("unitid");
 
-    @Override
-    public void loadInterstitialAd(final Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
         } else {
-            if (serverExtras.containsKey("unitid")) {
-                adUnitId = (String) serverExtras.get("unitid");
-
-            } else {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "unitid is empty!"));
-                }
-                return;
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "unitid is empty!");
             }
+            return;
         }
 
         if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Mopub context must be activity!");
             }
             return;
         }
 
-        MopubATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new MopubATInitManager.InitListener() {
+        postOnMainThread(new Runnable() {
             @Override
-            public void initSuccess() {
-                startLoad(context);
+            public void run() {
+                try {
+                    MopubATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new MopubATInitManager.InitListener() {
+                        @Override
+                        public void initSuccess() {
+                            try {
+                                startLoad(context);
+                            } catch (Throwable e) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError("", e.getMessage());
+                                }
+                            }
+                        }
+                    });
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
         });
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MopubATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return MopubATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return adUnitId;
     }
 
 }

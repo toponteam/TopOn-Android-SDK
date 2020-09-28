@@ -6,7 +6,6 @@ import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,117 +13,86 @@ import java.util.Map;
 
 public class AppnextATAdapter extends CustomNativeAdapter {
     private final String TAG = AppnextATAdapter.class.getSimpleName();
-    CustomNativeListener mListener;
     String mPlacementId;
 
-    int mCallbackCount;
 
-    List<CustomNativeAd> adList = new ArrayList<>();
     @Override
-    public void loadNativeAd(Context context, final CustomNativeListener customNativeListener, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-
-        mListener = customNativeListener;
-
-        mCallbackCount = 0;
-
-        if (serverExtras == null) {
-            log(TAG, "This placement's params in server is null!");
-            if (mListener != null) {
-                mListener.onNativeAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        }
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
         if (serverExtras.containsKey("placement_id")) {
             mPlacementId = (String) serverExtras.get("placement_id");
 
         } else {
-            log(TAG, "placement_id is empty!");
-            if (mListener != null) {
-                mListener.onNativeAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "placement_id is empty!"));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "placement_id is empty!");
             }
             return;
         }
+        final List<CustomNativeAd> adList = new ArrayList<>();
 
         AppnextATInitManager.getInstance().initSDK(context, serverExtras);
 
-        int requestNum = 1;
-        try {
-            if (serverExtras != null) {
-                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        final int finalRequestNum = requestNum;
-
-        AppnextATNativeAd.LoadCallbackListener selfListener = new AppnextATNativeAd.LoadCallbackListener() {
+        final AppnextATNativeAd.LoadCallbackListener selfListener = new AppnextATNativeAd.LoadCallbackListener() {
             @Override
             public void onSuccess(CustomNativeAd nativeAd) {
                 synchronized (AppnextATAdapter.this) {
-                    mCallbackCount++;
-                    adList.add(nativeAd);
-                    finishLoad(null);
-                }
-
-            }
-
-            @Override
-            public void onFail(AdError error) {
-                synchronized (AppnextATAdapter.this) {
-                    mCallbackCount++;
-                    finishLoad(error);
-                }
-            }
-
-            private void finishLoad(AdError adError) {
-                if (mCallbackCount >= finalRequestNum) {
-                    if (adList.size() > 0) {
-                        if (customNativeListener != null) {
-                            customNativeListener.onNativeAdLoaded(AppnextATAdapter.this, adList);
-                        }
-                    } else {
-                        if (mCallbackCount >= finalRequestNum) {
-                            if (adError == null) {
-                                adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "");
-                            }
-                            customNativeListener.onNativeAdFailed(AppnextATAdapter.this, adError);
-                        }
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded(nativeAd);
                     }
                 }
 
             }
+
+            @Override
+            public void onFail(String errorCode, String errorMsg) {
+                synchronized (AppnextATAdapter.this) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
+                }
+            }
+
         };
 
 
-        try {
-            for (int i = 0; i < requestNum; i++) {
-                AppnextATNativeAd appnextNativeAd = new AppnextATNativeAd(context, mPlacementId, selfListener);
-                appnextNativeAd.loadAd();
+        postOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AppnextATNativeAd appnextNativeAd = new AppnextATNativeAd(context, mPlacementId, selfListener);
+                    appnextNativeAd.loadAd();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (customNativeListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage());
-                customNativeListener.onNativeAdFailed(AppnextATAdapter.this, adError);
-            }
-        }
+        });
+
+    }
+
+    @Override
+    public void destory() {
+
     }
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return "";
-    }
-
-    @Override
-    public void clean() {
-
     }
 
     @Override
     public String getNetworkName() {
         return AppnextATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AppnextATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mPlacementId;
     }
 }

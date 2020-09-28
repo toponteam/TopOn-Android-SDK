@@ -20,7 +20,11 @@ public class HBContext {
     }
 
     public void runOnMainThread(Runnable runnable) {
-        mHandler.post(runnable);
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            runnable.run();
+        } else {
+            mHandler.post(runnable);
+        }
     }
 
     public void runOnMainThreadDelayed(Runnable runnable, long delayMillis) {
@@ -34,5 +38,6 @@ public class HBContext {
     public void removeMainThreadCackbacksAndMessages() {
         mHandler.removeCallbacksAndMessages(null);
     }
+
 
 }

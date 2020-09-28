@@ -35,13 +35,9 @@ public class ApkNotificationManager implements IApkNotification {
     private Context mContext;
     private int id;
 
-    public static ApkNotificationManager getInstance(Context context) {
+    public static synchronized ApkNotificationManager getInstance(Context context) {
         if (sInstance == null) {
-            synchronized (ApkNotificationManager.class) {
-                if (sInstance == null) {
-                    sInstance = new ApkNotificationManager(context);
-                }
-            }
+            sInstance = new ApkNotificationManager(context);
         }
         return sInstance;
     }

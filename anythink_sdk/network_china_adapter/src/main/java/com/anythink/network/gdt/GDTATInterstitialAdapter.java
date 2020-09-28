@@ -2,16 +2,10 @@ package com.anythink.network.gdt;
 
 import android.app.Activity;
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.qq.e.ads.cfg.VideoOption;
 import com.qq.e.ads.interstitial.InterstitialAD;
 import com.qq.e.ads.interstitial.InterstitialADListener;
@@ -29,7 +23,7 @@ import java.util.Map;
  * @Email: zhoushubin@salmonads.com
  */
 public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implements UnifiedInterstitialMediaListener {
-    public static String TAG = "GDTInterstitialAdapter";
+    public static String TAG = GDTATInterstitialAdapter.class.getSimpleName();
     InterstitialAD mInterstitialAD;
     UnifiedInterstitialAD mUnifiedInterstitialAd;
 
@@ -41,64 +35,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
     int mUnitVersion = 0;
     String mIsFullScreen;// 0： normal， 1：full screen
 
-    @Override
-    public void loadInterstitialAd(final Context context, final Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-
-        String posId = "";
-        String appid = "";
-
-        if (serverExtras.containsKey("app_id")) {
-            appid = serverExtras.get("app_id").toString();
-        }
-
-        if (serverExtras.containsKey("unit_id")) {
-            posId = serverExtras.get("unit_id").toString();
-        }
-
-        if (serverExtras.containsKey("unit_version")) {
-            mUnitVersion = Integer.parseInt(serverExtras.get("unit_version").toString());
-        }
-
-        mLoadResultListener = customInterstitialListener;
-        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(posId)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "GTD appid or unitId is empty.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
-
-            }
-            return;
-        }
-
-        if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        mAppId = appid;
-        mUnitId = posId;
-        isReady = false;
-
-
-        GDTATInitManager.getInstance().initSDK(context, serverExtras, new GDTATInitManager.OnInitCallback() {
-            @Override
-            public void onSuccess() {
-                startLoadAd(context, serverExtras);
-            }
-
-            @Override
-            public void onError() {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(GDTATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "GDT initSDK failed."));
-                }
-            }
-        });
-
-    }
-
-    private void startLoadAd(Context context, Map<String, Object> serverExtras) {
+    private void startLoadAd(Context context, Map<String, Object> serverExtra) {
         if (mUnitVersion != 2) {
             mInterstitialAD = new InterstitialAD((Activity) context, mAppId, mUnitId);
 
@@ -106,16 +43,16 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 @Override
                 public void onADReceive() {
                     isReady = true;
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoaded(GDTATInterstitialAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
                     }
                 }
 
                 @Override
                 public void onNoAD(com.qq.e.comm.util.AdError pAdError) {
 
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoadFail(GDTATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(pAdError.getErrorCode()), pAdError.getErrorMsg()));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(String.valueOf(pAdError.getErrorCode()), pAdError.getErrorMsg());
                     }
 
                 }
@@ -123,7 +60,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 @Override
                 public void onADOpened() {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdShow(GDTATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdShow();
                     }
                 }
 
@@ -134,7 +71,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 @Override
                 public void onADClicked() {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClicked(GDTATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClicked();
                     }
                 }
 
@@ -146,7 +83,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 public void onADClosed() {
                     isReady = false;
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClose(GDTATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClose();
                     }
                     if (mInterstitialAD != null) {
                         mInterstitialAD.destroy();
@@ -158,8 +95,8 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
         } else { //2.0
 
             mIsFullScreen = "0";
-            if (serverExtras.containsKey("is_fullscreen")) {
-                mIsFullScreen = (String) serverExtras.get("is_fullscreen");
+            if (serverExtra.containsKey("is_fullscreen")) {
+                mIsFullScreen = (String) serverExtra.get("is_fullscreen");
             }
 
             mUnifiedInterstitialAd = new UnifiedInterstitialAD((Activity) context, mUnitId, new UnifiedInterstitialADListener() {
@@ -167,8 +104,8 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 public void onADReceive() {
                     isReady = true;
 
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoaded(GDTATInterstitialAdapter.this);
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
                     }
                     try {
                         GDTATInitManager.getInstance().put(getTrackingInfo().getmUnitGroupUnitId(), mUnifiedInterstitialAd);
@@ -184,15 +121,15 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
 
                 @Override
                 public void onNoAD(com.qq.e.comm.util.AdError adError) {
-                    if (mLoadResultListener != null) {
-                        mLoadResultListener.onInterstitialAdLoadFail(GDTATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(adError.getErrorCode()), adError.getErrorMsg()));
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(String.valueOf(adError.getErrorCode()), adError.getErrorMsg());
                     }
                 }
 
                 @Override
                 public void onADOpened() {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdShow(GDTATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdShow();
                     }
                 }
 
@@ -204,7 +141,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 @Override
                 public void onADClicked() {
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClicked(GDTATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClicked();
                     }
                 }
 
@@ -217,7 +154,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 public void onADClosed() {
                     isReady = false;
                     if (mImpressListener != null) {
-                        mImpressListener.onInterstitialAdClose(GDTATInterstitialAdapter.this);
+                        mImpressListener.onInterstitialAdClose();
                     }
                     if (mUnifiedInterstitialAd != null) {
                         mUnifiedInterstitialAd.destroy();
@@ -231,7 +168,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
             });
 
             // set video option
-            setVideoOption(context, serverExtras);
+            setVideoOption(context, serverExtra);
 
             if (TextUtils.equals("1", mIsFullScreen)) {//full screen
                 mUnifiedInterstitialAd.loadFullScreenAD();
@@ -247,10 +184,10 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
     }
 
     @Override
-    public void show(Context context) {
+    public void show(Activity activity) {
         if (mInterstitialAD != null) {
-            if (context instanceof Activity) {
-                mInterstitialAD.show((Activity) context);
+            if (activity != null) {
+                mInterstitialAD.show(activity);
             } else {
                 mInterstitialAD.show();
             }
@@ -261,39 +198,19 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
             mUnifiedInterstitialAd.setMediaListener(GDTATInterstitialAdapter.this);
 
             if (TextUtils.equals("1", mIsFullScreen)) {//full screen
-                if (context instanceof Activity) {
-                    mUnifiedInterstitialAd.showFullScreenAD(((Activity) context));
+                if (activity != null) {
+                    mUnifiedInterstitialAd.showFullScreenAD(activity);
                 } else {
                     Log.e(TAG, "Gdt (Full Screen) show fail: context need be Activity");
                 }
             } else {
-                if (context instanceof Activity) {
-                    mUnifiedInterstitialAd.show(((Activity) context));
+                if (activity != null) {
+                    mUnifiedInterstitialAd.show(activity);
                 } else {
                     mUnifiedInterstitialAd.show();
                 }
-                mUnifiedInterstitialAd.show();
             }
         }
-    }
-
-    @Override
-    public void clean() {
-
-    }
-
-    @Override
-    public void onResume() {
-    }
-
-    @Override
-    public void onPause() {
-
-    }
-
-    @Override
-    public String getSDKVersion() {
-        return GDTATConst.getNetworkVersion();
     }
 
     @Override
@@ -301,25 +218,101 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
         return GDTATInitManager.getInstance().getNetworkName();
     }
 
+    @Override
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        String posId = "";
+        String appid = "";
+
+        if (serverExtra.containsKey("app_id")) {
+            appid = serverExtra.get("app_id").toString();
+        }
+
+        if (serverExtra.containsKey("unit_id")) {
+            posId = serverExtra.get("unit_id").toString();
+        }
+
+        if (serverExtra.containsKey("unit_version")) {
+            mUnitVersion = Integer.parseInt(serverExtra.get("unit_version").toString());
+        }
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(posId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "GDT appid or unitId is empty.");
+            }
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "GDT context must be activity.");
+            }
+            return;
+        }
+
+        mAppId = appid;
+        mUnitId = posId;
+        isReady = false;
+
+
+        GDTATInitManager.getInstance().initSDK(context, serverExtra, new GDTATInitManager.OnInitCallback() {
+            @Override
+            public void onSuccess() {
+                startLoadAd(context, serverExtra);
+            }
+
+            @Override
+            public void onError() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "GDT initSDK failed.");
+                }
+            }
+        });
+    }
+
+    @Override
+    public void destory() {
+        if (mInterstitialAD != null) {
+            mInterstitialAD.setADListener(null);
+            mInterstitialAD.destroy();
+            mInterstitialAD = null;
+        }
+
+        if (mUnifiedInterstitialAd != null) {
+            mUnifiedInterstitialAd.setMediaListener(null);
+            mUnifiedInterstitialAd.destroy();
+            mUnifiedInterstitialAd = null;
+        }
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mUnitId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return GDTATConst.getNetworkVersion();
+    }
+
     /**
      * set video option
      */
-    private void setVideoOption(Context context, Map<String, Object> serverExtras) {
+    private void setVideoOption(Context context, Map<String, Object> serverExtra) {
         if (mUnifiedInterstitialAd == null) {
             return;
         }
 
         int isVideoMuted = 1;
         int isVideoAutoPlay = 1;
-        String videoDuration = "";
-        if (serverExtras.containsKey("video_muted")) {
-            isVideoMuted = Integer.parseInt(serverExtras.get("video_muted").toString());
+        int videoDuration = -1;
+        if (serverExtra.containsKey("video_muted")) {
+            isVideoMuted = Integer.parseInt(serverExtra.get("video_muted").toString());
         }
-        if (serverExtras.containsKey("video_autoplay")) {
-            isVideoAutoPlay = Integer.parseInt(serverExtras.get("video_autoplay").toString());
+        if (serverExtra.containsKey("video_autoplay")) {
+            isVideoAutoPlay = Integer.parseInt(serverExtra.get("video_autoplay").toString());
         }
-        if (serverExtras.containsKey("video_duration")) {
-            videoDuration = serverExtras.get("video_duration").toString();
+        if (serverExtra.containsKey("video_duration")) {
+            videoDuration = Integer.parseInt(serverExtra.get("video_duration").toString());
         }
 
         VideoOption option = new VideoOption.Builder()
@@ -327,31 +320,12 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
                 .setAutoPlayPolicy(isVideoAutoPlay)
                 .build();
         mUnifiedInterstitialAd.setVideoOption(option);
-        if (!TextUtils.isEmpty(videoDuration)) {
-            mUnifiedInterstitialAd.setMaxVideoDuration(Integer.parseInt(videoDuration));
+        if (videoDuration != -1) {
+            mUnifiedInterstitialAd.setMaxVideoDuration(videoDuration);
         }
 
-        mUnifiedInterstitialAd.setVideoPlayPolicy(getVideoPlayPolicy(option.getAutoPlayPolicy(), context));
+        mUnifiedInterstitialAd.setVideoPlayPolicy(GDTATInitManager.getInstance().getVideoPlayPolicy(context, isVideoAutoPlay));
     }
-
-    private static int getVideoPlayPolicy(int autoPlayPolicy, Context context) {
-        if (autoPlayPolicy == VideoOption.AutoPlayPolicy.ALWAYS) {
-            return VideoOption.VideoPlayPolicy.AUTO;
-        } else if (autoPlayPolicy == VideoOption.AutoPlayPolicy.WIFI) {
-            try {
-                ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-                NetworkInfo wifiNetworkInfo = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-                return wifiNetworkInfo != null && wifiNetworkInfo.isConnected() ? VideoOption.VideoPlayPolicy.AUTO
-                        : VideoOption.VideoPlayPolicy.MANUAL;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else if (autoPlayPolicy == VideoOption.AutoPlayPolicy.NEVER) {
-            return VideoOption.VideoPlayPolicy.MANUAL;
-        }
-        return VideoOption.VideoPlayPolicy.UNKNOWN;
-    }
-
 
     @Override
     public void onVideoInit() {
@@ -370,7 +344,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
     @Override
     public void onVideoStart() {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdVideoStart(GDTATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdVideoStart();
         }
     }
 
@@ -382,14 +356,14 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
     @Override
     public void onVideoComplete() {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdVideoEnd(GDTATInterstitialAdapter.this);
+            mImpressListener.onInterstitialAdVideoEnd();
         }
     }
 
     @Override
     public void onVideoError(com.qq.e.comm.util.AdError adError) {
         if (mImpressListener != null) {
-            mImpressListener.onInterstitialAdVideoError(GDTATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, adError.getErrorCode() + "", adError.getErrorMsg()));
+            mImpressListener.onInterstitialAdVideoError(adError.getErrorCode() + "", adError.getErrorMsg());
         }
     }
 

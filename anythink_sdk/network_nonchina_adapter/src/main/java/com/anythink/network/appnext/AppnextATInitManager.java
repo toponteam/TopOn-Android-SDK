@@ -35,22 +35,15 @@ public class AppnextATInitManager extends ATInitMediation {
     @Override
     public synchronized void initSDK(Context context, Map<String, Object> serviceExtras) {
         if (!mIsInit) {
-            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                //Whether to agree to collect data
-                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                //Whether to set the GDPR of the network，
-                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                if (need_set_gdpr) {
-                    Appnext.setParam("consent", String.valueOf(gdp_consent));
-                }
-
-                logGDPRSetting(AppnextATConst.NETWORK_FIRM_ID);
-            }
-
             Appnext.init(context);
             mIsInit = true;
         }
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        Appnext.setParam("consent", String.valueOf(isConsent));
+        return true;
     }
 
     @Override

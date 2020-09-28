@@ -9,6 +9,7 @@ public class Const {
      * SDK Version
      */
     public static final String SDK_VERSION_NAME = BuildConfig.SDK_VERSION_NAME;
+    public static final String KEY_MYOFFER_ID = "my_oid";
 
     public static final int SDK_VERSION_DB = 4;
 
@@ -32,6 +33,10 @@ public class Const {
     public static final String SPU_APPKEY = RESOURCE_HEAD + "_appkey";
     public static final String SPU_SYS_GAID = RESOURCE_HEAD + "_gaid";
 
+    public static final String SPU_PLACEMENT_LOAD_RECORD_NAME = RESOURCE_HEAD + "_placement_load";
+    public static final String SPU_CRASH_NAME = RESOURCE_HEAD + "_crash";
+
+    public static final String SPU_EXC_LOG_NAME = "exc_log";
     /**
      * Placement update check
      */
@@ -73,6 +78,12 @@ public class Const {
         public static final String SPU_INIT_TIME_KEY = "SPU_INIT_TIME_KEY";
         public static final String SPU_UP_ID_KEY = "UP_ID";
         public static final String SPU_EU_INFO = "EU_INFO";
+
+        public static final String SPU_FIRST_INIT_TIME = "AT_INIT_TIME";
+
+        /**Only for exc_log**/
+        public static final String SPU_EXC_SYS = "exc_sys";
+        public static final String SPU_EXC_BK = "exc_bk";
     }
 
 

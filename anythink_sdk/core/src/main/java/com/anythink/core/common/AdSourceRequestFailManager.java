@@ -12,6 +12,7 @@ public class AdSourceRequestFailManager {
 
 
     ConcurrentHashMap<String, Long> concurrentHashMap;
+    ConcurrentHashMap<String, Long> bidFailHashMap;
 
     public synchronized static AdSourceRequestFailManager getInstance() {
         if (sIntance == null) {
@@ -22,6 +23,7 @@ public class AdSourceRequestFailManager {
 
     private AdSourceRequestFailManager() {
         concurrentHashMap = new ConcurrentHashMap<String, Long>();
+        bidFailHashMap = new ConcurrentHashMap<>();
     }
 
 
@@ -41,4 +43,23 @@ public class AdSourceRequestFailManager {
     public void putAdSourceRequestFailTime(String adsourceId, long failTime) {
         concurrentHashMap.put(adsourceId, failTime);
     }
+
+
+    public boolean isInBidFailInterval(PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+        if (unitGroupInfo.getBidFailInterval() == 0) {
+            return false;
+        }
+
+        long requestFailTime = bidFailHashMap.get(unitGroupInfo.unitId) != null ? bidFailHashMap.get(unitGroupInfo.unitId) : 0L;
+        if (requestFailTime + unitGroupInfo.getBidFailInterval() < System.currentTimeMillis()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void putAdSourceBidFailTime(String adsourceId, long failTime) {
+        bidFailHashMap.put(adsourceId, failTime);
+    }
+
 }

@@ -5,11 +5,7 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 
 import java.util.Map;
 
@@ -29,7 +25,7 @@ import mobi.oneway.export.enums.OnewaySdkError;
  * @Email: zhoushubin@salmonads.com
  */
 public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
-    public static String TAG = "oneway";
+    public static final String TAG = OnewayATInterstitialAdapter.class.getSimpleName();
 
 
     String mPublishId;
@@ -42,8 +38,8 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
         @Override
         public void onAdReady() {
             // The ad is ready, you can call the show () method to play the ad
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(OnewayATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
 
@@ -52,8 +48,8 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
             // Advertising has begun
             if (mImpressListener != null) {
 
-                mImpressListener.onInterstitialAdShow(OnewayATInterstitialAdapter.this);
-                mImpressListener.onInterstitialAdVideoStart(OnewayATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdShow();
+                mImpressListener.onInterstitialAdVideoStart();
             }
         }
 
@@ -61,21 +57,21 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
         public void onAdClick(String tag) {
             // Ad click event
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClicked(OnewayATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClicked();
             }
         }
 
         @Override
         public void onAdClose(String tag, OnewayAdCloseType type) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClose(OnewayATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClose();
             }
         }
 
         @Override
         public void onAdFinish(String s, OnewayAdCloseType onewayAdCloseType, String s1) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdVideoEnd(OnewayATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdVideoEnd();
             }
         }
 
@@ -83,8 +79,8 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
         @Override
         public void onSdkError(OnewaySdkError error, String message) {
             // An error occurred during SDK initialization or advertisement playback. You can save the error log here to troubleshoot the cause of the error.
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(OnewayATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(error.name()), message));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(error.name(), message);
             }
         }
     };
@@ -92,29 +88,29 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
     OWInterstitialImageAdListener mInterstitialImageListener = new OWInterstitialImageAdListener() {
         @Override
         public void onAdReady() {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoaded(OnewayATInterstitialAdapter.this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         }
 
         @Override
         public void onAdShow(String s) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdShow(OnewayATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdShow();
             }
         }
 
         @Override
         public void onAdClick(String s) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClicked(OnewayATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClicked();
             }
         }
 
         @Override
         public void onAdClose(String s, OnewayAdCloseType onewayAdCloseType) {
             if (mImpressListener != null) {
-                mImpressListener.onInterstitialAdClose(OnewayATInterstitialAdapter.this);
+                mImpressListener.onInterstitialAdClose();
             }
         }
 
@@ -125,82 +121,18 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
 
         @Override
         public void onSdkError(OnewaySdkError error, String message) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(OnewayATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, String.valueOf(error.name()), message));
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError(String.valueOf(error.name()), message);
             }
         }
     };
 
-
     @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        String publishId = "";
-        String slotId = "";
-        String isVideo = "0";
-
-        if (serverExtras.containsKey("publisher_id")) {
-            publishId = serverExtras.get("publisher_id").toString();
-        }
-        if (serverExtras.containsKey("slot_id")) {
-            slotId = serverExtras.get("slot_id").toString();
-        }
-        if (serverExtras.containsKey("is_video")) {
-            isVideo = serverExtras.get("is_video").toString();
-        }
-
-        mLoadResultListener = customInterstitialListener;
-        if (TextUtils.isEmpty(publishId) || TextUtils.isEmpty(slotId)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", " publishId or slotId is empty.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
-
-            }
-            return;
-        }
-
-        if (!(context instanceof Activity)) {
-            if (mLoadResultListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.noADError, "", "context must be activity.");
-                mLoadResultListener.onInterstitialAdLoadFail(this, adError);
-            }
-            return;
-        }
-
-        mPublishId = publishId;
-        mSlotId = slotId;
-        mIsVideo = isVideo;
-        OnewayATInitManager.getInstance().initSDK(context, serverExtras);
-
-        if (TextUtils.equals(mIsVideo, "1")) {//video
-            owInterstitialAd = new OWInterstitialAd(((Activity) context), mSlotId, mListener);
-            if (owInterstitialAd.isReady()) {
-                Log.i(TAG, "intersitital video : ready...");
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(OnewayATInterstitialAdapter.this);
-                }
-            } else {
-                owInterstitialAd.loadAd();
-            }
-
-        } else {//image
-            owInterstitialImageAd = new OWInterstitialImageAd(((Activity) context), mSlotId, mInterstitialImageListener);
-            if (owInterstitialImageAd.isReady()) {
-                Log.i(TAG, "intersitital image : ready...");
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(OnewayATInterstitialAdapter.this);
-                }
-            } else {
-                owInterstitialImageAd.loadAd();
-            }
-        }
-    }
-
-    @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
-        if (serverExtras.containsKey("publisher_id") && serverExtras.containsKey("slot_id")) {
-            mPublishId = serverExtras.get("publisher_id").toString();
-            mSlotId = serverExtras.get("slot_id").toString();
-            mIsVideo = serverExtras.get("is_video").toString();
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        if (serverExtra.containsKey("publisher_id") && serverExtra.containsKey("slot_id")) {
+            mPublishId = serverExtra.get("publisher_id").toString();
+            mSlotId = serverExtra.get("slot_id").toString();
+            mIsVideo = serverExtra.get("is_video").toString();
             return true;
         }
         return false;
@@ -216,26 +148,18 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public String getSDKVersion() {
-        return OnewayATConst.getNetworkVersion();
-    }
-
-    @Override
-    public void show(Context context) {
-        if (context instanceof Activity) {
+    public void show(Activity activity) {
+        if (activity != null) {
             if (isAdReady()) {
                 if (TextUtils.equals(mIsVideo, "1")) {
-                    owInterstitialAd.show(((Activity) context));
+                    owInterstitialAd.setListener(mListener);
+                    owInterstitialAd.show(activity);
                 } else {
-                    owInterstitialImageAd.show(((Activity) context));
+                    owInterstitialImageAd.setListener(mInterstitialImageListener);
+                    owInterstitialImageAd.show(activity);
                 }
             }
         }
-    }
-
-    @Override
-    public void clean() {
-
     }
 
     @Override
@@ -244,13 +168,89 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void onResume() {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+        String publishId = "";
+        String slotId = "";
+        String isVideo = "0";
 
+        if (serverExtra.containsKey("publisher_id")) {
+            publishId = serverExtra.get("publisher_id").toString();
+        }
+        if (serverExtra.containsKey("slot_id")) {
+            slotId = serverExtra.get("slot_id").toString();
+        }
+        if (serverExtra.containsKey("is_video")) {
+            isVideo = serverExtra.get("is_video").toString();
+        }
+
+        if (TextUtils.isEmpty(publishId) || TextUtils.isEmpty(slotId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", " publishId or slotId is empty.");
+            }
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Oneway context must be activity.");
+            }
+            return;
+        }
+
+        mPublishId = publishId;
+        mSlotId = slotId;
+        mIsVideo = isVideo;
+        OnewayATInitManager.getInstance().initSDK(context, serverExtra);
+
+        if (TextUtils.equals(mIsVideo, "1")) {//video
+            owInterstitialAd = new OWInterstitialAd(((Activity) context), mSlotId, mListener);
+            if (owInterstitialAd.isReady()) {
+                Log.i(TAG, "intersitital video : ready...");
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
+                }
+            } else {
+                owInterstitialAd.loadAd();
+            }
+
+        } else {//image
+            owInterstitialImageAd = new OWInterstitialImageAd(((Activity) context), mSlotId, mInterstitialImageListener);
+            if (owInterstitialImageAd.isReady()) {
+                Log.i(TAG, "intersitital image : ready...");
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
+                }
+            } else {
+                owInterstitialImageAd.loadAd();
+            }
+        }
     }
 
     @Override
-    public void onPause() {
+    public void destory() {
+        if (owInterstitialAd != null) {
+            owInterstitialAd.setListener(null);
+            owInterstitialAd.destory();
+            owInterstitialAd = null;
+        }
 
+        if (owInterstitialImageAd != null) {
+            owInterstitialImageAd.setListener(null);
+            owInterstitialImageAd.destory();
+            owInterstitialImageAd = null;
+        }
+
+        mListener = null;
+        mInterstitialImageListener = null;
     }
 
+    @Override
+    public String getNetworkPlacementId() {
+        return mSlotId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return OnewayATConst.getNetworkVersion();
+    }
 }

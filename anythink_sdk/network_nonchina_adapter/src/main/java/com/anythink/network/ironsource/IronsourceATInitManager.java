@@ -169,19 +169,6 @@ public class IronsourceATInitManager extends ATInitMediation {
         }
         if (TextUtils.isEmpty(mAppKey) || !TextUtils.equals(mAppKey, appkey)) {
 
-            if (serviceExtras.containsKey("gdpr_consent") && serviceExtras.containsKey("need_set_gdpr")) {
-                //Whether to agree to collect data
-                boolean gdp_consent = (boolean) serviceExtras.get("gdpr_consent");
-                //Whether to set the GDPR of the network
-                boolean need_set_gdpr = (boolean) serviceExtras.get("need_set_gdpr");
-
-                if (need_set_gdpr) {
-                    IronSource.setConsent(gdp_consent);
-                }
-            }
-
-            logGDPRSetting(IronsourceATConst.NETWORK_FIRM_ID);
-
             IronSource.setISDemandOnlyInterstitialListener(isDemandOnlyInterstitialListener);
             IronSource.setISDemandOnlyRewardedVideoListener(isDemandOnlyRewardedVideoListener);
 
@@ -203,6 +190,12 @@ public class IronsourceATInitManager extends ATInitMediation {
             }
         }
 
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        IronSource.setConsent(isConsent);
+        return true;
     }
 
     public void loadInterstitial(final String instanceId, IronsourceATInterstitialAdapter interstitialAdapter) {

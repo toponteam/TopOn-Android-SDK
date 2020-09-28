@@ -15,6 +15,7 @@ public class MyOfferErrorCode {
     public final static String noSettingError = "30002";
 
     public final static String rewardedVideoPlayError = "40002";
+    public final static String incompleteResourceError = "30003";
 
 
 
@@ -32,6 +33,7 @@ public class MyOfferErrorCode {
     public static final String fail_player = "Video player error!";
     public static final String fail_no_video_url = "Video url no exist!";
     public static final String fail_video_file_error_ = "Video file error!";
+    public static final String fail_incomplete_resource = "Incomplete resource allocation!";
 
 
     public static MyOfferError get(String code, String msg) {

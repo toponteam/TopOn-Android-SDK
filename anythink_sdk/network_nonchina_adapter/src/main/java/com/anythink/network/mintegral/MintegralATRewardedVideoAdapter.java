@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.mintegral.msdk.out.CustomInfoManager;
 import com.mintegral.msdk.out.MTGBidRewardVideoHandler;
 import com.mintegral.msdk.out.MTGRewardVideoHandler;
@@ -50,29 +49,29 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
                 }
 
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdLoaded(MintegralATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onLoadSuccess(String placementId, String unitId) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdDataLoaded(MintegralATRewardedVideoAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
                 }
             }
 
             @Override
             public void onVideoLoadFail(String pErrorMSG) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(MintegralATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", pErrorMSG));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", pErrorMSG);
                 }
             }
 
             @Override
             public void onAdShow() {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart(MintegralATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayStart();
                 }
             }
 
@@ -81,9 +80,9 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                                   float pRewardAmout) {
                 if (mImpressionListener != null) {
                     if (pIsCompleteView) {
-                        mImpressionListener.onReward(MintegralATRewardedVideoAdapter.this);
+                        mImpressionListener.onReward();
                     }
-                    mImpressionListener.onRewardedVideoAdClosed(MintegralATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdClosed();
                 }
 
                 try {
@@ -96,7 +95,7 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onShowFail(String pErrorMSG) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayFailed(MintegralATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", pErrorMSG));
+                    mImpressionListener.onRewardedVideoAdPlayFailed("", pErrorMSG);
                 }
 
             }
@@ -104,14 +103,14 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             @Override
             public void onVideoAdClicked(String placementId, String unitId) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked(MintegralATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
 
             @Override
             public void onVideoComplete(String placementId, String unitId) {
                 if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd(MintegralATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
             }
 
@@ -131,36 +130,17 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void loadRewardVideoAd(final Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+
+        String appid = (String) serverExtras.get("appid");
+        String appkey = (String) serverExtras.get("appkey");
+        unitId = (String) serverExtras.get("unitid");
+
+        if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "mintegral appid, appkey or unitid is empty!");
             }
             return;
-        }
-        if (mediationSetting != null && mediationSetting instanceof MintegralRewardedVideoSetting) {
-            mMintegralMediationSetting = (MintegralRewardedVideoSetting) mediationSetting;
-
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
-            }
-            return;
-        } else {
-
-            String appid = (String) serverExtras.get("appid");
-            String appkey = (String) serverExtras.get("appkey");
-            unitId = (String) serverExtras.get("unitid");
-
-            if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(appkey) || TextUtils.isEmpty(unitId)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "mintegral appid, appkey or unitid is empty!"));
-                }
-                return;
-            }
         }
 
         if (serverExtras.containsKey("payload")) {
@@ -175,26 +155,26 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             placementId = serverExtras.get("placement_id").toString();
         }
 
-        MintegralATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new MintegralATInitManager.InitCallback() {
+        MintegralATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new MintegralATInitManager.InitCallback() {
             @Override
             public void onSuccess() {
                 //init
-                init(activity);
+                init(context);
                 //load ad
                 startLoad();
             }
 
             @Override
             public void onError(Throwable e) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(MintegralATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, "", e.getMessage()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", e.getMessage());
                 }
             }
         });
     }
 
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras != null) {
             if (serverExtras.containsKey("appid") && serverExtras.containsKey("appkey") && serverExtras.containsKey("unitid")) {
                 unitId = serverExtras.get("unitid").toString();
@@ -230,18 +210,20 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
+    public void destory() {
+        if (mMvBidRewardVideoHandler != null) {
+            mMvBidRewardVideoHandler.setRewardVideoListener(null);
+            mMvBidRewardVideoHandler = null;
+        }
+
+        if (mMvRewardVideoHandler != null) {
+            mMvRewardVideoHandler.setRewardVideoListener(null);
+            mMvRewardVideoHandler = null;
+        }
+
+        mMintegralMediationSetting = null;
     }
 
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
-    }
 
     @Override
     public boolean isAdReady() {
@@ -253,6 +235,11 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             return mMvBidRewardVideoHandler.isBidReady();
         }
         return false;
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return MintegralATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
     }
 
     @Override
@@ -268,12 +255,17 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return MintegralATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitId;
     }
 }

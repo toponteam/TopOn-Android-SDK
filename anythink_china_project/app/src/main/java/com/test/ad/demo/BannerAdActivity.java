@@ -24,18 +24,18 @@ public class BannerAdActivity extends Activity {
             DemoApplicaion.mPlacementId_banner_all
             , DemoApplicaion.mPlacementId_banner_GDT
             , DemoApplicaion.mPlacementId_banner_toutiao
-            , DemoApplicaion.mPlacementId_banner_uniplay
             , DemoApplicaion.mPlacementId_banner_mintegral
             , DemoApplicaion.mPLacementId_banner_baidu
+            , DemoApplicaion.mPlacementId_banner_myoffer
     };
 
     String unitGroupName[] = new String[]{
             "All",
             "GDT",
             "Toutiao",
-            "Uniplay",
             "Mintegral",
             "Baidu",
+            "MyOffer"
     };
 
     ATBannerView mBannerView;
@@ -52,6 +52,7 @@ public class BannerAdActivity extends Activity {
         Spinner spinner = (Spinner) findViewById(R.id.banner_spinner);
         final FrameLayout frameLayout = findViewById(R.id.adview_container);
         mBannerView = new ATBannerView(this);
+        mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
         frameLayout.addView(mBannerView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, dip2px(300)));
         mBannerView.setBannerAdListener(new ATBannerListener() {
             @Override
@@ -66,7 +67,7 @@ public class BannerAdActivity extends Activity {
             public void onBannerFailed(AdError adError) {
                 Log.i("BannerAdActivity", "onBannerFailed：" + adError.printStackTrace());
                 Toast.makeText(BannerAdActivity.this,
-                        "onBannerFailed",
+                        "onBannerFailed: " + adError.printStackTrace(),
                         Toast.LENGTH_SHORT).show();
             }
 
@@ -80,7 +81,7 @@ public class BannerAdActivity extends Activity {
 
             @Override
             public void onBannerShow(ATAdInfo entity) {
-                Log.i("BannerAdActivity", "onBannerShow:"  + entity.toString());
+                Log.i("BannerAdActivity", "onBannerShow:" + entity.toString());
                 Toast.makeText(BannerAdActivity.this,
                         "onBannerShow",
                         Toast.LENGTH_SHORT).show();
@@ -88,7 +89,7 @@ public class BannerAdActivity extends Activity {
 
             @Override
             public void onBannerClose(ATAdInfo entity) {
-                Log.i("BannerAdActivity", "onBannerClose:"  + entity.toString());
+                Log.i("BannerAdActivity", "onBannerClose:" + entity.toString());
                 Toast.makeText(BannerAdActivity.this,
                         "onBannerClose",
                         Toast.LENGTH_SHORT).show();
@@ -96,7 +97,7 @@ public class BannerAdActivity extends Activity {
 
             @Override
             public void onBannerAutoRefreshed(ATAdInfo entity) {
-                Log.i("BannerAdActivity", "onBannerAutoRefreshed:"  + entity.toString());
+                Log.i("BannerAdActivity", "onBannerAutoRefreshed:" + entity.toString());
             }
 
             @Override
@@ -119,6 +120,8 @@ public class BannerAdActivity extends Activity {
                         parent.getItemAtPosition(position).toString(),
                         Toast.LENGTH_SHORT).show();
                 mCurrentSelectIndex = position;
+                mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+                mBannerView.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -141,6 +144,9 @@ public class BannerAdActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mBannerView != null) {
+            mBannerView.destroy();
+        }
     }
 
     public int dip2px(float dipValue) {

@@ -2,6 +2,7 @@ package com.anythink.core.common.utils;
 
 import android.util.Log;
 
+import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.AnyThinkBaseAdapter;
 import com.anythink.core.strategy.PlaceStrategy;
@@ -17,17 +18,17 @@ public class CustomAdapterFactory {
 
     protected static CustomAdapterFactory instance = new CustomAdapterFactory();
 
-    protected static AnyThinkBaseAdapter create(final String className) throws Exception {
+    public static ATBaseAdAdapter create(final String className) throws Exception {
         if (className != null) {
-            final Class<? extends AnyThinkBaseAdapter> nativeClass = Class.forName(className)
-                    .asSubclass(AnyThinkBaseAdapter.class);
+            final Class<? extends ATBaseAdAdapter> nativeClass = Class.forName(className)
+                    .asSubclass(ATBaseAdAdapter.class);
             return instance.internalCreate(nativeClass);
         } else {
             return null;
         }
     }
 
-    protected AnyThinkBaseAdapter internalCreate(
+    protected ATBaseAdAdapter internalCreate(
             final Class<? extends AnyThinkBaseAdapter> nativeClass) throws Exception {
         if (nativeClass == null) {
             Log.w(Const.RESOURCE_HEAD, "can not find adapter");
@@ -35,11 +36,11 @@ public class CustomAdapterFactory {
 
         final Constructor<?> nativeConstructor = nativeClass.getDeclaredConstructor((Class[]) null);
         nativeConstructor.setAccessible(true);
-        return (AnyThinkBaseAdapter) nativeConstructor.newInstance();
+        return (ATBaseAdAdapter) nativeConstructor.newInstance();
     }
 
-    public static AnyThinkBaseAdapter createAdapter(final PlaceStrategy.UnitGroupInfo unitGroupInfo) {
-        AnyThinkBaseAdapter customRewardVideoAdapter;
+    public static ATBaseAdAdapter createAdapter(final PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+        ATBaseAdAdapter customRewardVideoAdapter;
 
         try {
             customRewardVideoAdapter = CustomAdapterFactory.create(unitGroupInfo.adapterClassName);

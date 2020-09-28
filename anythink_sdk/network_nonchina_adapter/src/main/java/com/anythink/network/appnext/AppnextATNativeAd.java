@@ -40,29 +40,27 @@ public class AppnextATNativeAd extends CustomNativeAd {
     }
 
     public void loadAd() {
-        log(TAG, "loadad");
         NativeAd nativeAd = new NativeAd(mContext, mPlacementId);
         nativeAd.setPrivacyPolicyColor(PrivacyIcon.PP_ICON_COLOR_LIGHT);
         nativeAd.setAdListener(new NativeAdListener() {
             public void onAdLoaded(NativeAd nativeAd, AppnextAdCreativeType creativeType) {
-                log(TAG, "onAdLoaded");
                 mNativeAd = nativeAd;
                 setData();
                 if (mCustomNativeListener != null) {
-                    mCustomNativeListener.onSuccess( AppnextATNativeAd.this);
+                    mCustomNativeListener.onSuccess(AppnextATNativeAd.this);
                 }
+                mCustomNativeListener = null;
             }
 
             public void onAdClicked(NativeAd nativeAd) {
-                log(TAG, "onAdClicked");
                 notifyAdClicked();
             }
 
             public void onError(NativeAd nativeAd, AppnextError error) {
-                log(TAG, "onError:" + error.getErrorMessage());
                 if (mCustomNativeListener != null) {
-                    mCustomNativeListener.onFail(ErrorCode.getErrorCode(ErrorCode.noADError, "", error.getErrorMessage()));
+                    mCustomNativeListener.onFail("", error.getErrorMessage());
                 }
+                mCustomNativeListener = null;
             }
 
             public void adImpression(NativeAd nativeAd) {
@@ -105,10 +103,8 @@ public class AppnextATNativeAd extends CustomNativeAd {
     @Override
     public ViewGroup getCustomAdContainer() {
         mNativeAdView = new NativeAdView(mContext);
-        mMediaView = new MediaView(mContext);
         if (mNativeAd != null) {
             mNativeAd.setNativeAdView(mNativeAdView);
-            mNativeAd.setMediaView(mMediaView);
         }
         return mNativeAdView;
     }
@@ -122,7 +118,6 @@ public class AppnextATNativeAd extends CustomNativeAd {
         if (mNativeAd != null) {
             mNativeAd.registerClickableViews(view);
         }
-        log(TAG, "prepare");
     }
 
     @Override
@@ -138,29 +133,47 @@ public class AppnextATNativeAd extends CustomNativeAd {
 
     @Override
     public void clear(final View view) {
-        log(TAG, "clear");
+        if (mMediaView != null) {
+            mMediaView.destroy();
+            mMediaView = null;
+        }
     }
 
 
     @Override
     public View getAdMediaView(Object... object) {
+        mMediaView = new MediaView(mContext);
+        if (mNativeAd != null) {
+            mNativeAd.setMediaView(mMediaView);
+        }
         return mMediaView;
     }
 
     @Override
     public void destroy() {
-        log(TAG, "destory");
         try {
             if (mNativeAd != null) {
+                mNativeAd.setAdListener(null);
                 mNativeAd.destroy();
+                mNativeAd = null;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        mContext = null;
+        mCustomNativeListener = null;
+        if (mMediaView != null) {
+            mMediaView.destroy();
+            mMediaView = null;
+        }
+
+        mNativeAdView = null;
     }
 
-    interface LoadCallbackListener{
-        public void onSuccess(CustomNativeAd customNativeAd);
-        public void onFail(AdError adError);
+    interface LoadCallbackListener {
+        void onSuccess(CustomNativeAd customNativeAd);
+
+        void onFail(String errorCode, String errorMsg);
     }
 }

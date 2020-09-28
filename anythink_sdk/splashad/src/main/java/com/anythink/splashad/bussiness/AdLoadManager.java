@@ -2,38 +2,40 @@ package com.anythink.splashad.bussiness;
 
 import android.app.Activity;
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.anythink.core.api.ATMediationRequestInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.CommonAdManager;
+import com.anythink.core.common.CommonMediationManager;
+import com.anythink.core.common.PlacementAdManager;
+import com.anythink.core.common.ShowWaterfallManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.splashad.api.ATSplashAdListener;
 import com.anythink.core.strategy.PlaceStrategy;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * Ad Request Manager
  */
 
-public class AdLoadManager extends CommonAdManager {
+public class AdLoadManager extends CommonAdManager<SplashLoadParams> {
 
+    DefaultAdSourceManager defaultAdSourceManager;
 
     public AdLoadManager(Context context, String placementId) {
         super(context, placementId);
     }
 
 
-
     public static AdLoadManager getInstance(Activity context, String placementId) {
 
-        CommonAdManager adLoadManager = CommonAdManager.getInstance(placementId);
+        CommonAdManager adLoadManager = PlacementAdManager.getInstance().getAdManager(placementId);
         if (adLoadManager == null || !(adLoadManager instanceof AdLoadManager)) {
             adLoadManager = new AdLoadManager(context, placementId);
-            CommonAdManager.addAdManager(placementId, adLoadManager);
+            PlacementAdManager.getInstance().addAdManager(placementId, adLoadManager);
         }
         adLoadManager.refreshContext(context);
         return (AdLoadManager) adLoadManager;
@@ -44,42 +46,71 @@ public class AdLoadManager extends CommonAdManager {
      *
      * @param listener
      */
-    public void startLoadAd(final ViewGroup container, final View skipView, final ATSplashAdListener listener) {
-        loadStragety(mApplicationContext, Const.FORMAT.SPLASH_FORMAT, mPlacementId, false, new PlacementCallback() {
-            @Override
-            public void onSuccess(String placementId, String requestId, PlaceStrategy placeStrategy, List<PlaceStrategy.UnitGroupInfo> unitGroupInfoList) {
-                MediationGroupManager mediationManager = new MediationGroupManager((Activity) mActivityRef.get());
-                mediationManager.setCallbackListener(listener);
-                mediationManager.loadSplashAd(container, skipView, mPlacementId, requestId, placeStrategy, unitGroupInfoList);
+    public void startLoadAd(Activity activity, final ViewGroup container, final View skipView, ATMediationRequestInfo defaultRequestInfo, final ATSplashAdListener listener) {
+        SplashLoadParams loadParams = new SplashLoadParams();
+        loadParams.activity = activity;
+        loadParams.containerView = container;
+        loadParams.listener = listener;
+        loadParams.defaultRequestInfo = defaultRequestInfo;
 
-                mCurrentManager = mediationManager;
-            }
+        super.startLoadAd(mApplicationContext, Const.FORMAT.SPLASH_FORMAT, mPlacementId, loadParams);
 
-            @Override
-            public void onAdLoaded(String placementId, String requestId) {
-                if (listener != null) {
-                    listener.onAdLoaded();
-                }
-            }
+    }
 
-            @Override
-            public void onLoadError(String placementId, String requestId, AdError adError) {
-                if (listener != null) {
-                    listener.onNoAdError(adError);
-                }
-            }
-        });
+
+    @Override
+    public CommonMediationManager createFormatMediationManager(SplashLoadParams formatLoadParams) {
+        MediationGroupManager mediationManager = new MediationGroupManager(formatLoadParams.activity);
+        mediationManager.setCallbackListener(formatLoadParams.listener);
+        mediationManager.setContainerView(formatLoadParams.containerView);
+        return mediationManager;
+    }
+
+
+    @Override
+    public boolean isInDefaultAdSourceLoading() {
+        return defaultAdSourceManager != null && defaultAdSourceManager.isLoading();
     }
 
     @Override
-    public void startCountdown(PlaceStrategy.UnitGroupInfo unitGroupInfo, AdTrackingInfo adTrackingInfo) {
-        /**Splash no need to do this**/
+    public boolean startDefaultAdSourceLoading(String placementId, String requestId, SplashLoadParams loadParam) {
+        defaultAdSourceManager = new DefaultAdSourceManager(mApplicationContext);
+        defaultAdSourceManager.startRequestAd(loadParam.activity, placementId, requestId, loadParam.containerView, loadParam.defaultRequestInfo, loadParam.listener);
+        return true;
     }
 
-    public void release() {
-        if (mCurrentManager != null) {
-            mCurrentManager.release();
+    @Override
+    public void onCallbackOfferHasExist(SplashLoadParams formatLoadParams, String placementId, String requestId) {
+        if (formatLoadParams.listener != null) {
+            formatLoadParams.listener.onAdLoaded();
         }
+    }
+
+    @Override
+    public void onCallbacInternalError(SplashLoadParams formatLoadParams, String placementId, String requestId, AdError adError) {
+        if (formatLoadParams.listener != null) {
+            formatLoadParams.listener.onNoAdError(adError);
+        }
+    }
+
+    /**
+     * Release the current MediationManager
+     */
+    public void releaseMediationManager() {
+        if (defaultAdSourceManager != null) {
+            defaultAdSourceManager.release();
+            defaultAdSourceManager = null;
+        }
+
+        String requestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(mPlacementId);
+        if (!TextUtils.isEmpty(requestId)) {
+            CommonMediationManager mediationGroupManager = mHistoryMediationManager.get(requestId);
+            if (mediationGroupManager != null) {
+                mediationGroupManager.release();
+            }
+
+        }
+
     }
 
 }

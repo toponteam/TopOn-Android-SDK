@@ -2,13 +2,10 @@ package com.anythink.network.admob;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.banner.unitgroup.api.CustomBannerListener;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -29,104 +26,109 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
     private String unitid = "";
 
 
-    CustomBannerListener mListener;
-
-    View mBannerView;
+    AdView mBannerView;
 
 
     @Override
-    public void loadBannerAd(ATBannerView bannerView, Context activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomBannerListener customBannerListener) {
-        mListener = customBannerListener;
+    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
-        if (activity == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
+        String appid = "";
+        if (serverExtras.containsKey("app_id") && serverExtras.containsKey("unit_id")) {
+            appid = (String) serverExtras.get("app_id");
+            unitid = (String) serverExtras.get("unit_id");
 
-
-        if (serverExtras == null) {
-            if (mListener != null) {
-                mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " serverExtras is empty."));
-            }
-            return;
         } else {
-            String appid = "";
-            if (serverExtras.containsKey("app_id") && serverExtras.containsKey("unit_id")) {
-                appid = (String) serverExtras.get("app_id");
-                unitid = (String) serverExtras.get("unit_id");
-
-            } else {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", " appid ,unitid or sdkkey is empty."));
-
-                }
-                return;
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "appid or unitId is empty.");
             }
+            return;
         }
-        
+
         AdMobATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras);
 
         Bundle persionalBundle = AdMobATInitManager.getInstance().getRequestBundle(activity.getApplicationContext());
 
-        String size = "";
-        if (serverExtras.containsKey("size")) {
-            size = serverExtras.get("size").toString();
-        }
-
         final AdView adView = new AdView(activity);
-        switch (size) {
-            case "320x50":
-                adView.setAdSize(AdSize.BANNER);
-                break;
-            case "320x100":
-                adView.setAdSize(AdSize.LARGE_BANNER);
-                break;
-            case "300x250":
-                adView.setAdSize(AdSize.MEDIUM_RECTANGLE);
-                break;
-            case "468x60":
-                adView.setAdSize(AdSize.FULL_BANNER);
-                break;
-            case "728x90":
-                adView.setAdSize(AdSize.LEADERBOARD);
-                break;
-            default:
-                adView.setAdSize(AdSize.SMART_BANNER);
-                break;
+        AdSize adSize = null;
+        if (localExtras.containsKey(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION) && localExtras.containsKey(AdmobATConst.INLINE_ADAPTIVE_WIDTH)) {
+            try {
+                int orientation = Integer.parseInt(localExtras.get(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION).toString());
+                int width = Integer.parseInt(localExtras.get(AdmobATConst.INLINE_ADAPTIVE_WIDTH).toString());
+                width = px2dip(activity, width);
+                switch (orientation) {
+                    case AdmobATConst.ORIENTATION_PORTRAIT:
+                        adSize = AdSize.getPortraitInlineAdaptiveBannerAdSize(activity, width);
+                        break;
+                    case AdmobATConst.ORIENTATION_LANDSCAPE:
+                        adSize = AdSize.getLandscapeInlineAdaptiveBannerAdSize(activity, width);
+                        break;
+                    default:
+                        adSize = AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(activity, width);
+                        break;
+                }
+            } catch (Throwable e) {
+                adSize = null;
+            }
         }
 
+        if(adSize == null) {
+            String size = "";
+            if (serverExtras.containsKey("size")) {
+                size = serverExtras.get("size").toString();
+            }
 
+            switch (size) {
+                case "320x50":
+                    adSize = AdSize.BANNER;
+                    break;
+                case "320x100":
+                    adSize = AdSize.LARGE_BANNER;
+                    break;
+                case "300x250":
+                    adSize = AdSize.MEDIUM_RECTANGLE;
+                    break;
+                case "468x60":
+                    adSize = AdSize.FULL_BANNER;
+                    break;
+                case "728x90":
+                    adSize = AdSize.LEADERBOARD;
+                    break;
+                default:
+                    adSize = AdSize.SMART_BANNER;
+                    break;
+            }
+        }
+
+        adView.setAdSize(adSize);
         adView.setAdUnitId(unitid);
         adView.setAdListener(new AdListener() {
             @Override
             public void onAdLoaded() {
                 mBannerView = adView;
-                if (mListener != null) {
-                    mListener.onBannerAdLoaded(AdmobATBannerAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onAdFailedToLoad(int errorCode) {
-                if (mListener != null) {
-                    mListener.onBannerAdLoadFail(AdmobATBannerAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, errorCode + "", ""));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode + "", "");
 
                 }
             }
 
             @Override
             public void onAdOpened() {
-                if (mListener != null) {
-                    mListener.onBannerAdShow(AdmobATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
                 }
             }
 
             @Override
             public void onAdLeftApplication() {
-                if (mListener != null) {
-                    mListener.onBannerAdClicked(AdmobATBannerAdapter.this);
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
                 }
             }
 
@@ -151,18 +153,37 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public void clean() {
-        mBannerView = null;
+    public void destory() {
+        if (mBannerView != null) {
+            mBannerView.setAdListener(null);
+            mBannerView.destroy();
+            mBannerView = null;
+        }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return AdmobATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return AdMobATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return AdMobATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return unitid;
+    }
+
+    private static int px2dip(Context context, float pxValue) {
+        final float scale = context.getResources().getDisplayMetrics().density;
+        return (int) (pxValue / (scale <= 0 ? 1 : scale) + 0.5f);
     }
 
 }

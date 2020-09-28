@@ -141,6 +141,8 @@ public class AppStrategy {
 
     private String dataLevel;
 
+    private String abTestId;
+
     private ConcurrentHashMap<String, NetworkInfoBean> tkInfoMap;
 
     private int recreatePsidIntervalWhenHotBoot;
@@ -149,6 +151,94 @@ public class AppStrategy {
     private Map<String, String> daRtKeyFtMap;//da key -> format string array
     private Map<String, String> tkNoTFtMap;//tk key -> format string array
     private Map<String, String> daNotKeyFtMap;//da key -> format string array
+
+    private int crashSwitch;
+
+    private String crashList;
+
+    private int tcpSwitchType;
+
+    private String tcpDomain;
+
+    private int tcpPort;
+
+    private String tcpRate;
+
+    private String systemId;
+
+    private String bkId;
+
+    public String getSystemId() {
+        return systemId;
+    }
+
+    public void setSystemId(String systemId) {
+        this.systemId = systemId;
+    }
+
+    public String getBkId() {
+        return bkId;
+    }
+
+    public void setBkId(String bkId) {
+        this.bkId = bkId;
+    }
+
+    public String getTcpRate() {
+        return tcpRate;
+    }
+
+    public void setTcpRate(String tcpRate) {
+        this.tcpRate = tcpRate;
+    }
+
+    public int getTcpSwitchType() {
+        return tcpSwitchType;
+    }
+
+    public void setTcpSwitchType(int tcpSwitchType) {
+        this.tcpSwitchType = tcpSwitchType;
+    }
+
+    public String getTcpDomain() {
+        return tcpDomain;
+    }
+
+    public void setTcpDomain(String tcpDomain) {
+        this.tcpDomain = tcpDomain;
+    }
+
+    public int getTcpPort() {
+        return tcpPort;
+    }
+
+    public void setTcpPort(int tcpPort) {
+        this.tcpPort = tcpPort;
+    }
+
+    public int getCrashSwitch() {
+        return crashSwitch;
+    }
+
+    public void setCrashSwitch(int crashSwitch) {
+        this.crashSwitch = crashSwitch;
+    }
+
+    public String getCrashList() {
+        return crashList;
+    }
+
+    public void setCrashList(String crashList) {
+        this.crashList = crashList;
+    }
+
+    public String getAbTestId() {
+        return abTestId;
+    }
+
+    public void setAbTestId(String abTestId) {
+        this.abTestId = abTestId;
+    }
 
     public int getRecreatePsidIntervalWhenHotBoot() {
         return recreatePsidIntervalWhenHotBoot;
@@ -283,6 +373,29 @@ public class AppStrategy {
         private static String tk_no_t_ft = "tk_no_t_ft";
         private static String da_not_keys_ft = "da_not_keys_ft";
 
+        /**
+         * 5.6.1
+         */
+        private static String ab_test_id = "abtest_id";
+
+        /**
+         * 5.6.2
+         */
+        private static String crash_switch = "crash_sw";
+        private static String crash_list = "crash_list";
+
+        /**
+         * 5.6.3
+         */
+        private static String tcp_domain = "tcp_domain";
+        private static String tcp_port = "tcp_port";
+        private static String tcp_tk_da_type = "tcp_tk_da_type";
+        private static String tcp_rate = "tcp_rate";
+
+        /**
+         * 5.6.6
+         */
+        private static String system_id = "sy_id";
 
     }
 
@@ -611,6 +724,14 @@ public class AppStrategy {
                     }
                 }
 
+
+                /**
+                 * v5.6.3
+                 */
+                strategy.setTcpDomain(loggerObject.optString(ResponseKey.tcp_domain));
+                strategy.setTcpPort(loggerObject.optInt(ResponseKey.tcp_port));
+                strategy.setTcpSwitchType(loggerObject.optInt(ResponseKey.tcp_tk_da_type));
+                strategy.setTcpRate(loggerObject.optString(ResponseKey.tcp_rate));
             }
 
             if (!jsonObject.isNull(ResponseKey.new_psid_time)) {
@@ -670,6 +791,38 @@ public class AppStrategy {
                 strategy.setUseCountDownSwitchAfterLeaveApp(jsonObject.optInt(ResponseKey.la_sw));
             }
 
+
+            /**v5.6.1**/
+            if (jsonObject.isNull(ResponseKey.ab_test_id)) {
+                strategy.setAbTestId("");
+            } else {
+                strategy.setAbTestId(jsonObject.optString(ResponseKey.ab_test_id));
+            }
+
+            /**
+             * v5.6.2
+             */
+            if (jsonObject.isNull(ResponseKey.crash_switch)) {
+                strategy.setCrashSwitch(1);
+            } else {
+                strategy.setCrashSwitch(jsonObject.optInt(ResponseKey.crash_switch));
+            }
+
+            if (jsonObject.isNull(ResponseKey.crash_list)) {
+                strategy.setCrashList("");
+            } else {
+                strategy.setCrashList(jsonObject.optString(ResponseKey.crash_list));
+            }
+
+            /**
+             * v5.6.5
+             */
+            if (jsonObject.isNull(ResponseKey.system_id)) {
+                strategy.setSystemId("");
+            } else {
+                strategy.setSystemId(jsonObject.optString(ResponseKey.system_id));
+            }
+
         } catch (Exception e) {
             if (Const.DEBUG) {
                 e.printStackTrace();
@@ -719,6 +872,39 @@ public class AppStrategy {
 
         //Status of Setting Mediation GDPR config
         serviceExtras.put("need_set_gdpr", needSetNetworkGDPR);
+    }
+
+
+    public static boolean needToSetNetworkGDPR() {
+        AppStrategy appStrategy = AppStrategyManager.getInstance(SDKContext.getInstance().getContext()).getAppStrategyByAppId(SDKContext.getInstance().getAppId());
+        boolean isEU = appStrategy != null && appStrategy.getGdprIa() == 1;
+        boolean isUseNetworkDefaultGDPR = appStrategy != null && appStrategy.getUseNetworkDefaultGDPR() == 1;
+        UploadDataLevelManager uploadDataLevelManager = UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext());
+
+        boolean needSetNetworkGDPR = false;
+
+        if (appStrategy.isLocalStrategy()) {
+            /**level=UNKNOWN (Use Mediation's default GDPR setting）**/
+            needSetNetworkGDPR = uploadDataLevelManager.getUploadDataLevel() != ATSDK.UNKNOWN;
+        } else {
+            if (uploadDataLevelManager.getUploadDataLevel() == ATSDK.UNKNOWN) { /**UNKNOWNN**/
+                if (appStrategy.getGdprIa() == 0) { /**Not EU-Traffic**/
+                    needSetNetworkGDPR = false;
+                } else { /**EU-Traffic**/
+                    if (isUseNetworkDefaultGDPR) {
+                        /**Set by Service Setting**/
+                        needSetNetworkGDPR = false;
+                    } else {
+                        needSetNetworkGDPR = true;
+                    }
+                }
+            } else { /**Not UNKNOW**/
+                needSetNetworkGDPR = true;
+            }
+        }
+
+        //Status of Setting Mediation GDPR config
+        return needSetNetworkGDPR;
     }
 
 }

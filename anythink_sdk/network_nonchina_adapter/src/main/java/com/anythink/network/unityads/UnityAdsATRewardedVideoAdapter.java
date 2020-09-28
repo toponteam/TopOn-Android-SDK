@@ -7,63 +7,51 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.metadata.PlayerMetaData;
 
 import java.util.Map;
 
 /**
- * Created by zhou on 2018/6/27.
+ * Created by Z on 2018/6/27.
  */
 public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private static final String TAG = UnityAdsATRewardedVideoAdapter.class.getSimpleName();
 
-    UnityAdsRewardedVideoSetting mUnityAdRewardVideoSetting;
     String placement_id = "";
 
     @Override
-    public void loadRewardVideoAd(Activity activity, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomRewardVideoListener customRewardVideoListener) {
-        mLoadResultListener = customRewardVideoListener;
-        if (activity == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+
+        String game_id = (String) serverExtras.get("game_id");
+        placement_id = (String) serverExtras.get("placement_id");
+
+        if (TextUtils.isEmpty(game_id) || TextUtils.isEmpty(placement_id)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "unityads game_id, placement_id is empty!");
             }
             return;
         }
-        if (mediationSetting != null && mediationSetting instanceof UnityAdsRewardedVideoSetting) {
-            mUnityAdRewardVideoSetting = (UnityAdsRewardedVideoSetting) mediationSetting;
-        }
 
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "This placement's params in server is null!"));
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "UnityAds context must be activity.");
             }
             return;
-        } else {
-            String game_id = (String) serverExtras.get("game_id");
-            placement_id = (String) serverExtras.get("placement_id");
-
-            if (TextUtils.isEmpty(game_id) || TextUtils.isEmpty(placement_id)) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onRewardedVideoAdFailed(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "unityads game_id, placement_id is empty!"));
-                }
-                return;
-            }
         }
 
-        PlayerMetaData playerMetaData = new PlayerMetaData(activity.getApplicationContext());
+        PlayerMetaData playerMetaData = new PlayerMetaData(context.getApplicationContext());
         playerMetaData.setServerId(mUserId);
         playerMetaData.commit();
 
         UnityAds.PlacementState placementState = UnityAds.getPlacementState(placement_id);
         if (UnityAds.PlacementState.READY == placementState) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onRewardedVideoAdLoaded(this);
+            if (mLoadListener != null) {
+                mLoadListener.onAdCacheLoaded();
             }
         } else {
             UnityAdsATInitManager.getInstance().putLoadResultAdapter(placement_id, this);
-            UnityAdsATInitManager.getInstance().initSDK(activity, serverExtras);
+            UnityAdsATInitManager.getInstance().initSDK(context, serverExtras);
             UnityAds.load(placement_id);
         }
     }
@@ -74,13 +62,20 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void show(Activity activity) {
-        UnityAdsATInitManager.getInstance().putAdapter(placement_id, this);
-        UnityAds.show(activity, placement_id);
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return UnityAdsATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
     }
 
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting) {
+    public void show(Activity activity) {
+        if (activity != null) {
+            UnityAdsATInitManager.getInstance().putAdapter(placement_id, this);
+            UnityAds.show((activity), placement_id);
+        }
+    }
+
+    @Override
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras != null) {
             if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
                 placement_id = (String) serverExtras.get("placement_id");
@@ -91,35 +86,25 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public void clean() {
-    }
-
-    @Override
-    public void onResume(Activity activity) {
-
-    }
-
-    @Override
-    public void onPause(Activity activity) {
-
+    public void destory() {
     }
 
 
     void notifyLoaded(String placementId) {
-        if (mLoadResultListener != null && placement_id.equals(placementId)) {
-            mLoadResultListener.onRewardedVideoAdLoaded(UnityAdsATRewardedVideoAdapter.this);
+        if (mLoadListener != null && placement_id.equals(placementId)) {
+            mLoadListener.onAdCacheLoaded();
         }
     }
 
     void notifyLoadFail(String code, String msg) {
-        if (mLoadResultListener != null) {
-            mLoadResultListener.onRewardedVideoAdFailed(UnityAdsATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, code, msg));
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadError(code, msg);
         }
     }
 
     void notifyStart(String placementId) {
         if (mImpressionListener != null && placement_id.equals(placementId)) {
-            mImpressionListener.onRewardedVideoAdPlayStart(UnityAdsATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayStart();
         }
     }
 
@@ -127,17 +112,17 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         if (mImpressionListener != null && placement_id.equals(placementId)) {
             switch (finishState) {
                 case ERROR:
-                    mImpressionListener.onRewardedVideoAdPlayFailed(UnityAdsATRewardedVideoAdapter.this, ErrorCode.getErrorCode(ErrorCode.rewardedVideoPlayError, "", " play video error"));
-                    mImpressionListener.onRewardedVideoAdClosed(UnityAdsATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayFailed("", " play video error");
+                    mImpressionListener.onRewardedVideoAdClosed();
                     break;
                 case COMPLETED:
-                    mImpressionListener.onRewardedVideoAdPlayEnd(UnityAdsATRewardedVideoAdapter.this);
-                    mImpressionListener.onReward(UnityAdsATRewardedVideoAdapter.this);
-                    mImpressionListener.onRewardedVideoAdClosed(UnityAdsATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
+                    mImpressionListener.onReward();
+                    mImpressionListener.onRewardedVideoAdClosed();
                     break;
                 case SKIPPED:
-                    mImpressionListener.onRewardedVideoAdPlayEnd(UnityAdsATRewardedVideoAdapter.this);
-                    mImpressionListener.onRewardedVideoAdClosed(UnityAdsATRewardedVideoAdapter.this);
+                    mImpressionListener.onRewardedVideoAdPlayEnd();
+                    mImpressionListener.onRewardedVideoAdClosed();
                     break;
                 default:
                     break;
@@ -148,18 +133,23 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     void notifyClick(String placementId) {
         if (mImpressionListener != null && placement_id.equals(placementId)) {
-            mImpressionListener.onRewardedVideoAdPlayClicked(UnityAdsATRewardedVideoAdapter.this);
+            mImpressionListener.onRewardedVideoAdPlayClicked();
         }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return UnityAdsATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return UnityAdsATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return placement_id;
     }
 
 }

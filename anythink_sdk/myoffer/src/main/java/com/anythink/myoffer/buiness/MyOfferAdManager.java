@@ -1,23 +1,31 @@
 package com.anythink.myoffer.buiness;
 
 import android.content.Context;
-import android.text.TextUtils;
+import android.util.TypedValue;
 
-import com.anythink.core.common.entity.MyOfferInitInfo;
+import com.anythink.china.common.ApkDownloadManager;
+import com.anythink.china.common.download.ApkRequest;
+import com.anythink.china.common.resource.ApkResource;
+import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.MyOfferSetting;
+import com.anythink.core.common.res.ImageLoader;
+import com.anythink.core.common.res.ResourceEntry;
+import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.strategy.PlaceStrategy;
+import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.myoffer.buiness.resource.MyOfferLoader;
-import com.anythink.myoffer.db.MyOfferAdDao;
-import com.anythink.myoffer.entity.MyOfferAd;
 import com.anythink.myoffer.entity.MyOfferImpression;
-import com.anythink.myoffer.entity.MyOfferSetting;
+import com.anythink.myoffer.net.MyOfferTkLoader;
+import com.anythink.myoffer.net.NoticeUrlLoader;
+import com.anythink.myoffer.ui.ApkConfirmDialogActivity;
 import com.anythink.network.myoffer.MyOfferErrorCode;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 public class MyOfferAdManager {
@@ -35,27 +43,29 @@ public class MyOfferAdManager {
         return sIntance;
     }
 
-    public void initOfferList(final MyOfferInitInfo myOfferInitInfo) {
+    public void preloadOfferList(final String placementId) {
 //        TaskManager.getInstance().run_proxy(new Runnable() {
 //            @Override
 //            public void run() {
-                /**Remove old myoffer info by placementid**/
-                MyOfferAdDao.getInstance(mContext).deleteByPlacementId(myOfferInitInfo.placementId);
-                if (TextUtils.isEmpty(myOfferInitInfo.offerList)) {
-                    return;
-                }
-                List<MyOfferAd> myOfferAdList = parseOfferList(myOfferInitInfo.offerList, myOfferInitInfo.tkInfoMap);
-                /**Update placement's MyOffer List**/
-                MyOfferAdDao.getInstance(mContext).insertOrUpdate(myOfferAdList, myOfferInitInfo.placementId);
-                /**
-                 * PreLoad Resource
-                 */
-                if (myOfferInitInfo.isNeedPreloadRes) {
-                    MyOfferSetting setting = MyOfferSetting.parseMyOfferSetting(myOfferInitInfo.settings);
-                    MyOfferResourceManager.getInstance().preLoadOfferList(myOfferInitInfo.placementId, myOfferAdList, setting);
-                }
-//            }
-//        });
+        PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(mContext).getPlaceStrategyByAppIdAndPlaceId(placementId);
+
+        if (placeStrategy == null) {
+            return;
+        }
+
+        List<MyOfferAd> myOfferAdList = placeStrategy.getMyOfferAdList();
+
+        if (myOfferAdList == null) {
+            return;
+        }
+        /**
+         * PreLoad Resource
+         */
+        MyOfferSetting setting = placeStrategy.getMyOfferSetting();
+        if (setting == null) {
+            return;
+        }
+        MyOfferResourceManager.getInstance().preLoadOfferList(placementId, myOfferAdList, setting);
     }
 
 
@@ -67,7 +77,13 @@ public class MyOfferAdManager {
      * @return
      */
     public MyOfferAd getAdCache(String toponPlacementId, String offerId) {
-        return MyOfferAdDao.getInstance(mContext).queryOfferById(toponPlacementId, offerId);
+        PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(mContext).getPlaceStrategyByAppIdAndPlaceId(toponPlacementId);
+        if (placeStrategy == null) {
+            return null;
+        }
+
+        MyOfferAd myOfferAd = placeStrategy.getMyOfferByOfferId(offerId);
+        return myOfferAd;
     }
 
 
@@ -75,7 +91,12 @@ public class MyOfferAdManager {
      * Get default offer order by cap
      */
     public String getDefaultCacheOfferId(String placementId) {
-        List<MyOfferAd> myOfferAdList = MyOfferAdDao.getInstance(mContext).queryAllGroupByOfferIdByPlacementId(placementId);
+        PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(mContext).getPlaceStrategyByAppIdAndPlaceId(placementId);
+        if (placeStrategy == null) {
+            return "";
+        }
+
+        List<MyOfferAd> myOfferAdList = placeStrategy.getMyOfferAdList();
         List<MyOfferImpression> myOfferImpressionList = new ArrayList<>();
         if (myOfferAdList == null || myOfferAdList.size() == 0) {
             return "";
@@ -86,7 +107,7 @@ public class MyOfferAdManager {
          */
         for (int index = myOfferAdList.size() - 1; index >= 0; index--) {
             MyOfferAd myOfferAd = myOfferAdList.get(index);
-            if (!MyOfferResourceManager.getInstance().isExist(myOfferAd)) {
+            if (!MyOfferResourceManager.getInstance().isExist(myOfferAd, placeStrategy.getMyOfferSetting())) {
                 myOfferAdList.remove(index);
             } else {
                 myOfferImpressionList.add(MyOfferImpressionRecordManager.getInstance(mContext).getOfferImpreesion(myOfferAd));
@@ -115,13 +136,14 @@ public class MyOfferAdManager {
      *
      * @return
      */
-    public String getCacheOfferId() {
-        List<MyOfferAd> myOfferAdList = MyOfferAdDao.getInstance(mContext).queryAllGroupByOfferId();
+    public String getCacheOfferId(String format, MyOfferSetting myOfferSetting) {
+        PlaceStrategyManager placeStrategyManager = PlaceStrategyManager.getInstance(mContext);
+        List<MyOfferAd> myOfferAdList = placeStrategyManager.getMyOfferListByFormat(format);
         JSONObject cacheOffers = new JSONObject();
         if (myOfferAdList != null) {
             try {
                 for (MyOfferAd myOfferAd : myOfferAdList) {
-                    if (MyOfferResourceManager.getInstance().isExist(myOfferAd)) {
+                    if (MyOfferResourceManager.getInstance().isExist(myOfferAd, myOfferSetting)) {
                         cacheOffers.put(myOfferAd.getOfferId(), myOfferAd.getCreativeId());
                     }
                 }
@@ -132,82 +154,18 @@ public class MyOfferAdManager {
         return cacheOffers.toString();
     }
 
-    /**
-     * Parse the MyOffer's JSONObject
-     *
-     * @param offerList
-     * @return
-     */
-    private List<MyOfferAd> parseOfferList(String offerList, String tkInfoMap) {
-        List<MyOfferAd> myOfferAdList = new ArrayList<>();
-        JSONObject tkInfoObject = null;
-        try {
-            tkInfoObject = new JSONObject(tkInfoMap);
-        } catch (Exception e) {
-
-        }
-
-        try {
-            JSONArray jsonArray = new JSONArray(offerList);
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                MyOfferAd myOfferAd = new MyOfferAd();
-                JSONObject offerObject = jsonArray.optJSONObject(i);
-                myOfferAd.setOfferId(offerObject.optString("o_id"));
-                myOfferAd.setCreativeId(offerObject.optString("c_id"));
-                myOfferAd.setTitle(offerObject.optString("t"));
-                myOfferAd.setPkgName(offerObject.optString("p_g"));
-                myOfferAd.setDesc(offerObject.optString("d"));
-                myOfferAd.setIconUrl(offerObject.optString("ic_u"));
-                myOfferAd.setMainImageUrl(offerObject.optString("im_u"));
-                myOfferAd.setEndCardImageUrl(offerObject.optString("f_i_u"));
-                myOfferAd.setAdChoiceUrl(offerObject.optString("a_c_u"));
-                myOfferAd.setCtaText(offerObject.optString("c_t"));
-                myOfferAd.setVideoUrl(offerObject.optString("v_u"));
-                myOfferAd.setClickType(offerObject.optInt("l_t"));
-                myOfferAd.setPreviewUrl(offerObject.optString("p_u"));
-                myOfferAd.setDeeplinkUrl(offerObject.optString("dl"));
-                myOfferAd.setClickUrl(offerObject.optString("c_u"));
-                myOfferAd.setNoticeUrl(offerObject.optString("ip_u"));
-
-                /**Tracking url handle**/
-                myOfferAd.setVideoStartTrackUrl(handleTKUrlReplace(offerObject.optString("t_u"), tkInfoObject));
-                myOfferAd.setVideoProgress25TrackUrl(handleTKUrlReplace(offerObject.optString("t_u_25"), tkInfoObject));
-                myOfferAd.setVideoProgress50TrackUrl(handleTKUrlReplace(offerObject.optString("t_u_50"), tkInfoObject));
-                myOfferAd.setVideoProgress75TrackUrl(handleTKUrlReplace(offerObject.optString("t_u_75"), tkInfoObject));
-                myOfferAd.setVideoFinishTrackUrl(handleTKUrlReplace(offerObject.optString("t_u_100"), tkInfoObject));
-                myOfferAd.setEndCardShowTrackUrl(handleTKUrlReplace(offerObject.optString("s_e_c_t_u"), tkInfoObject));
-                myOfferAd.setEndCardCloseTrackUrl(handleTKUrlReplace(offerObject.optString("c_t_u"), tkInfoObject));
-                myOfferAd.setImpressionTrackUrl(handleTKUrlReplace(offerObject.optString("ip_n_u"), tkInfoObject));
-                myOfferAd.setClickTrackUrl(handleTKUrlReplace(offerObject.optString("c_n_u"), tkInfoObject));
-
-
-                myOfferAd.setOfferCap(offerObject.optInt("o_a_d_c"));
-                myOfferAd.setOfferPacing(offerObject.optLong("o_a_p"));
-                myOfferAd.setUpdateTime(System.currentTimeMillis());
-
-                myOfferAd.setOfferType(offerObject.optInt("f_t"));
-                myOfferAd.setClickMode(offerObject.optInt("c_m"));
-                myOfferAdList.add(myOfferAd);
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return myOfferAdList;
-    }
 
     /**
      * Download MyOffer's Resource
      */
     public void load(String placementId, MyOfferAd myOfferAd, MyOfferSetting myOfferSetting, final MyOfferLoader.MyOfferLoaderListener listener) {
-        if(MyOfferImpressionRecordManager.getInstance(mContext).isOfferInCap(myOfferAd)) { // Cap
-            if(listener != null) {
+        if (MyOfferImpressionRecordManager.getInstance(mContext).isOfferInCap(myOfferAd)) { // Cap
+            if (listener != null) {
                 listener.onFailed(MyOfferErrorCode.get(MyOfferErrorCode.outOfCapError, MyOfferErrorCode.fail_out_of_cap));
             }
             return;
-        }
-        else if(MyOfferImpressionRecordManager.getInstance(mContext).isOfferInPacing(myOfferAd)) { // Pacing
-            if(listener != null) {
+        } else if (MyOfferImpressionRecordManager.getInstance(mContext).isOfferInPacing(myOfferAd)) { // Pacing
+            if (listener != null) {
                 listener.onFailed(MyOfferErrorCode.get(MyOfferErrorCode.inPacingError, MyOfferErrorCode.fail_in_pacing));
             }
             return;
@@ -218,41 +176,77 @@ public class MyOfferAdManager {
 
     /**
      * Check if MyOffer Resource exist
+     *
      * @param myOfferAd
      * @param isDefault
      * @return
      */
-    public boolean isReady(MyOfferAd myOfferAd, boolean isDefault) {
+    public boolean isReady(MyOfferAd myOfferAd, MyOfferSetting myOfferSetting, boolean isDefault) {
         if (mContext == null || myOfferAd == null) {
             return false;
         }
         if (isDefault) {
-            return MyOfferResourceManager.getInstance().isExist(myOfferAd);
+            return MyOfferResourceManager.getInstance().isExist(myOfferAd, myOfferSetting);
         } else {
             return !MyOfferImpressionRecordManager.getInstance(mContext).isOfferInCap(myOfferAd)
                     && !MyOfferImpressionRecordManager.getInstance(mContext).isOfferInPacing(myOfferAd)
-                    && MyOfferResourceManager.getInstance().isExist(myOfferAd);
+                    && MyOfferResourceManager.getInstance().isExist(myOfferAd, myOfferSetting);
         }
 
     }
 
 
-    /**
-     * Replace String in url
-     * @param url
-     * @param tkInfoObject
-     * @return
-     */
-    public String handleTKUrlReplace(String url, JSONObject tkInfoObject) {
-        if (tkInfoObject == null) {
-            return url;
+    public void startDownloadApp(final String requestId, final MyOfferSetting myOfferSetting, final MyOfferAd myOfferAd, final String url) {
+        SDKContext.getInstance().runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                if (1 == myOfferSetting.getApkDownloadConfirm()) {
+                    ApkConfirmDialogActivity.start(mContext, requestId, myOfferSetting, myOfferAd, url);
+                } else {
+                    realStartDownloadApp(requestId, myOfferSetting, myOfferAd, url);
+                }
+            }
+        });
+
+    }
+
+    public void realStartDownloadApp(final String requestId, final MyOfferSetting myOfferSetting, final MyOfferAd myOfferAd, final String url) {
+        if (ApkResource.isApkInstalled(SDKContext.getInstance().getContext(), myOfferAd.getPkgName())) {
+            //App was installed， open it
+            ApkResource.openApp(SDKContext.getInstance().getContext(), myOfferAd.getPkgName());
+        } else {
+            //App not exist, download it
+            ApkRequest apkRequest = new ApkRequest();
+            apkRequest.requestId = requestId;
+            apkRequest.offerId = myOfferAd.getOfferId();
+            apkRequest.url = url;
+            apkRequest.pkgName = myOfferAd.getPkgName();
+            apkRequest.title = myOfferAd.getTitle();
+            int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50, SDKContext.getInstance().getContext().getResources().getDisplayMetrics());
+            apkRequest.icon = ImageLoader.getInstance(mContext).getBitmapFromDiskCache(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, myOfferAd.getIconUrl()), size, size);
+
+
+            ApkDownloadManager.getInstance(SDKContext.getInstance().getContext()).setOfferCacheTime(myOfferSetting.getOfferCacheTime());
+            ApkDownloadManager.getInstance(SDKContext.getInstance().getContext()).checkAndCleanApk();
+            ApkDownloadManager.getInstance(SDKContext.getInstance().getContext()).handleClick(apkRequest);
         }
-        Iterator<String> keyIterator = tkInfoObject.keys();
-        while (keyIterator.hasNext()) {
-            String key = keyIterator.next();
-            url = url.replaceAll("\\{" + key + "\\}", tkInfoObject.optString(key));
-        }
-        return url;
+    }
+
+
+    public void sendAdTracking(final String requestId, final MyOfferAd myOfferAd, final int tkType, final String scenario) {
+        TaskManager.getInstance().run_proxy(new Runnable() {
+            @Override
+            public void run() {
+                if (tkType == MyOfferTkLoader.IMPRESSION_TYPE) {
+                    new NoticeUrlLoader(myOfferAd.getNoticeUrl(), requestId).start(0, null);
+                }
+
+                MyOfferTkLoader myOfferTkLoader = new MyOfferTkLoader(tkType, myOfferAd, requestId);
+                myOfferTkLoader.setScenario(scenario);
+                myOfferTkLoader.start(0, null);
+            }
+        });
+
     }
 
 }

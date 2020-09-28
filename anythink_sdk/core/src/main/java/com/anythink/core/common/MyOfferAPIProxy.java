@@ -3,6 +3,7 @@ package com.anythink.core.common;
 import android.content.Context;
 
 import com.anythink.core.common.entity.MyOfferInitInfo;
+import com.anythink.core.common.entity.MyOfferSetting;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,7 +15,7 @@ public class MyOfferAPIProxy {
     public static final int MYOFFER_NETWORK_FIRM_ID = 35;
     public static final String MYOFFER_DEFAULT_TAG = "isDefaultOffer";
 
-    Method initTopOnOfferMethod;
+    Method preloadTopOnOfferMethod;
     Method getOutOfCapOfferIdsMethod;
     Method getCacheOfferIdsMethod;
     Method getDefaultOfferIdMethod;
@@ -23,9 +24,9 @@ public class MyOfferAPIProxy {
     private MyOfferAPIProxy() {
         try {
             Class<?> myOfferAPI = Class.forName("com.anythink.network.myoffer.MyOfferAPI");
-            initTopOnOfferMethod = myOfferAPI.getDeclaredMethod("initTopOnOffer", Context.class, MyOfferInitInfo.class);
+            preloadTopOnOfferMethod = myOfferAPI.getDeclaredMethod("preloadTopOnOffer", Context.class, MyOfferInitInfo.class);
             getOutOfCapOfferIdsMethod = myOfferAPI.getDeclaredMethod("getOutOfCapOfferIds", Context.class);
-            getCacheOfferIdsMethod = myOfferAPI.getDeclaredMethod("getCacheOfferIds", Context.class);
+            getCacheOfferIdsMethod = myOfferAPI.getDeclaredMethod("getCacheOfferIds", Context.class, String.class, MyOfferSetting.class);
             getDefaultOfferIdMethod = myOfferAPI.getDeclaredMethod("getDefaultOfferId", Context.class, String.class);
             getCheckOffersOutOfCapMethod = myOfferAPI.getDeclaredMethod("checkOffersOutOfCap", Context.class, String.class);
         } catch (Exception e) {
@@ -42,21 +43,16 @@ public class MyOfferAPIProxy {
     }
 
     /**
-     * Init MyOffer List
+     * preload MyOffer List
      *
      * @param placementId
-     * @param offerListJsonArray
      */
-    public void initTopOnOffer(Context context, String placementId, String offerListJsonArray, String tkInfoMap, String myofferSetting, boolean isPreLoadRes) {
+    public void preLoadTopOnOffer(Context context, String placementId) {
         try {
-            if (initTopOnOfferMethod != null) {
+            if (preloadTopOnOfferMethod != null) {
                 MyOfferInitInfo myOfferInitInfo = new MyOfferInitInfo();
                 myOfferInitInfo.placementId = placementId;
-                myOfferInitInfo.offerList = offerListJsonArray;
-                myOfferInitInfo.tkInfoMap = tkInfoMap;
-                myOfferInitInfo.settings = myofferSetting;
-                myOfferInitInfo.isNeedPreloadRes = isPreLoadRes;
-                initTopOnOfferMethod.invoke(null, context, myOfferInitInfo);
+                preloadTopOnOfferMethod.invoke(null, context, myOfferInitInfo);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -87,10 +83,10 @@ public class MyOfferAPIProxy {
      *
      * @return
      */
-    public JSONObject getCacheOfferIds(Context context) {
+    public JSONObject getCacheOfferIds(Context context, String format, MyOfferSetting myOfferSetting) {
         try {
             if (getCacheOfferIdsMethod != null) {
-                Object cacheOfferIdsObject = getCacheOfferIdsMethod.invoke(null, context);
+                Object cacheOfferIdsObject = getCacheOfferIdsMethod.invoke(null, context, format, myOfferSetting);
                 JSONObject cacheOfferIdsArray = new JSONObject(cacheOfferIdsObject.toString());
                 return cacheOfferIdsArray;
             }

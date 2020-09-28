@@ -5,10 +5,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.baidu.mobad.feeds.NativeResponse;
 import com.baidu.mobads.component.XNativeView;
-import com.anythink.nativead.unitgroup.api.CustomNativeAd;
-import com.anythink.nativead.unitgroup.api.CustomNativeListener;
 
 import java.util.List;
 import java.util.Map;
@@ -17,13 +16,10 @@ public class BaiduATNativeAd extends CustomNativeAd {
 
     private NativeResponse mNativeResponse;
     private Context mContext;
-    private CustomNativeListener mCustomNativeListener;
 
-    public BaiduATNativeAd(Context context, NativeResponse nativeResponse, CustomNativeListener customNativeListener
-            , Map<String, Object> localExtras) {
+    public BaiduATNativeAd(Context context, NativeResponse nativeResponse) {
 
         mContext = context.getApplicationContext();
-        mCustomNativeListener = customNativeListener;
         mNativeResponse = nativeResponse;
 
         setData(mNativeResponse);
@@ -104,8 +100,31 @@ public class BaiduATNativeAd extends CustomNativeAd {
         }
     }
 
+    private void unregisterView(View view) {
+        if (view == null) {
+            return;
+        }
+        if (view instanceof ViewGroup && view != mMediaView) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                View child = viewGroup.getChildAt(i);
+                unregisterView(child);
+            }
+        } else {
+            view.setOnClickListener(null);
+        }
+    }
+
+
     @Override
     public void clear(final View view) {
+        unregisterView(view);
+        if (mMediaView != null) {
+            mMediaView.setNativeItem(null);
+            mMediaView.setNativeViewClickListener(null);
+            mMediaView = null;
+        }
+
     }
 
 
@@ -129,6 +148,14 @@ public class BaiduATNativeAd extends CustomNativeAd {
 
     @Override
     public void destroy() {
+        mNativeResponse = null;
+
+        if (mMediaView != null) {
+            mMediaView.setNativeItem(null);
+            mMediaView.setNativeViewClickListener(null);
+            mMediaView = null;
+        }
+        mContext = null;
     }
 
 }

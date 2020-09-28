@@ -1,12 +1,12 @@
 package com.anythink.network.facebook;
 
+import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.anythink.interstitial.unitgroup.api.CustomInterstitialListener;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
 import com.facebook.ads.InterstitialAd;
@@ -15,7 +15,7 @@ import com.facebook.ads.InterstitialAdListener;
 import java.util.Map;
 
 /**
- * Created by zhou on 2018/6/27.
+ * Created by Z on 2018/6/27.
  */
 
 public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
@@ -34,22 +34,22 @@ public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
 
             @Override
             public void onError(Ad ad, AdError adError) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(FacebookATInterstitialAdapter.this, ErrorCode.getErrorCode(ErrorCode.noADError, adError.getErrorCode() + "", "" + adError.getErrorMessage()));
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(adError.getErrorCode() + "", "" + adError.getErrorMessage());
                 }
             }
 
             @Override
             public void onAdLoaded(Ad ad) {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoaded(FacebookATInterstitialAdapter.this);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
             public void onAdClicked(Ad ad) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked(FacebookATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClicked();
                 }
             }
 
@@ -60,81 +60,56 @@ public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
             @Override
             public void onInterstitialDisplayed(Ad ad) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow(FacebookATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdShow();
                 }
             }
 
             @Override
             public void onInterstitialDismissed(Ad ad) {
                 if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose(FacebookATInterstitialAdapter.this);
+                    mImpressListener.onInterstitialAdClose();
                 }
             }
         };
 
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                mInterstitialAd = new InterstitialAd(context.getApplicationContext(), mUnitid);
-                // Load a new interstitial.
-                final InterstitialAd.InterstitialAdLoadConfigBuilder adConfig = mInterstitialAd.buildLoadAdConfig()
-                        .withAdListener(interstitialAdListener);
+        mInterstitialAd = new InterstitialAd(context.getApplicationContext(), mUnitid);
+        // Load a new interstitial.
+        final InterstitialAd.InterstitialAdLoadConfigBuilder adConfig = mInterstitialAd.buildLoadAdConfig()
+                .withAdListener(interstitialAdListener);
 
-                if (!TextUtils.isEmpty(mPayload)) {
-                    adConfig.withBid(mPayload);
-                }
+        if (!TextUtils.isEmpty(mPayload)) {
+            adConfig.withBid(mPayload);
+        }
 
-                mInterstitialAd.loadAd(adConfig.build());
-            }
-        }).start();
+        mInterstitialAd.loadAd(adConfig.build());
     }
 
 
     @Override
-    public void clean() {
-        if (mInterstitialAd != null) {
-            mInterstitialAd.destroy();
+    public void destory() {
+        try {
+            if (mInterstitialAd != null) {
+                mInterstitialAd.setAdListener(null);
+                mInterstitialAd.destroy();
+                mInterstitialAd = null;
+            }
+        } catch (Exception e) {
         }
     }
 
-    @Override
-    public void onResume() {
-
-    }
 
     @Override
-    public void onPause() {
-
-    }
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
 
-    @Override
-    public void loadInterstitialAd(Context context, Map<String, Object> serverExtras, ATMediationSetting mediationSetting, CustomInterstitialListener customInterstitialListener) {
-        mLoadResultListener = customInterstitialListener;
-        if (context == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "activity is null."));
-            }
-            return;
-        }
-
-        if (serverExtras == null) {
-            if (mLoadResultListener != null) {
-                mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "facebook serverExtras is empty."));
-            }
-            return;
+        if (serverExtras.containsKey("unit_id")) {
+            mUnitid = (String) serverExtras.get("unit_id");
         } else {
-
-
-            if (serverExtras.containsKey("unit_id")) {
-                mUnitid = (String) serverExtras.get("unit_id");
-            } else {
-                if (mLoadResultListener != null) {
-                    mLoadResultListener.onInterstitialAdLoadFail(this, ErrorCode.getErrorCode(ErrorCode.noADError, "", "facebook sdkkey is empty."));
-                }
-                return;
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "facebook sdkkey is empty.");
             }
+            return;
         }
 
         if (serverExtras.containsKey("payload")) {
@@ -159,20 +134,30 @@ public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     @Override
-    public void show(Context context) {
+    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
+        return false;
+    }
+
+    @Override
+    public void show(Activity activity) {
         if (mInterstitialAd != null) {
             mInterstitialAd.show();
         }
     }
 
     @Override
-    public String getSDKVersion() {
+    public String getNetworkSDKVersion() {
         return FacebookATConst.getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return FacebookATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public String getNetworkPlacementId() {
+        return mUnitid;
     }
 
 }

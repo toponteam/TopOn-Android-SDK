@@ -1,13 +1,16 @@
 package com.anythink.splashad.api;
 
 import android.app.Activity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.anythink.core.api.ATMediationRequestInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.core.api.ATSDK;
+import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.api.ATAdInfo;
@@ -21,7 +24,7 @@ import java.util.Map;
 public class ATSplashAd {
 
     final String TAG = getClass().getSimpleName();
-    String mUnitId;
+    String mPlacementId;
 //    long mFetchDelay;
 
     AdLoadManager mAdLoadManager;
@@ -52,6 +55,10 @@ public class ATSplashAd {
 
         @Override
         public void onNoAdError(final AdError adError) {
+            if (mAdLoadManager != null) {
+                mAdLoadManager.setLoadFail(adError);
+            }
+
             SDKContext.getInstance().removeMainThreadRunnable(loadOverTimeRunnable);
             SDKContext.getInstance().runOnMainThread(new Runnable() {
                 @Override
@@ -92,6 +99,9 @@ public class ATSplashAd {
 
         @Override
         public void onAdDismiss(final ATAdInfo entity) {
+            if (mAdLoadManager != null) {
+                mAdLoadManager.releaseMediationManager();
+            }
             if (!mHasDismiss) {
                 mHasDismiss = true;
                 SDKContext.getInstance().runOnMainThread(new Runnable() {
@@ -121,10 +131,14 @@ public class ATSplashAd {
     Runnable loadOverTimeRunnable = new Runnable() {
         @Override
         public void run() {
-            mContainer.setVisibility(View.INVISIBLE);
-            if (mAdLoadManager != null) {
-                mAdLoadManager.release();
+            if (mContainer != null) {
+                mContainer.setVisibility(View.GONE);
             }
+
+            if (mAdLoadManager != null) {
+                mAdLoadManager.releaseMediationManager();
+            }
+
             if (!mHasReturn) {
                 mHasReturn = true;
                 if (mListener != null) {
@@ -137,43 +151,70 @@ public class ATSplashAd {
     ViewGroup mContainer;
 
     @Deprecated
-    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String unitId, ATSplashAdListener listener, Map<String, String> customMap) {
-        this(activity, container, skipView, unitId, listener, 5000L);
+    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener, Map<String, String> customMap) {
+        this(activity, container, skipView, placementId, listener, 5000L);
     }
 
     @Deprecated
-    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String unitId, ATSplashAdListener listener, Map<String, String> customMap, long fetchDelay) {
-        this(activity, container, skipView, unitId, listener, fetchDelay);
+    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener, Map<String, String> customMap, long fetchDelay) {
+        this(activity, container, skipView, placementId, listener, fetchDelay);
     }
 
     @Deprecated
-    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String unitId, ATSplashAdListener listener) {
-        this(activity, container, unitId, listener);
+    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener) {
+        this(activity, container, placementId, listener);
     }
 
     @Deprecated
-    public ATSplashAd(final Activity activity, ViewGroup container, View skipView, String unitId, ATSplashAdListener listener, long fetchDelay) {
-        this(activity, container, unitId, listener);
+    public ATSplashAd(final Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener, long fetchDelay) {
+        this(activity, container, placementId, listener);
     }
 
 
-    public ATSplashAd(final Activity activity, ViewGroup container, String unitId, ATSplashAdListener listener) {
+    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, ATSplashAdListener listener) {
+        this(activity, container, placementId, null, null, listener);
+    }
+
+    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, Map<String, Object> localMap, ATSplashAdListener listener) {
+        this(activity, container, placementId, localMap, null, listener);
+    }
+
+    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, ATMediationRequestInfo defaultRequestInfo, ATSplashAdListener listener) {
+        this(activity, container, placementId, null, defaultRequestInfo, listener);
+    }
+
+    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, Map<String, Object> localMap, ATMediationRequestInfo defaultRequestInfo, ATSplashAdListener listener) {
         if (activity == null || container == null) {
             if (listener != null) {
-                listener.onNoAdError(ErrorCode.getErrorCode(ErrorCode.exception, "", "activity, constainer could not be null!"));
+                listener.onNoAdError(ErrorCode.getErrorCode(ErrorCode.exception, "", "Activity, Constainer could not be null!"));
             }
-            Log.i(TAG, "activity, constainer could not be null!");
+            Log.i(TAG, "Activity, Constainer could not be null!");
             return;
         }
 
+        if (TextUtils.isEmpty(placementId)) {
+            if (listener != null) {
+                listener.onNoAdError(ErrorCode.getErrorCode(ErrorCode.exception, "", "PlacementId could not be empty."));
+            }
+            Log.i(TAG, "PlacementId could not be empty.");
+            return;
+        }
 
         mContainer = container;
         mHasDismiss = false;
-        mUnitId = unitId;
+        mPlacementId = placementId;
         mListener = listener;
 
-        mAdLoadManager = AdLoadManager.getInstance(activity, unitId); //new AdLoadManager(activity, container, skipView, unitId, mFetchDelay);
-        mAdLoadManager.startLoadAd(mContainer, null, mSelfListener);
+        if (defaultRequestInfo != null) {
+            defaultRequestInfo.setFormat(Const.FORMAT.SPLASH_FORMAT);
+        }
+
+        if (localMap != null) {
+            PlacementAdManager.getInstance().putPlacementLocalSettingMap(placementId, localMap);
+        }
+
+        mAdLoadManager = AdLoadManager.getInstance(activity, placementId); //new AdLoadManager(activity, container, skipView, placementId, mFetchDelay);
+        mAdLoadManager.startLoadAd(activity, mContainer, null, defaultRequestInfo, mSelfListener);
 
         mHasReturn = false;
         /**
@@ -188,13 +229,13 @@ public class ATSplashAd {
         });
 
 
-        ATSDK.apiLog(mUnitId, Const.LOGKEY.API_SPLASH, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_SPLASH, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
     }
 
 
     public void onDestory() {
         if (mAdLoadManager != null) {
-            mAdLoadManager.release();
+            mAdLoadManager.releaseMediationManager();
         }
 
     }

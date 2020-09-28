@@ -21,7 +21,6 @@ public class InterstitialAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_interstitial_facebook
             , DemoApplicaion.mPlacementId_interstitial_admob
             , DemoApplicaion.mPlacementId_interstitial_inmobi
-            , DemoApplicaion.mPlacementId_interstitial_flurry
             , DemoApplicaion.mPlacementId_interstitial_applovin
             , DemoApplicaion.mPlacementId_interstitial_mintegral
             , DemoApplicaion.mPlacementId_interstitial_video_mintegral
@@ -39,31 +38,34 @@ public class InterstitialAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_interstitial_myoffer
             , DemoApplicaion.mPlacementId_interstitial_ogury
             , DemoApplicaion.mPlacementId_interstitial_fyber
+            , DemoApplicaion.mPlacementId_interstitial_googleAdManager
+            , DemoApplicaion.mPlacementId_interstitial_huawei
     };
 
     String unitGroupName[] = new String[]{
             "All network",
-            "facebook",
-            "admob",
-            "inmobi",
-            "flurry",
-            "applovin",
-            "mintegral",
-            "mintegral video",
-            "mopub",
-            "chartboost",
-            "tapjoy",
-            "ironsource",
-            "unity3d",
-            "vungle",
-            "adcolony",
-            "appnext",
-            "nend",
-            "maio",
-            "startapp",
-            "myoffer",
-            "ogury",
-            "fyber"
+            "Facebook",
+            "Admob",
+            "Inmobi",
+            "Applovin",
+            "Mintegral",
+            "Mintegral video",
+            "Mopub",
+            "Chartboost",
+            "Tapjoy",
+            "Ironsource",
+            "Unity3d",
+            "Vungle",
+            "Adcolony",
+            "Appnext",
+            "Nend",
+            "Maio",
+            "Startapp",
+            "Myoffer",
+            "Ogury",
+            "Fyber",
+            "Google Ad Manager",
+            "Huawei"
     };
 
     RadioGroup mRadioGroup;

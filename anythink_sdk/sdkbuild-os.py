@@ -19,6 +19,15 @@ def cur_file_dir():
     elif os.path.isfile(path):
         return os.path.dirname(path)
 
+def cur_command():
+    cmd = COMMAND + ''
+
+    cur_platform = platform.system().strip()
+    if "Windows" == cur_platform:
+        cmd = 'gradle.bat'
+
+    print 'current platform is ' + cur_platform + ', use command --> ' + cmd
+    return cmd;
 
 def runcmd(cmd):
     print '\rrun cmd: ' + cmd + '\r'
@@ -32,7 +41,7 @@ def runcmd(cmd):
 
 # gradle
 ROOT_DIR = cur_file_dir()
-
+COMMAND = cur_command()
 
 def clean():
     os.chdir(ROOT_DIR)
@@ -51,99 +60,99 @@ def buildOnce(brand):
     if os.path.exists(ROOT_DIR + "/core/build"):
         shutil.rmtree(ROOT_DIR + "/core/build")
     os.chdir(ROOT_DIR + '/core')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/china_plugin/build"):
         shutil.rmtree(ROOT_DIR + '/china_plugin/build')
     os.chdir(ROOT_DIR + '/china_plugin')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/myoffer/build"):
         shutil.rmtree(ROOT_DIR + '/myoffer/build')
     os.chdir(ROOT_DIR + '/myoffer')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/hibid/build"):
         shutil.rmtree(ROOT_DIR + '/hibid/build')
     os.chdir(ROOT_DIR + '/hibid')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/native/build"):
         shutil.rmtree(ROOT_DIR + '/native/build')
     os.chdir(ROOT_DIR + '/native')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/rewardvideo/build"):
         shutil.rmtree(ROOT_DIR + '/rewardvideo/build')
     os.chdir(ROOT_DIR + '/rewardvideo')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/banner/build"):
         shutil.rmtree(ROOT_DIR + '/banner/build')
     os.chdir(ROOT_DIR + '/banner')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/Interstitial/build"):
         shutil.rmtree(ROOT_DIR + '/Interstitial/build')
     os.chdir(ROOT_DIR + '/Interstitial')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/splashad/build"):
         shutil.rmtree(ROOT_DIR + '/splashad/build')
     os.chdir(ROOT_DIR + '/splashad')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/plugin/build"):
         shutil.rmtree(ROOT_DIR + '/plugin/build')
     os.chdir(ROOT_DIR + '/plugin')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/network_china_adapter/build"):
         shutil.rmtree(ROOT_DIR + '/network_china_adapter/build')
     os.chdir(ROOT_DIR + '/network_china_adapter')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/network_nonchina_adapter/build"):
         shutil.rmtree(ROOT_DIR + '/network_nonchina_adapter/build')
     os.chdir(ROOT_DIR + '/network_nonchina_adapter')
-    runcmd('../gradlew assembleRelease')
+    runcmd(COMMAND + ' assembleRelease')
 
     os.chdir(ROOT_DIR + '/' + packageModuel)
-    runcmd('../gradlew cpSDKResToOutput')
+    runcmd(COMMAND + ' cpSDKResToOutput')
 
     # Anythink SDK Package
-    runcmd('../gradlew makeCoreAARRes')
+    runcmd(COMMAND + ' makeCoreAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputCoreAAR')
+    runcmd(COMMAND + ' outputCoreAAR')
 
-    runcmd('../gradlew makeChinaCoreAARRes')
+    runcmd(COMMAND + ' makeChinaCoreAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputChinaCoreAAR')
+    runcmd(COMMAND + ' outputChinaCoreAAR')
 
 
-    runcmd('../gradlew makeNativeAARRes')
+    runcmd(COMMAND + ' makeNativeAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputNativeAAR')
+    runcmd(COMMAND + ' outputNativeAAR')
 
-    runcmd('../gradlew makeRewardedVideoAARRes')
+    runcmd(COMMAND + ' makeRewardedVideoAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputRewardedVideoAAR')
+    runcmd(COMMAND + ' outputRewardedVideoAAR')
 
-    runcmd('../gradlew makeBannerAARRes')
+    runcmd(COMMAND + ' makeBannerAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputBannerAAR')
+    runcmd(COMMAND + ' outputBannerAAR')
 
-    runcmd('../gradlew makeInterstitialAARRes')
+    runcmd(COMMAND + ' makeInterstitialAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputInterstitialAAR')
+    runcmd(COMMAND + ' outputInterstitialAAR')
 
-    runcmd('../gradlew makeSplashAdAARRes')
+    runcmd(COMMAND + ' makeSplashAdAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputSplashAdAAR')
+    runcmd(COMMAND + ' outputSplashAdAAR')
 
-    runcmd('../gradlew makeHeadBiddingAARRes')
+    runcmd(COMMAND + ' makeHeadBiddingAARRes')
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd('../gradlew outputHeadBiddingAAR')
+    runcmd(COMMAND + ' outputHeadBiddingAAR')
 
 
 
@@ -158,21 +167,21 @@ def buildOnce(brand):
 
     os.chdir(ROOT_DIR + '/' + packageModuel)
     for aar_name in china_network:
-        runcmd('../gradlew makeNetworkAARRes -Paarname=' + aar_name + ' -PisChina=\"' + str(1) + '\"' )
+        runcmd(COMMAND + ' makeNetworkAARRes -Paarname=' + aar_name + ' -PisChina=\"' + str(1) + '\"' )
         if os.path.exists(ROOT_DIR + '/' + packageModuel + '/build'):
             shutil.rmtree(ROOT_DIR + '/' + packageModuel + '/build')
-        runcmd('../gradlew assembleRelease')
-        runcmd('../gradlew outputNetworkAAR -Paarname=' + aar_name + ' -PisChina=\"' + str(1) + '\"')
+        runcmd(COMMAND + ' assembleRelease')
+        runcmd(COMMAND + ' outputNetworkAAR -Paarname=' + aar_name + ' -PisChina=\"' + str(1) + '\"')
 
     for aar_name in nonchina_network:
-        runcmd('../gradlew makeNetworkAARRes -Paarname=' + aar_name + ' -PisChina=\"' + str(0) + '\"')
+        runcmd(COMMAND + ' makeNetworkAARRes -Paarname=' + aar_name + ' -PisChina=\"' + str(0) + '\"')
         if os.path.exists(ROOT_DIR + '/' + packageModuel + '/build'):
             shutil.rmtree(ROOT_DIR + '/' + packageModuel + '/build')
-        runcmd('../gradlew assembleRelease')
-        runcmd('../gradlew outputNetworkAAR -Paarname=' + aar_name + ' -PisChina=\"' + str(0) + '\"')
+        runcmd(COMMAND + ' assembleRelease')
+        runcmd(COMMAND + ' outputNetworkAAR -Paarname=' + aar_name + ' -PisChina=\"' + str(0) + '\"')
 
     os.chdir(ROOT_DIR + '/' + packageModuel)
-    runcmd('../gradlew makeTopOnSDK')
+    runcmd(COMMAND + ' makeTopOnSDK')
 
 
 def main():

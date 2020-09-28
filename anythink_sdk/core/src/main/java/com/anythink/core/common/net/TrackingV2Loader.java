@@ -62,9 +62,12 @@ public class TrackingV2Loader extends AbsHttpLoader {
 
     boolean needPutReqParamEx = false;
 
-    public TrackingV2Loader(Context mContext, List<AdTrackingLogBean> logs) {
+    private int uploadType;
+
+    public TrackingV2Loader(Context mContext, int uploadType, List<AdTrackingLogBean> logs) {
 
         this.mContext = mContext;
+        this.uploadType = uploadType;
 
         this.appid = SDKContext.getInstance().getAppId();
         this.appKey = SDKContext.getInstance().getAppKey();
@@ -73,21 +76,21 @@ public class TrackingV2Loader extends AbsHttpLoader {
 
     }
 
-    public TrackingV2Loader(Context mContext, AdTrackingLogBean log) {
-
-        this.mContext = mContext;
-
-        this.appid = SDKContext.getInstance().getAppId();
-        this.appKey = SDKContext.getInstance().getAppKey();
-
-        this.logBean = log;
-
-    }
+//    public TrackingV2Loader(Context mContext, AdTrackingLogBean log) {
+//
+//        this.mContext = mContext;
+//
+//        this.appid = SDKContext.getInstance().getAppId();
+//        this.appKey = SDKContext.getInstance().getAppKey();
+//
+//        this.logBean = log;
+//
+//    }
 
 
     @Override
     protected int onPrepareType() {
-        return AbsHttpLoader.POST;
+        return ApiRequestParam.POST;
     }
 
     @Override
@@ -133,7 +136,7 @@ public class TrackingV2Loader extends AbsHttpLoader {
         if (logBeans != null) {
             failCount = logBeans.size();
         }
-        AgentEventManager.sendErrorAgent("tk", adError.getPlatformCode(), adError.getPlatformMSG(), onPrepareURL(), null, String.valueOf(failCount));
+        AgentEventManager.sendErrorAgent("tk", adError.getPlatformCode(), adError.getPlatformMSG(), onPrepareURL(), null, String.valueOf(failCount), String.valueOf(AgentEventManager.REQUEST_HTTP_TYPE));
 
     }
 
@@ -163,13 +166,14 @@ public class TrackingV2Loader extends AbsHttpLoader {
         JSONObject mainObject = super.getMainInfoObject();
 
         try {
-            commonObject.put("app_id", appid);
+            commonObject.put(ApiRequestParam.JSON_REQUEST_APPID, appid);
+            commonObject.put(ApiRequestParam.JSON_REQUEST_TKDA_REPORT_TYPE, uploadType);
             Iterator<String> iterator = mainObject.keys();
             while (iterator.hasNext()) {
                 String key = iterator.next();
                 commonObject.put(key, mainObject.opt(key));
             }
-            commonObject.put("gdpr_cs", String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
+            commonObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
         } catch (JSONException e) {
             if (Const.DEBUG) {
                 e.printStackTrace();
@@ -197,13 +201,15 @@ public class TrackingV2Loader extends AbsHttpLoader {
             dataArray.put(dataJsonObject);
         }
         String dataEncode = CommonBase64Util.base64Encode(dataArray.toString());
-        String sign = CommonMD5.getLowerMd5(appKey + "api_ver=" + Const.API.APPSTR_APIVERSION + "&common=" + commonEncode + "&data=" + dataEncode);
-
+        String sign = CommonMD5.getLowerMd5(appKey
+                + ApiRequestParam.JSON_REQUEST_API_VERSION + "=" + Const.API.APPSTR_APIVERSION
+                + "&" + ApiRequestParam.JSON_REQUEST_COMMON + "=" + commonEncode
+                + "&" + ApiRequestParam.JSON_REQUEST_DATA_LIST + "=" + dataEncode);
         try {
-            jsonObject.put("common", commonEncode);
-            jsonObject.put("data", dataEncode);
-            jsonObject.put("api_ver", Const.API.APPSTR_APIVERSION);
-            jsonObject.put("sign", sign);
+            jsonObject.put(ApiRequestParam.JSON_REQUEST_COMMON, commonEncode);
+            jsonObject.put(ApiRequestParam.JSON_REQUEST_DATA_LIST, dataEncode);
+            jsonObject.put(ApiRequestParam.JSON_REQUEST_API_VERSION, Const.API.APPSTR_APIVERSION);
+            jsonObject.put(ApiRequestParam.JSON_REQUEST_SIGIN, sign);
         } catch (Exception e) {
             e.printStackTrace();
         }
