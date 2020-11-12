@@ -19,13 +19,7 @@ import com.anythink.interstitial.business.AdLoadManager;
 
 import java.util.Map;
 
-/**
- * Copyright (C) 2018 {XX} Science and Technology Co., Ltd.
- *
- * @version V{2.3.0}
- * @Author ：Created by zhoushubin on 2018/9/19.
- * @Email: zhoushubin@salmonads.com
- */
+
 public class ATInterstitial {
     public static final String TAG = ATInterstitial.class.getSimpleName();
     public String mPlacementId;
