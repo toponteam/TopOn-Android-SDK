@@ -15,13 +15,7 @@ import com.qq.e.ads.interstitial2.UnifiedInterstitialMediaListener;
 
 import java.util.Map;
 
-/**
- * Copyright (C) 2018 {XX} Science and Technology Co., Ltd.
- *
- * @version V{XX_XX}
- * @Author ：Created by zhoushubin on 2018/9/20.
- * @Email: zhoushubin@salmonads.com
- */
+
 public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implements UnifiedInterstitialMediaListener {
     public static String TAG = GDTATInterstitialAdapter.class.getSimpleName();
     InterstitialAD mInterstitialAD;
