@@ -17,13 +17,6 @@ import mobi.oneway.export.enums.OnewayAdCloseType;
 import mobi.oneway.export.enums.OnewaySdkError;
 
 
-/**
- * Copyright (C) 2018 {XX} Science and Technology Co., Ltd.
- *
- * @version V{XX_XX}
- * @Author ：Created by zhoushubin on 2018/9/20.
- * @Email: zhoushubin@salmonads.com
- */
 public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
     public static final String TAG = OnewayATInterstitialAdapter.class.getSimpleName();
 
