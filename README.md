@@ -1,82 +1,31 @@
-# TopOn Android SDK
+# TopOn-Android-SDK for Android
 
-TopOn is an ad mediation platform that helps global app developers manage ad networks conveniently and maximize revenue lightly. Relying on big data + cloud computing, TopOn collects global mobile marketing resources, which can optimize the choice of advertising delivery, improves the filling rate and eCPM, and maximizes user retention and advertising revenue.
-
-Sign up for an account at [https://www.toponad.com/](https://www.toponad.com/).
+TopOn is an ad mediation platform that helps global app developers manage ad networks conveniently and maximize revenue lightly. Especially in China, TopOn becomes the Top #1 mediation platform. Until now, We have cooperated with around 400 companies. We have supported rich local advertising platform resources and lots of global ad platforms. 
 
 
-## SDK Download
+## Communication
+Official website ： https://www.toponad.com/
 
-The TopOn SDK can be downloaded through [https://docs.toponad.com/#/en-us/android/download/package](https://docs.toponad.com/#/en-us/android/download/package), you can choose the mediation's SDK which you want to import to your project.
+Business Cooperation : business@toponad.com
 
+Market Cooperation : leon@toponad.com
 
-You can find integration documentation in [https://docs.toponad.com/#/en-us/android/android_doc/android_access_doc](https://docs.toponad.com/#/en-us/android/android_doc/android_access_doc)
+Technical Support : support@toponad.com
 
-
-If you have any questions, you can file the issue by github or email [developer@toponad.com](developer@toponad.com), we will 
-reply you as soon as possible.
-
-
-
-## SDK Project Instruction 
-
-### Catalog description
-
-| Catalog | Description |
-| ---- | --- |
-|**AnyThinkSDK/core** |AnyThinkSDK Core Moduel，realize the basic function logic of advertising. e.g: Ad loading logic, Mediation management.|
-|**AnyThinkSDK/banner** |AnyThinkSDK Banner Moduel.|
-|**AnyThinkSDK/Interstitial** |AnyThinkSDK Interstital Moduel.|
-|**AnyThinkSDK/native** |AnyThinkSDK NativeAd Moduel.|
-|**AnyThinkSDK/rewardvideo** |AnyThinkSDK RewardedVideo Moduel.|
-|**AnyThinkSDK/splashad** |AnyThinkSDK SplashAd Moduel.|
-|**AnyThinkSDK/myoffer** |AnyThinkSDK Cross promotion Moduel.|
-|**AnyThinkSDK/hibid** |AnyThinkSDK HeadBidding Moduel.|
-|**AnyThinkSDK/network** |AnyThinkSDK Mediations' adapter Moduel.|
-|**AnyThinkSDK/network_base** |AnyThinkSDK Mediations' SDK Moduel.|
-|**AnyThinkSDK/sdkbuild-os.py** |AnyThinkSDK Packaging shell. You can get SDK releasing int the AnyThinkSDK/outputs after running the shell.|
+QQ & wechat 188108875(Harry)
 
 
-### SDK Usage
+## Requirements
 
-1.You can use the Module in AnyThink as the Module in your project. Using Android Studio to import the Anythink's moduel, you can depend it in gradle like this:
+We support Android Operating Systems Version 4.1 (API Level 16) and up. Be sure to:
 
-```java
-	implementation project(':core')
-	implementation project(':native')
-	implementation project(':rewardvideo')
-	implementation project(':Interstitial')
-	implementation project(':banner')
-	implementation project(':splashad')
-	implementation project(':network')
-	implementation project(':hibid')
-	implementation project(':myoffer')
-```
+- Use Android Studio 3.0 and up
+- Target Android API level 28
+- MinSdkVersion level 16 and up
 
+## Integration instructions
+https://docs.toponad.com/#/en-us/android/android_doc/android_sdk_config_access
 
-2.You can use the SDK which is outputed by sdkbuild-os.py. Catalog of relase sdk like this ：
+## LICENSE
 
-| Catalog | Description |
-| ---- | --- |
-|China/libs|AnyThink SDK in China|
-|China/network|Mediation SDK in China|
-|NonChina/libs|AnyThink SDK in NonChina|
-|NonChina/network |Mediation SDK in NonChina|
-
-You can copy the SDK which you want into your project and depend it.
-
-### Proguard Config
-
-```java
--keep public class com.anythink.network.**
--keepclassmembers class com.anythink.network.** {
-   public *;
-}
-
--dontwarn com.anythink.hb.**
--keep class com.anythink.hb.**{ *;}
-```
-
-
-## License
-To view the full license, visit [GPL License](LICENSE)<br>
+See the [LICENSE](LICENSE) file.
