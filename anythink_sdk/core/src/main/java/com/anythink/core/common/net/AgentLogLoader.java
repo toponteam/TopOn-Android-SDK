@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.net;
 
 
@@ -111,6 +118,24 @@ public class AgentLogLoader extends AbsHttpLoader {
             try {
                 jsonObject.put(ApiRequestParam.JSON_REQUEST_APPID, mAppID);
                 jsonObject.put(ApiRequestParam.JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
+
+                Map<String, Object> customMap = SDKContext.getInstance().getCustomMap();
+                try {
+                    if (customMap != null && customMap.size() > 0) {
+                        if (customMap != null) {
+                            JSONObject customObject = new JSONObject();
+                            for (String key : customMap.keySet()) {
+                                Object itemObject = customMap.get(key);
+                                if (itemObject != null) {
+                                    customObject.put(key, itemObject.toString());
+                                }
+                            }
+                            jsonObject.put(ApiRequestParam.JSON_REQUEST_CUSTOM, customObject);
+                        }
+                    }
+                } catch (Throwable e) {
+
+                }
 
                 JSONArray jsonArray = new JSONArray();
                 if (mDataList != null && mDataList.size() > 0) {

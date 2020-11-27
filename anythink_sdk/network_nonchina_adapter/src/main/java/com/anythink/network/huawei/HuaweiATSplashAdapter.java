@@ -5,7 +5,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.ViewGroup;
 
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;

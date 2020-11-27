@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.nativead.bussiness;
 
 import android.content.Context;
@@ -9,16 +16,12 @@ import com.anythink.core.common.CommonMediationManager;
 import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.entity.AdCacheInfo;
-import com.anythink.core.common.entity.AdTrackingInfo;
+import com.anythink.core.strategy.PlaceStrategy;
+import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.nativead.api.ATNativeNetworkListener;
 import com.anythink.nativead.api.ATNativeOpenSetting;
 import com.anythink.nativead.unitgroup.BaseNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.anythink.core.strategy.PlaceStrategy;
-import com.anythink.core.strategy.PlaceStrategyManager;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Ad Request Manager

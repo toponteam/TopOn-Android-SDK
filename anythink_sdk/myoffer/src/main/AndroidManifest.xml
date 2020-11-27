@@ -1,19 +1,32 @@
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.anythink.myoffer">
 
     <application>
         <activity
-            android:name="com.anythink.myoffer.ui.MyOfferLandscapeActivity"
+            android:name="com.anythink.basead.ui.AdLandscapeActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:screenOrientation="sensorLandscape" />
 
         <activity
-            android:name="com.anythink.myoffer.ui.MyOfferPortraitActivity"
+            android:name="com.anythink.basead.ui.AdPortraitActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:screenOrientation="sensorPortrait" />
 
         <activity
-            android:name="com.anythink.myoffer.ui.ApkConfirmDialogActivity"
+            android:name="com.anythink.basead.ui.ApkConfirmDialogActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
+
+        <activity
+            android:name="com.anythink.basead.ui.web.WebLandPageActivity"
+            android:launchMode="singleTop"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"/>
     </application>
 </manifest>

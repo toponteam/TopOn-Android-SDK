@@ -390,18 +390,6 @@ task makeSplashAdJar(type: Jar) {
     include "com/anythink/splashad/**/*.class"
 }
 
-task makeHeadbiddingJar(type: Jar) {
-    println '=============== makeHeadbiddingJar ==============='
-    baseName 'anythink'
-    appendix = 'dex'
-    version = '1.0.0'
-    classifier = 'release'
-    extension = 'jar'
-    archiveName = 'anythink_headbidding.jar'
-    destinationDir file(buildDir.absolutePath + '/../../outputs/libs')
-    from(buildDir.absolutePath + '/../../outputs/'+ class_core_output_dir)
-    include "com/anythink/hb/**/*.class"
-}
 
 
 /**------------------------------------------------SDK Core Jar End-----------------------------------------------**/
@@ -730,44 +718,7 @@ task makeNetworkTouTiaoChinaJar(type: Jar) {
     include "com/anythink/network/toutiao/**/*.class"
 }
 
-task makeNetworkOnewayJar(type: Jar) {
-    println '=============== makeNetworkOnewayJar ==============='
-    baseName 'anythink'
-    appendix = 'dex'
-    version = '1.0.0'
-    classifier = 'release'
-    extension = 'jar'
-    archiveName = 'anythink_network_oneway.jar'
-    destinationDir file(buildDir.absolutePath + '/../../outputs/libs')
-    from(buildDir.absolutePath + '/../../outputs/' + class_china_adapter_output_dir)
-    include "com/anythink/network/oneway/**/*.class"
-}
 
-task makeNetworkUniplayJar(type: Jar) {
-    println '=============== makeNetworkUniplayJar ==============='
-    baseName 'anythink'
-    appendix = 'dex'
-    version = '1.0.0'
-    classifier = 'release'
-    extension = 'jar'
-    archiveName = 'anythink_network_uniplay.jar'
-    destinationDir file(buildDir.absolutePath + '/../../outputs/libs')
-    from(buildDir.absolutePath + '/../../outputs/' + class_china_adapter_output_dir)
-    include "com/anythink/network/uniplay/**/*.class"
-}
-
-task makeNetworkKsyunJar(type: Jar) {
-    println '=============== makeNetworkKsyunJar ==============='
-    baseName 'anythink'
-    appendix = 'dex'
-    version = '1.0.0'
-    classifier = 'release'
-    extension = 'jar'
-    archiveName = 'anythink_network_ksyun.jar'
-    destinationDir file(buildDir.absolutePath + '/../../outputs/libs')
-    from(buildDir.absolutePath + '/../../outputs/' + class_china_adapter_output_dir)
-    include "com/anythink/network/ksyun/**/*.class"
-}
 task makeNetworkBaiduJar(type: Jar) {
     println '=============== makeNetworkBaiduJar ==============='
     baseName 'anythink'
@@ -1041,36 +992,6 @@ task outputSplashAdAAR  {
     }
 }
 
-//anythink_headbidding
-task makeHeadBiddingAARRes  {
-    doLast {
-        delete projectDir.absolutePath + "/libs"
-        delete projectDir.absolutePath + "/src/main/res"
-        copy {
-            from projectDir.absolutePath + '/../outputs/libs/'
-            into projectDir.absolutePath + '/libs'
-            include "anythink_headbidding.jar"
-        }
-
-        List<File> libraryManifestList = new ArrayList<>();
-        libraryManifestList.add(file(rootProject.project(":headbidding").projectDir.absolutePath + '/src/main/AndroidManifest.xml'));
-
-        mergeManifest(libraryManifestList, file(projectDir.absolutePath + "/src/main/AndroidManifest_hibid.xml"));
-    }
-}
-
-task outputHeadBiddingAAR  {
-    doLast {
-        copy {
-            from buildDir.absolutePath + '/outputs/aar/packagemodule-os-release.aar'
-            into projectDir.absolutePath + '/../outputs/aar/anythink_sdk'
-            rename { String fileName ->
-                fileName.replace('packagemodule-os-release.aar', 'anythink_headbidding.aar')
-            }
-        }
-    }
-}
-
 
 task makeNetworkAARRes {
     doLast {
@@ -1288,11 +1209,8 @@ task copyChinaNecessaryResPackage  {
 
         networkChinaLibsPath.add("baidu");
         networkChinaLibsPath.add("gdt");
-        networkChinaLibsPath.add("ksyun");
         networkChinaLibsPath.add("mintegral");
-        networkChinaLibsPath.add("oneway");
         networkChinaLibsPath.add("pangle");
-        networkChinaLibsPath.add("uniplay");
         networkChinaLibsPath.add("kuaishou");
         networkChinaLibsPath.add("sigmob")
 
@@ -1440,8 +1358,7 @@ makeRewardedVideoJar.dependsOn 'makeNativeJar'
 makeBannerJar.dependsOn 'makeRewardedVideoJar'
 makeInterstitialJar.dependsOn 'makeBannerJar'
 makeSplashAdJar.dependsOn 'makeInterstitialJar'
-makeHeadbiddingJar.dependsOn 'makeSplashAdJar'
-makeNetworkFBJar.dependsOn 'makeHeadbiddingJar'
+makeNetworkFBJar.dependsOn 'makeSplashAdJar'
 makeNetworkAdmobJar.dependsOn 'makeNetworkFBJar'
 makeNetworkApplovinJar.dependsOn 'makeNetworkAdmobJar'
 makeNetworkFlurryJar.dependsOn 'makeNetworkApplovinJar'
@@ -1458,10 +1375,7 @@ makeNetworkUnityadsJar.dependsOn 'makeNetworkTapjoyJar'
 makeNetworkVungleJar.dependsOn 'makeNetworkUnityadsJar'
 makeNetworkTouTiaoNonChinaJar.dependsOn 'makeNetworkVungleJar'
 makeNetworkTouTiaoChinaJar.dependsOn 'makeNetworkTouTiaoNonChinaJar'
-makeNetworkOnewayJar.dependsOn 'makeNetworkTouTiaoChinaJar'
-makeNetworkUniplayJar.dependsOn 'makeNetworkOnewayJar'
-makeNetworkKsyunJar.dependsOn 'makeNetworkUniplayJar'
-makeNetworkAppnextJar.dependsOn 'makeNetworkKsyunJar'
+makeNetworkAppnextJar.dependsOn 'makeNetworkTouTiaoChinaJar'
 makeNetworkBaiduJar.dependsOn 'makeNetworkAppnextJar'
 makeNetworkNendJar.dependsOn 'makeNetworkBaiduJar'
 makeNetworkMaioJar.dependsOn 'makeNetworkNendJar'
@@ -1481,7 +1395,6 @@ outputRewardedVideoAAR.dependsOn 'assembleRelease'
 outputBannerAAR.dependsOn 'assembleRelease'
 outputInterstitialAAR.dependsOn 'assembleRelease'
 outputSplashAdAAR.dependsOn 'assembleRelease'
-outputHeadBiddingAAR.dependsOn 'assembleRelease'
 
 copyNonChinaNecessaryResPackage.dependsOn 'copyChinaNecessaryResPackage'
 makeTopOnSDK.dependsOn 'copyNonChinaNecessaryResPackage'

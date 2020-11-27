@@ -1,25 +1,33 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.myoffer;
 
 import android.content.Context;
 
+import com.anythink.basead.entity.OfferError;
+import com.anythink.basead.listeners.AdListener;
 import com.anythink.core.api.BaseAd;
 import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.MyOfferSetting;
-import com.anythink.myoffer.network.base.MyOfferAdListener;
-import com.anythink.myoffer.network.nativead.MyOfferNativeAd;
+import com.anythink.core.common.entity.MyOfferRequestInfo;
+import com.anythink.basead.myoffer.MyOfferNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 
 import java.util.Map;
 
 public class MyOfferATAdapter extends CustomNativeAdapter {
     private String offer_id = "";
-    private MyOfferSetting myofferSetting;
-    private String placement_id = "";
 
     private boolean isDefaultOffer = false; //用于判断兜底offer的
 
     MyOfferNativeAd mMyOfferNativeAd;
+
+    MyOfferRequestInfo mMyOfferRequestInfo;
 
     @Override
     public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
@@ -27,11 +35,8 @@ public class MyOfferATAdapter extends CustomNativeAdapter {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey("myoffer_setting")) {
-            myofferSetting = (MyOfferSetting) serverExtras.get("myoffer_setting");
-        }
-        if (serverExtras.containsKey("topon_placement")) {
-            placement_id = serverExtras.get("topon_placement").toString();
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
         }
 
         initNativeObject(context);
@@ -41,11 +46,16 @@ public class MyOfferATAdapter extends CustomNativeAdapter {
     }
 
     private void initNativeObject(final Context context) {
-        mMyOfferNativeAd = new MyOfferNativeAd(context, placement_id, offer_id, myofferSetting, isDefaultOffer);
-        mMyOfferNativeAd.setListener(new MyOfferAdListener() {
+        mMyOfferNativeAd = new MyOfferNativeAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, isDefaultOffer);
+        mMyOfferNativeAd.setListener(new AdListener() {
 
             @Override
-            public void onAdLoaded() {
+            public void onAdDataLoaded() {
+
+            }
+
+            @Override
+            public void onAdCacheLoaded() {
                 if (mLoadListener != null) {
                     MyOfferATNativeAd myOfferATNativeAd = new MyOfferATNativeAd(context, mMyOfferNativeAd);
                     mLoadListener.onAdCacheLoaded(myOfferATNativeAd);
@@ -53,7 +63,7 @@ public class MyOfferATAdapter extends CustomNativeAdapter {
             }
 
             @Override
-            public void onAdLoadFailed(MyOfferError error) {
+            public void onAdLoadFailed(OfferError error) {
                 if (mLoadListener != null) {
                     mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
                 }
@@ -79,18 +89,15 @@ public class MyOfferATAdapter extends CustomNativeAdapter {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey("myoffer_setting")) {
-            myofferSetting = (MyOfferSetting) serverExtras.get("myoffer_setting");
-        }
-        if (serverExtras.containsKey("topon_placement")) {
-            placement_id = serverExtras.get("topon_placement").toString();
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
         }
 
         if (serverExtras.containsKey(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG)) {
             isDefaultOffer = (Boolean) serverExtras.get(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG);
         }
 
-        mMyOfferNativeAd = new MyOfferNativeAd(context, placement_id, offer_id, myofferSetting, isDefaultOffer);
+        mMyOfferNativeAd = new MyOfferNativeAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, isDefaultOffer);
         return true;
     }
 

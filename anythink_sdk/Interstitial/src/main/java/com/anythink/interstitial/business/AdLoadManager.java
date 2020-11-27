@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.interstitial.business;
 
 import android.app.Activity;
@@ -14,6 +21,7 @@ import com.anythink.core.common.entity.AdCacheInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.interstitial.api.ATInterstitialListener;
@@ -70,21 +78,26 @@ public class AdLoadManager extends CommonAdManager<InterstitialLoadParams> {
 
                     final AdTrackingInfo adTrackingInfo = adCacheInfo.getBaseAdapter().getTrackingInfo();
 
+                    long timestamp = System.currentTimeMillis();
+
                     if (adTrackingInfo != null) {
                         adTrackingInfo.setCurrentRequestId(mRequestId);
                         adTrackingInfo.setmScenario(scenario);
+                        adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
+
                         /**Must set before AdCacheManager.saveShowTime()，don't suggest to do it in UI-Thread**/
                         TrackingInfoUtil.fillTrackingInfoShowTime(mApplicationContext, adTrackingInfo);
                     }
 
 
-                    AdCacheManager.getInstance().saveShowTime(mApplicationContext, adCacheInfo);
+                    AdCacheManager.getInstance().saveShowTimeToDisk(mApplicationContext, adCacheInfo.getBaseAdapter(), adCacheInfo.isLast());
 
                     /**Send Tracking**/
-                    AdTrackingManager.getInstance(mApplicationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo);
+                    AdTrackingManager.getInstance(mApplicationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo, timestamp);
                     SDKContext.getInstance().runOnMainThread(new Runnable() {
                         @Override
                         public void run() {
+                            customInterstitialAdapter.setScenario(scenario);
                             customInterstitialAdapter.internalShow(activity, new InterstitialEventListener(customInterstitialAdapter, interstitialEventListener));
                         }
                     });

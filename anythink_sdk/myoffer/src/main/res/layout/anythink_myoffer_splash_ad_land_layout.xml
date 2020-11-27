@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.anythink.myoffer.ui.component.RoundImageView
+    <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_splash_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -57,16 +64,16 @@
                 android:textSize="19dp"
                 android:textStyle="bold" />
 
-            <com.anythink.myoffer.ui.AppRatingView
+            <com.anythink.basead.ui.AppRatingView
                 android:id="@+id/anythink_myoffer_rating_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"></com.anythink.myoffer.ui.AppRatingView>
+                android:layout_marginTop="10dp"></com.anythink.basead.ui.AppRatingView>
         </LinearLayout>
     </RelativeLayout>
 
 
-    <com.anythink.myoffer.ui.component.RoundFrameLayout
+    <com.anythink.basead.ui.component.RoundFrameLayout
         android:id="@+id/anythink_myoffer_splash_ad_content_image_area"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -75,7 +82,7 @@
         android:layout_marginLeft="70dp"
         android:layout_marginTop="50dp"
         android:layout_marginRight="70dp"
-        android:layout_marginBottom="20dp"></com.anythink.myoffer.ui.component.RoundFrameLayout>
+        android:layout_marginBottom="20dp"></com.anythink.basead.ui.component.RoundFrameLayout>
 
 
     <TextView
@@ -88,7 +95,7 @@
         android:textColor="#e9e9e9"
         android:textSize="12dp" />
 
-    <com.anythink.myoffer.ui.component.RoundImageView
+    <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_splash_ad_logo"
         android:layout_width="40dp"
         android:layout_height="20dp"

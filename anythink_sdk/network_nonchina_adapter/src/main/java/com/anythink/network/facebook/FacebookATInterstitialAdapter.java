@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
@@ -90,7 +88,6 @@ public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
     public void destory() {
         try {
             if (mInterstitialAd != null) {
-                mInterstitialAd.setAdListener(null);
                 mInterstitialAd.destroy();
                 mInterstitialAd = null;
             }

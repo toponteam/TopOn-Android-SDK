@@ -4,14 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.interstitialvideo.out.InterstitialVideoListener;
 import com.mintegral.msdk.interstitialvideo.out.MTGBidInterstitialVideoHandler;
 import com.mintegral.msdk.interstitialvideo.out.MTGInterstitialVideoHandler;
+import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.out.CustomInfoManager;
 import com.mintegral.msdk.out.InterstitialListener;
 import com.mintegral.msdk.out.MTGInterstitialHandler;
@@ -85,9 +83,6 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
                 @Override
                 public void onAdClose(boolean isCompleteView) {
                     if (mImpressListener != null) {
-                        if (isCompleteView) {
-                            mImpressListener.onInterstitialAdVideoEnd();
-                        }
                         mImpressListener.onInterstitialAdClose();
                     }
                 }
@@ -325,5 +320,10 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
     @Override
     public String getNetworkPlacementId() {
         return unitId;
+    }
+
+    @Override
+    public String getBiddingToken(Context context) {
+        return BidManager.getBuyerUid(context);
     }
 }

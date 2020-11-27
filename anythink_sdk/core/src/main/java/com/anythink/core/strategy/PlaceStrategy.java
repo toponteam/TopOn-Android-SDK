@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.strategy;
 
 import android.text.TextUtils;
@@ -6,11 +13,15 @@ import com.anythink.core.api.ATRewardInfo;
 import com.anythink.core.common.HeadBiddingKey;
 import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
+import com.anythink.core.common.entity.AdxAdSetting;
+import com.anythink.core.common.entity.AdxRequestInfo;
 import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.MyOfferRequestInfo;
 import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.entity.TemplateStrategy;
 import com.anythink.core.common.net.PlaceStrategyLoader;
 import com.anythink.core.common.utils.CommonLogUtil;
+import com.anythink.core.common.utils.CommonUtil;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 
 public class PlaceStrategy {
-
+    private final String TAG = "Placement";
     /***
      * Cache Time
      */
@@ -93,7 +104,8 @@ public class PlaceStrategy {
     /**
      * Headbidding UnitGroup JSON String
      */
-    private String headbiddingUnitGroupListStr;
+    private String s2sheadbiddingUnitGroupListStr;
+    private String c2sHeadbiddingUnitGroupListStr;
 
     private List<UnitGroupInfo> mNormalUnitGroupList;
     private List<UnitGroupInfo> mHBUnitGroupList;
@@ -178,6 +190,30 @@ public class PlaceStrategy {
         this.impressionRevenueForMonitoringPlatformString = impressionRevenueForMonitoringPlatformString;
     }
 
+    /**
+     * v5.7.0
+     *
+     * @param myOfferSetting
+     */
+    private String adxUnitGroupListStr;
+    private String adxAdSettingStr;
+
+    public String getAdxAdSettingStr() {
+        return adxAdSettingStr;
+    }
+
+    public void setAdxAdSettingStr(String adxAdSettingStr) {
+        this.adxAdSettingStr = adxAdSettingStr;
+    }
+
+    public String getAdxUnitGroupListStr() {
+        return adxUnitGroupListStr;
+    }
+
+    public void setAdxUnitGroupListStr(String adxUnitGroupListStr) {
+        this.adxUnitGroupListStr = adxUnitGroupListStr;
+    }
+
     public void setMyOfferSetting(MyOfferSetting myOfferSetting) {
         this.myOfferSetting = myOfferSetting;
     }
@@ -214,7 +250,7 @@ public class PlaceStrategy {
         return mHBUnitGroupList;
     }
 
-    public void setHBUnitGroupList(List<UnitGroupInfo> hbUnitGroupList) {
+    public void setHeadBiddingList(List<UnitGroupInfo> hbUnitGroupList) {
         mHBUnitGroupList = hbUnitGroupList;
     }
 
@@ -502,15 +538,23 @@ public class PlaceStrategy {
         this.normalUnitGroupListStr = normalUnitGroupListStr;
     }
 
-    public String getHeadbiddingUnitGroupListStr() {
-        return headbiddingUnitGroupListStr;
+    public String getS2SHeadbiddingUnitGroupListStr() {
+        return s2sheadbiddingUnitGroupListStr;
     }
 
-    public void setHeadbiddingUnitGroupListStr(String headbiddingUnitGroupListStr) {
-        this.headbiddingUnitGroupListStr = headbiddingUnitGroupListStr;
+    public void setS2SHeadbiddingUnitGroupListStr(String s2sheadbiddingUnitGroupListStr) {
+        this.s2sheadbiddingUnitGroupListStr = s2sheadbiddingUnitGroupListStr;
     }
 
-//    public List<UnitGroupInfo> getSortByEcpmUnitGroupList() {
+    public String getC2SHeadbiddingUnitGroupListStr() {
+        return c2sHeadbiddingUnitGroupListStr;
+    }
+
+    public void setC2SHeadbiddingUnitGroupListStr(String c2sHeadbiddingUnitGroupListStr) {
+        this.c2sHeadbiddingUnitGroupListStr = c2sHeadbiddingUnitGroupListStr;
+    }
+
+    //    public List<UnitGroupInfo> getSortByEcpmUnitGroupList() {
 //        return sortByEcpmUnitGroupList;
 //    }
 
@@ -639,9 +683,20 @@ public class PlaceStrategy {
         public final static String cached_offers_num = "cached_offers_num";
 
         /**
+         * v5.7.0
+         */
+        public final static String adx_ug_list_key = "adx_list";
+        public final static String adx_ad_setting_key = "adx_st";
+
+        /**
          * v5.6.8
          */
         public final static String ilrd = "ilrd";
+
+        /**
+         * v5.7.1
+         */
+        public final static String c2s_hb_list_key = "hb_list";
 
     }
 
@@ -786,6 +841,15 @@ public class PlaceStrategy {
          * Bid fail interval
          */
         public long bidFailInterval;
+
+        /**
+         * adsourceType (0: normal  1: s2s   2: c2s   3: adx)
+         */
+        public int adsourceType;
+        public static int TYPE_NORMAL = 0;
+        public static int TYPE_HB_S2S = 1;
+        public static int TYPE_HB_C2S = 2;
+        public static int TYPE_ADX = 3;
 
 
         public UnitGroupInfo() {
@@ -1143,22 +1207,33 @@ public class PlaceStrategy {
                 strategy.setNormalUnitGroupList(new ArrayList<UnitGroupInfo>());
             } else {
                 strategy.setNormalUnitGroupListStr(jsonObject.optString(ResponseKey.unitGroup_key));
-                strategy.setNormalUnitGroupList(parseUnitGroupInfoList(jsonObject.optString(ResponseKey.unitGroup_key), false));
+                strategy.setNormalUnitGroupList(parseUnitGroupInfoList(jsonObject.optString(ResponseKey.unitGroup_key), UnitGroupInfo.TYPE_NORMAL));
             }
 
             if (jsonObject.isNull(ResponseKey.unitGroup_hb_s2s_list_key)) {
-                strategy.setHeadbiddingUnitGroupListStr("[]");
-                strategy.setHBUnitGroupList(new ArrayList<UnitGroupInfo>());
+                strategy.setS2SHeadbiddingUnitGroupListStr("[]");
             } else {
-                strategy.setHBUnitGroupList(parseUnitGroupInfoList(jsonObject.optString(ResponseKey.unitGroup_hb_s2s_list_key), true));
-                JSONArray jsonArray = jsonObject.optJSONArray(ResponseKey.unitGroup_hb_s2s_list_key);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject hbObject = jsonArray.optJSONObject(i);
-                    hbObject.put(HeadBiddingKey.unitGroup_bidtype, 1);
-                    jsonArray.put(i, hbObject);
-                }
-                strategy.setHeadbiddingUnitGroupListStr(jsonArray.toString());
+                strategy.setS2SHeadbiddingUnitGroupListStr(jsonObject.optString(ResponseKey.unitGroup_hb_s2s_list_key));
             }
+
+            if (jsonObject.isNull(ResponseKey.adx_ug_list_key)) {
+                strategy.setAdxUnitGroupListStr("[]");
+            } else {
+                strategy.setAdxUnitGroupListStr(jsonObject.optString(ResponseKey.adx_ug_list_key));
+            }
+
+            if (jsonObject.isNull(ResponseKey.c2s_hb_list_key)) {
+                strategy.setC2SHeadbiddingUnitGroupListStr("[]");
+            } else {
+                strategy.setC2SHeadbiddingUnitGroupListStr(jsonObject.optString(ResponseKey.c2s_hb_list_key));
+            }
+
+            try {
+                strategy.setHeadBiddingList(parseHeadBiddingUnitGroupInfoList(strategy.getS2SHeadbiddingUnitGroupListStr(), strategy.getAdxUnitGroupListStr(), strategy.getC2SHeadbiddingUnitGroupListStr()));
+            } catch (Exception e) {
+
+            }
+
 
             long updateTime = 0;
             if (jsonObject.isNull("updateTime")) {
@@ -1320,6 +1395,13 @@ public class PlaceStrategy {
             } else {
                 strategy.setImpressionRevenueForMonitoringPlatformString(jsonObject.optString(ResponseKey.ilrd));
             }
+
+            if (jsonObject.isNull(ResponseKey.adx_ad_setting_key)) {
+                strategy.setAdxAdSettingStr("");
+            } else {
+                strategy.setAdxAdSettingStr(jsonObject.optString(ResponseKey.adx_ad_setting_key));
+            }
+
             return strategy;
         } catch (Exception e) {
             if (Const.DEBUG) {
@@ -1388,12 +1470,31 @@ public class PlaceStrategy {
 //    }
 
     /**
+     * Parse Headbidding List
+     *
+     * @param s2sHbInfo
+     * @param adxHbInfo
+     * @return
+     */
+    public static List<PlaceStrategy.UnitGroupInfo> parseHeadBiddingUnitGroupInfoList(String s2sHbInfo, String adxHbInfo, String c2sHbInfo) {
+        List<PlaceStrategy.UnitGroupInfo> s2sHbInfoList = parseUnitGroupInfoList(s2sHbInfo, UnitGroupInfo.TYPE_HB_S2S);
+        List<PlaceStrategy.UnitGroupInfo> adxHbInfoList = parseUnitGroupInfoList(adxHbInfo, UnitGroupInfo.TYPE_ADX);
+        List<PlaceStrategy.UnitGroupInfo> c2sHbInfoList = parseUnitGroupInfoList(c2sHbInfo, UnitGroupInfo.TYPE_HB_C2S);
+
+        s2sHbInfoList.addAll(adxHbInfoList);
+        s2sHbInfoList.addAll(c2sHbInfoList);
+
+        return s2sHbInfoList;
+    }
+
+    /**
      * jsonArray to uglist
      *
      * @param successArray
      * @return
      */
-    public static List<PlaceStrategy.UnitGroupInfo> parseUnitGroupInfoList(String successArray, boolean isHB) {
+    public static List<PlaceStrategy.UnitGroupInfo> parseUnitGroupInfoList(String successArray, int adsourceType) {
+        boolean isHB = adsourceType != UnitGroupInfo.TYPE_NORMAL;
         CopyOnWriteArrayList<UnitGroupInfo> unitGroupList = new CopyOnWriteArrayList<PlaceStrategy.UnitGroupInfo>();
         try {
             JSONArray unitGroupArray = new JSONArray(successArray);
@@ -1407,6 +1508,7 @@ public class PlaceStrategy {
                 }
                 unitGroupInfo = new PlaceStrategy.UnitGroupInfo();
 //                unitGroupInfo.level = i;
+                unitGroupInfo.adsourceType = adsourceType;
                 unitGroupInfo.bidType = isHB ? 1 : 0;
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_adapterClassName_key)) {
                     unitGroupInfo.adapterClassName = "";
@@ -1440,7 +1542,7 @@ public class PlaceStrategy {
                 }
 
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_unitGroupId_key)) {
-                    unitGroupInfo.unitGroupId = "unkwon";
+                    unitGroupInfo.unitGroupId = "unknown";
                 } else {
                     unitGroupInfo.unitGroupId = arryItemTemp.optString(HeadBiddingKey.unitGroup_unitGroupId_key);
                 }
@@ -1645,7 +1747,7 @@ public class PlaceStrategy {
                 myOfferAd.setOfferPacing(offerObject.optLong("o_a_p"));
                 myOfferAd.setUpdateTime(updateTime);
 
-                myOfferAd.setOfferType(offerObject.optInt("unit_type"));
+                myOfferAd.setResourceType(offerObject.optInt("unit_type"));
                 myOfferAd.setClickMode(offerObject.optInt("c_m"));
 
                 /**v5.6.6**/
@@ -1685,39 +1787,47 @@ public class PlaceStrategy {
      * Check Placement Setting status
      */
     public boolean isPlaceStrategyExpired() {
-        CommonLogUtil.d("commonadmanager", "Already cache time -- > " + (System.currentTimeMillis() - updateTime));
+        CommonLogUtil.d(TAG, "Already cache time -- > " + (System.currentTimeMillis() - updateTime));
         return System.currentTimeMillis() - updateTime > ps_ct;
     }
 
     /**
      * JSONObject to Map
      */
-    public static Map<String, Object> getServerExtrasMap(String placementId, PlaceStrategy.UnitGroupInfo unitGroupInfo, MyOfferSetting extraSetting) {
-        Map<String, Object> serviceExtras = getServerExtrasMap(unitGroupInfo.content);
+    public Map<String, Object> getServerExtrasMap(String placementId, String requestId, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+        Map<String, Object> serviceExtras = CommonUtil.jsonObjectToMap(unitGroupInfo.content);
 
-        serviceExtras.put("payload", unitGroupInfo.getPayload());
+        serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.BID_PAYLOAD_KEY, unitGroupInfo.getPayload());
+
         if (unitGroupInfo.networkType == MyOfferAPIProxy.MYOFFER_NETWORK_FIRM_ID) {
-            serviceExtras.put("myoffer_setting", extraSetting);
-            serviceExtras.put("topon_placement", placementId);
+            MyOfferRequestInfo myOfferRequestInfo = new MyOfferRequestInfo();
+            myOfferRequestInfo.placementId = placementId;
+            myOfferRequestInfo.requestId = requestId;
+            myOfferRequestInfo.myOfferSetting = getMyOfferSetting();
+            if (myOfferRequestInfo.myOfferSetting != null) {
+                myOfferRequestInfo.myOfferSetting.setFormat(format);
+            }
+
+            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY, myOfferRequestInfo);
         }
+
+        if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) { //Adx Network Firm Id
+            AdxRequestInfo adxRequestInfo = new AdxRequestInfo();
+            adxRequestInfo.bidId = unitGroupInfo.getPayload();
+            adxRequestInfo.adsourceId = unitGroupInfo.unitId;
+            adxRequestInfo.groupId = groupId;
+            adxRequestInfo.placementId = placementId;
+            adxRequestInfo.requestId = requestId;
+            adxRequestInfo.trafficGroupId = tracfficGroupId;
+            adxRequestInfo.adxAdSetting = AdxAdSetting.parseAdxSetting(getAdxAdSettingStr());
+            if (adxRequestInfo.adxAdSetting != null) {
+                adxRequestInfo.adxAdSetting.setFormat(format);
+            }
+
+            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.ADX_PARAMS_KEY, adxRequestInfo);
+        }
+
         return serviceExtras;
     }
 
-    static Map<String, Object> getServerExtrasMap(String content) {
-        final Map<String, Object> serviceExtras = new HashMap<>();
-        try {
-            JSONObject jsonObject = new JSONObject(content);
-            Iterator<String> serviceObject = jsonObject.keys();
-            while (serviceObject.hasNext()) {
-                String key = serviceObject.next();
-                Object value = jsonObject.opt(key);
-                serviceExtras.put(key, value);
-            }
-        } catch (Exception e) {
-            if (Const.DEBUG) {
-                e.printStackTrace();
-            }
-        }
-        return serviceExtras;
-    }
 }

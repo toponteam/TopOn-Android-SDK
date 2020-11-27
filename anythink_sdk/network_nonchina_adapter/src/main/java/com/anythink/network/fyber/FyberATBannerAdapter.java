@@ -6,11 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.fyber.inneractive.sdk.external.ImpressionData;
 import com.fyber.inneractive.sdk.external.InneractiveAdRequest;
 import com.fyber.inneractive.sdk.external.InneractiveAdSpot;
@@ -31,14 +27,6 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public void loadCustomNetworkAd(final Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-        //todo  mock data
-//        serverExtras.put("app_id", "102960");
-//        serverExtras.put("spot_id", "150942");
-//        serverExtras.put("spot_id", "150943");//RECTANGLE
-
-//        serverExtras.put("app_id", "112759");
-//        serverExtras.put("spot_id", "217617");
-        //end  mock data
 
         String appId = "";
         spotId = "";

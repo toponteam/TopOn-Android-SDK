@@ -7,7 +7,6 @@ import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
 import com.huawei.hms.ads.AdListener;
 import com.huawei.hms.ads.AdParam;
 import com.huawei.hms.ads.BannerAdSize;
-import com.huawei.hms.ads.annotation.GlobalApi;
 import com.huawei.hms.ads.banner.BannerView;
 
 import java.util.Map;

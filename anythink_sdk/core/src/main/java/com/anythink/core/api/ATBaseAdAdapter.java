@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.api;
 
 import android.content.Context;
@@ -11,6 +18,8 @@ public abstract class ATBaseAdAdapter extends AnyThinkBaseAdapter {
 
     protected String mUserId = "";
     protected String mUserData = "";
+
+    protected String mScenario = "";
 
     //Custom Network request Ad
     public abstract void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtra, final Map<String, Object> localExtra);
@@ -37,6 +46,10 @@ public abstract class ATBaseAdAdapter extends AnyThinkBaseAdapter {
 
     public boolean initNetworkObjectByPlacementId(final Context context, final Map<String, Object> serverExtras, final Map<String, Object> localExtra) {
         return false;
+    }
+
+    public final void setScenario(String scenario) {
+        mScenario = scenario;
     }
 
     public BaseAd getBaseAdObject(Context context) {
@@ -68,5 +81,13 @@ public abstract class ATBaseAdAdapter extends AnyThinkBaseAdapter {
 
     public void releaseLoadResource() {
         cleanLoadListener();
+    }
+
+    public boolean startBiddingRequest(Context applicationContext, Map<String, Object> serverExtra, ATBiddingListener biddingListener) {
+        return false;
+    }
+
+    public String getBiddingToken(Context context) {
+        return null;
     }
 }

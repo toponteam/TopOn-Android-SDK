@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.base;
 
 import android.app.Application;
@@ -13,12 +20,17 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.anythink.BuildConfig;
 import com.anythink.core.api.ATCustomRuleKeys;
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.core.api.AdError;
+import com.anythink.core.api.ErrorCode;
 import com.anythink.core.api.IATChinaSDKHandler;
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.common.MsgManager;
 import com.anythink.core.common.OffLineTkManager;
+import com.anythink.core.common.net.OnHttpLoaderListener;
+import com.anythink.core.common.net.PlaceStrategyLoader;
 import com.anythink.core.common.track.Agent;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonDeviceUtil;
@@ -29,6 +41,7 @@ import com.anythink.core.common.utils.SPUtil;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
+import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 
 import org.json.JSONArray;
@@ -55,7 +68,7 @@ import dalvik.system.DexFile;
 
 public class SDKContext {
     private final String TAG = "SDK.init";
-    private final String CHINA_HANDLER_CLASS = "com.anythink.china.api.ATChinaSDKHandler";
+    private final String CHINA_HANDLER_CLASS = BuildConfig.CHINA_PLUGIN_NAME;
     private boolean isCheckChinaPlugin = false;
 
     private static SDKContext instance;
@@ -67,6 +80,8 @@ public class SDKContext {
 
     private ConcurrentHashMap<String, Object> mCustomMap;
     private ConcurrentHashMap<String, Map<String, Object>> mPlacementCustomMap;
+
+    private Map<String, Boolean> mDeniedDeviceInfoUpLoadMap;
 
     private String mPsid;
     private JSONObject mSessionIdObject;
@@ -122,6 +137,25 @@ public class SDKContext {
         mCustomMap = new ConcurrentHashMap<>();
 
         mLogPath = File.separator + "anythink.test";
+    }
+
+    public synchronized void deniedUploadDeviceInfo(String... deviceInfos) {
+        if (deviceInfos != null) {
+            mDeniedDeviceInfoUpLoadMap = new HashMap<>();
+            for (String deviceKey : deviceInfos) {
+                mDeniedDeviceInfoUpLoadMap.put(deviceKey, true);
+            }
+        } else {
+            mDeniedDeviceInfoUpLoadMap = null;
+        }
+    }
+
+    public synchronized boolean containDeniedDeviceKey(String deviceKey) {
+        if (mDeniedDeviceInfoUpLoadMap == null) {
+            return false;
+        }
+
+        return mDeniedDeviceInfoUpLoadMap.containsKey(deviceKey);
     }
 
     public void setContext(Context context) {
@@ -263,7 +297,7 @@ public class SDKContext {
         if (TextUtils.isEmpty(placementSessionId)) {
             placementSessionId = createSessionId(placementId);
         } else {
-            CommonLogUtil.i(TAG, placementId + ": sessionid exits.");
+            CommonLogUtil.i(TAG, placementId + ": sessionid exists.");
             CommonLogUtil.i(TAG, "placementSessionId :" + placementSessionId);
         }
 
@@ -663,6 +697,63 @@ public class SDKContext {
 
             }
         });
+    }
+
+    public void checkSplashDefaultConfig(Context context, final String splashPlacementId, Map<String, Object> customMap) {
+        if (isNetworkLogDebug()) {
+            Log.i(Const.RESOURCE_HEAD, "Requesting placement(" + splashPlacementId + ") setting Info，please wait a moment.");
+            PlaceStrategyLoader placeStrategyLoader = new PlaceStrategyLoader(context, SDKContext.getInstance().getAppId(), SDKContext.getInstance().getAppKey(), splashPlacementId, "", customMap);
+            placeStrategyLoader.start(0, new OnHttpLoaderListener() {
+                @Override
+                public void onLoadStart(int reqCode) {
+
+                }
+
+                @Override
+                public void onLoadFinish(int reqCode, Object result) {
+                    String json = (String) result;
+
+                    final PlaceStrategy curr = PlaceStrategy.parseStrategy(json);
+                    if (!Const.FORMAT.SPLASH_FORMAT.equals(String.valueOf(curr.getFormat()))) {
+                        Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config Start(" + splashPlacementId + ") *************************************");
+                        Log.i(Const.RESOURCE_HEAD, "This placement(" + splashPlacementId + ") does not belong to Splash!");
+                        Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config End(" + splashPlacementId + ") *************************************");
+                    } else {
+                        Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config Start(" + splashPlacementId + ") *************************************");
+                        List<PlaceStrategy.UnitGroupInfo> unitGroupInfoList = curr.getNormalUnitGroupList();
+                        if (unitGroupInfoList == null || unitGroupInfoList.size() == 0) {
+                            Log.i(Const.RESOURCE_HEAD, ErrorCode.getErrorCode(ErrorCode.noAdsourceConfig, "", "").getDesc());
+                        } else {
+                            for (PlaceStrategy.UnitGroupInfo unitGroupInfo : unitGroupInfoList) {
+                                Log.i(Const.RESOURCE_HEAD, "------------------------------------------------");
+                                Log.i(Const.RESOURCE_HEAD, "Network Firm Id:" + unitGroupInfo.networkType);
+                                Log.i(Const.RESOURCE_HEAD, "AdSource Id:" + unitGroupInfo.unitId);
+                                Log.i(Const.RESOURCE_HEAD, "Network Content:" + unitGroupInfo.content);
+                                Log.i(Const.RESOURCE_HEAD, "------------------------------------------------");
+                            }
+                        }
+                        Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config End(" + splashPlacementId + ") *************************************");
+                    }
+                }
+
+                @Override
+                public void onLoadError(int reqCode, String msg, AdError errorCode) {
+                    Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config Start(" + splashPlacementId + ") *************************************");
+                    Log.i(Const.RESOURCE_HEAD, "This placement(" + splashPlacementId + ") request error:" + errorCode.printStackTrace());
+                    Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config End(" + splashPlacementId + ") *************************************");
+                }
+
+                @Override
+                public void onLoadCanceled(int reqCode) {
+
+                }
+            });
+        } else {
+            Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config Start(" + splashPlacementId + ") *************************************");
+            Log.i(Const.RESOURCE_HEAD, "Only use in debug mode!");
+            Log.i(Const.RESOURCE_HEAD, "********************************** Get Splash Config End(" + splashPlacementId + ") *************************************");
+
+        }
     }
 
 

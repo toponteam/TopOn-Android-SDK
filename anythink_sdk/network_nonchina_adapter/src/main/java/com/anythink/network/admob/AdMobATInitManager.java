@@ -11,7 +11,7 @@ import com.google.android.gms.ads.AdActivity;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.internal.ClientApi;
-import com.google.android.gms.common.GoogleSignatureVerifier;
+import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.internal.ads.zzb;
 import com.google.android.gms.internal.ads.zzdpt;
 import com.google.android.gms.internal.measurement.zzfd;
@@ -106,7 +106,7 @@ public class AdMobATInitManager extends ATInitMediation {
         return "Admob";
     }
 
-    public String getGoogleAdManagerName(){
+    public String getGoogleAdManagerName() {
         return "Google Ad Manager";
     }
 
@@ -174,7 +174,7 @@ public class AdMobATInitManager extends ATInitMediation {
         }
 
         try {
-            clazz = GoogleSignatureVerifier.class;
+            clazz = PlatformVersion.class;
             pluginMap.put("play-services-basement-*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();

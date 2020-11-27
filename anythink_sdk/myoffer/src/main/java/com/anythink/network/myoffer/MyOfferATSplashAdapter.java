@@ -1,32 +1,38 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.myoffer;
 
 import android.content.Context;
 
+import com.anythink.basead.entity.OfferError;
+import com.anythink.basead.listeners.AdListener;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.MyOfferSetting;
-import com.anythink.myoffer.network.base.MyOfferAdListener;
-import com.anythink.myoffer.network.splash.MyOfferSplashAd;
+import com.anythink.core.common.entity.MyOfferRequestInfo;
+import com.anythink.basead.myoffer.MyOfferSplashAd;
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 
 import java.util.Map;
 
 public class MyOfferATSplashAdapter extends CustomSplashAdapter {
     String offer_id;
-    MyOfferSetting myofferSetting;
-    String placement_id;
 
     MyOfferSplashAd mMyOfferSplashAd;
+
+    MyOfferRequestInfo mMyOfferRequestInfo;
 
     @Override
     public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey("myoffer_setting")) {
-            myofferSetting = (MyOfferSetting) serverExtras.get("myoffer_setting");
-        }
-        if (serverExtras.containsKey("topon_placement")) {
-            placement_id = serverExtras.get("topon_placement").toString();
+
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
         }
 
         initSplashObject(context);
@@ -41,14 +47,19 @@ public class MyOfferATSplashAdapter extends CustomSplashAdapter {
             mMyOfferSplashAd = null;
         }
 
-        myofferSetting = null;
+        mMyOfferRequestInfo = null;
     }
 
     private void initSplashObject(Context context) {
-        mMyOfferSplashAd = new MyOfferSplashAd(context, placement_id, offer_id, myofferSetting, getTrackingInfo().getmRequestId(), false);
-        mMyOfferSplashAd.setListener(new MyOfferAdListener() {
+        mMyOfferSplashAd = new MyOfferSplashAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, getTrackingInfo().getmRequestId(), false);
+        mMyOfferSplashAd.setListener(new AdListener() {
             @Override
-            public void onAdLoaded() {
+            public void onAdDataLoaded() {
+
+            }
+
+            @Override
+            public void onAdCacheLoaded() {
                 if (mContainer != null) {
                     if (mLoadListener != null) {
                         mLoadListener.onAdCacheLoaded();
@@ -62,7 +73,7 @@ public class MyOfferATSplashAdapter extends CustomSplashAdapter {
             }
 
             @Override
-            public void onAdLoadFailed(MyOfferError error) {
+            public void onAdLoadFailed(OfferError error) {
                 if (mLoadListener != null) {
                     mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
                 }

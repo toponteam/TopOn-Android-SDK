@@ -103,6 +103,7 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
 
     private void startLoad() {
         splashHandler = new MTGSplashHandler(placementId, unitId, allowSkip, countdown, orientation, 0, 0);
+        splashHandler.setLoadTimeOut(5);//unit: second
         splashHandler.setSplashLoadListener(new MTGSplashLoadListener() {
             @Override
             public void onLoadSuccessed(int i) {

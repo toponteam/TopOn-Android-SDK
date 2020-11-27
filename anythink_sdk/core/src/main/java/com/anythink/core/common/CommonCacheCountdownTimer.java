@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common;
 
 import android.content.Context;
@@ -16,6 +23,7 @@ import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonLogUtil;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.CustomAdapterFactory;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
@@ -86,7 +94,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
 
         CommonLogUtil.i(TAG, "start to refresh Ad---");
 
-        adapter.log(Const.LOGKEY.REQUEST, Const.LOGKEY.START, "");
+        CommonSDKUtil.printAdTrackingInfoStatusLog(mAdTrackingInfo, Const.LOGKEY.REQUEST, Const.LOGKEY.START, "");
 
 
         mPlaceStrategy = PlaceStrategyManager.getInstance(SDKContext.getInstance().getContext()).getPlaceStrategyByAppIdAndPlaceId(mAdTrackingInfo.getmPlacementId());
@@ -99,7 +107,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
         Map<String, Object> localMap = PlacementAdManager.getInstance().getPlacementLocalSettingMap(mAdTrackingInfo.getmPlacementId());
         /**Start request Ad**/
         adapter.internalLoad(context
-                , PlaceStrategy.getServerExtrasMap(mAdTrackingInfo.getmPlacementId(), adapter.getmUnitgroupInfo(), mPlaceStrategy.getMyOfferSetting())
+                , mPlaceStrategy.getServerExtrasMap(mAdTrackingInfo.getmPlacementId(), mAdTrackingInfo.getmRequestId(), adapter.getmUnitgroupInfo())
                 , localMap, new CustomAdapterLoadListener(starttime, adapter));
     }
 
@@ -124,7 +132,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
             adTrackingInfo.setFillTime(System.currentTimeMillis() - starttime);
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_REQUEST_SUCCESS_TYPE, adTrackingInfo);
 
-            adapter.log(Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.SUCCESS, "");
 
         }
 
@@ -141,7 +149,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
             mHasGetResult = true;
 
             AgentEventManager.onAdsourceLoadFail(adTrackingInfo, 0, adError, System.currentTimeMillis() - startTime);
-            adapter.log(Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.FAIL, adError.printStackTrace());
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.FAIL, adError.printStackTrace());
 
         }
     }

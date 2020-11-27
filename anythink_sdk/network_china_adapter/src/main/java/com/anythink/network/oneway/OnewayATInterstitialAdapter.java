@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.oneway;
 
 import android.app.Activity;
@@ -15,6 +22,7 @@ import mobi.oneway.export.AdListener.OWInterstitialAdListener;
 import mobi.oneway.export.AdListener.OWInterstitialImageAdListener;
 import mobi.oneway.export.enums.OnewayAdCloseType;
 import mobi.oneway.export.enums.OnewaySdkError;
+
 
 
 public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {

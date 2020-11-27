@@ -13,15 +13,16 @@ import com.mintegral.msdk.interstitial.view.MTGInterstitialActivity;
 import com.mintegral.msdk.interstitialvideo.out.MTGInterstitialVideoHandler;
 import com.mintegral.msdk.mtgbanner.view.MTGBannerWebView;
 import com.mintegral.msdk.mtgbid.out.BidManager;
-import com.mintegral.msdk.mtgjscommon.base.BaseWebView;
 import com.mintegral.msdk.mtgnative.a.b;
+import com.mintegral.msdk.mtgsignalcommon.base.BaseWebView;
 import com.mintegral.msdk.nativex.view.MTGMediaView;
+import com.mintegral.msdk.out.ChannelManager;
 import com.mintegral.msdk.out.MIntegralSDKFactory;
 import com.mintegral.msdk.playercommon.PlayerView;
 import com.mintegral.msdk.reward.player.MTGRewardVideoActivity;
 import com.mintegral.msdk.splash.view.MTGSplashView;
-import com.mintegral.msdk.video.js.bridge.BaseVideoBridge;
-import com.mintegral.msdk.video.js.bridge.RewardJs;
+import com.mintegral.msdk.video.signal.communication.BaseRewardSignalH5;
+import com.mintegral.msdk.video.signal.communication.RewardSignal;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,6 +74,7 @@ public class MintegralATInitManager extends ATInitMediation {
                 if (!TextUtils.isEmpty(appid) && !TextUtils.isEmpty(appkey)) {
                     try {
                         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mAppKey) || !TextUtils.equals(mAppId, appid) || !TextUtils.equals(mAppKey, appkey)) {
+                            ChannelManager.setChannel("Y+H6DFttYrPQYcIeicKwJQKQYrN=");
                             MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
                             Map<String, String> map = sdk.getMTGConfigurationMap(appid, appkey);
 //                            MIntegralConstans.DEBUG = ATSDK.isNetworkLogDebug();
@@ -134,7 +136,6 @@ public class MintegralATInitManager extends ATInitMediation {
     @Override
     public Map<String, Boolean> getPluginClassStatus() {
         HashMap<String, Boolean> pluginMap = new HashMap<>();
-        pluginMap.put("mintegral_alphab.aar", false);
         pluginMap.put("mintegral_interstitial.aar", false);
         pluginMap.put("mintegral_interstitialvideo.aar", false);
         pluginMap.put("mintegral_mtgbanner.aar", false);
@@ -216,14 +217,14 @@ public class MintegralATInitManager extends ATInitMediation {
         }
 
         try {
-            clazz = RewardJs.class;
+            clazz = RewardSignal.class;
             pluginMap.put("mintegral_videocommon.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = BaseVideoBridge.class;
+            clazz = BaseRewardSignalH5.class;
             pluginMap.put("mintegral_videojs.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();

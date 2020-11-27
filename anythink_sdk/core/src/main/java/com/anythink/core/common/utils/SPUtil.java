@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.utils;
 
 import android.content.Context;
@@ -23,6 +30,20 @@ public class SPUtil {
 
         }
 
+    }
+
+    public static void remove(Context context, String name, String key) {
+        if (context == null) {
+            return;
+        }
+        try {
+            SharedPreferences spuFile = context.getSharedPreferences(name, Context.MODE_PRIVATE);
+            spuFile.edit().remove(key).apply();
+        } catch (Exception e) {
+
+        } catch (Error e) {
+
+        }
     }
 
     public static void putLong(Context context, String name, String key, long value) {

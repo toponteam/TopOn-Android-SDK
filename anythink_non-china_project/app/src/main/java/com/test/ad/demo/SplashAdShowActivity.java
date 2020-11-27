@@ -1,3 +1,11 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ *
+ */
+
 package com.test.ad.demo;
 
 import android.app.Activity;
@@ -52,9 +60,13 @@ public class SplashAdShowActivity extends Activity implements ATSplashAdListener
         ATMediationRequestInfo atMediationRequestInfo = null;
 //        atMediationRequestInfo = new MintegralATRequestInfo("100947", "ef13ef712aeb0f6eb3d698c4c08add96", "210169", "276803");
 //        atMediationRequestInfo.setAdSourceId("68188");
+
+//        atMediationRequestInfo = new AdmobATRequestInfo("ca-app-pub-9488501426181082~6354662111", "ca-app-pub-3940256099942544/1033173712", AdmobATRequestInfo.ORIENTATION_PORTRAIT);
+//        atMediationRequestInfo.setAdSourceId("145022");
         splashAd = new ATSplashAd(this, container, unitId, atMediationRequestInfo, this);
 
 
+        ATSplashAd.checkSplashDefaultConfigList(this, unitId, null);
     }
 
     @Override

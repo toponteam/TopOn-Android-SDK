@@ -4,9 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.fyber.inneractive.sdk.external.ImpressionData;
 import com.fyber.inneractive.sdk.external.InneractiveAdRequest;
@@ -28,17 +25,6 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-
-
-        //todo  mock data
-//        serverExtras.put("app_id", "102960");
-//        serverExtras.put("spot_id", "150946");
-//        serverExtras.put("video_muted", "1");
-
-//        serverExtras.put("app_id", "112759");
-//        serverExtras.put("spot_id", "217617");
-//        serverExtras.put("video_muted", "1");
-        //end  mock data
 
         String appId = "";
         spotId = "";
@@ -64,6 +50,11 @@ public class FyberATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
 
         FyberATInitManager.getInstance().initSDK(context, serverExtras);
+
+
+        // Passing a User ID to the SDK (from v.7.7.0)
+        //Without reflection, using an import of the InneractiveAdManager class -
+//        InneractiveAdManager.setUserId(userId);
 
         // spot integration for display Square
         mSpot = InneractiveAdSpotManager.get().createSpot();

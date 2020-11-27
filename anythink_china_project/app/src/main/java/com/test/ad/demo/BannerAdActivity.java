@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.test.ad.demo;
 
 import android.app.Activity;
@@ -20,7 +27,7 @@ import java.util.HashMap;
 public class BannerAdActivity extends Activity {
 
 
-    String unitIds[] = new String[]{
+    String placementIds[] = new String[]{
             DemoApplicaion.mPlacementId_banner_all
             , DemoApplicaion.mPlacementId_banner_GDT
             , DemoApplicaion.mPlacementId_banner_toutiao
@@ -52,7 +59,7 @@ public class BannerAdActivity extends Activity {
         Spinner spinner = (Spinner) findViewById(R.id.banner_spinner);
         final FrameLayout frameLayout = findViewById(R.id.adview_container);
         mBannerView = new ATBannerView(this);
-        mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+        mBannerView.setPlacementId(placementIds[mCurrentSelectIndex]);
         frameLayout.addView(mBannerView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, dip2px(300)));
         mBannerView.setBannerAdListener(new ATBannerListener() {
             @Override
@@ -120,7 +127,7 @@ public class BannerAdActivity extends Activity {
                         parent.getItemAtPosition(position).toString(),
                         Toast.LENGTH_SHORT).show();
                 mCurrentSelectIndex = position;
-                mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+                mBannerView.setPlacementId(placementIds[mCurrentSelectIndex]);
                 mBannerView.setVisibility(View.VISIBLE);
             }
 
@@ -134,7 +141,7 @@ public class BannerAdActivity extends Activity {
             @Override
             public void onClick(View view) {
                 HashMap<String, String> maps = new HashMap<>();
-                mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+                mBannerView.setUnitId(placementIds[mCurrentSelectIndex]);
                 mBannerView.loadAd();
             }
         });

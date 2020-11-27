@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.gdt;
 
 import android.content.Context;
@@ -116,10 +123,6 @@ public class GDTATNativeExpressAd extends CustomNativeAd {
 
     protected void loadAD(GDTATNativeLoadListener loadListener) {
         mLoadListener = loadListener;
-        mNativeExpressAD.setVideoOption(new VideoOption.Builder()
-                .setAutoPlayPolicy(VideoOption.AutoPlayPolicy.ALWAYS)
-                .setAutoPlayMuted(false)
-                .build());
         mNativeExpressAD.loadAD(1);
     }
 

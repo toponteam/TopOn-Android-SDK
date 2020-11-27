@@ -2,7 +2,6 @@ package com.anythink.network.admob;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
@@ -50,20 +49,37 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
 
         final AdView adView = new AdView(activity);
         AdSize adSize = null;
-        if (localExtras.containsKey(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION) && localExtras.containsKey(AdmobATConst.INLINE_ADAPTIVE_WIDTH)) {
+
+        if (localExtras.containsKey(AdmobATConst.ADAPTIVE_TYPE) && localExtras.containsKey(AdmobATConst.ADAPTIVE_ORIENTATION) && localExtras.containsKey(AdmobATConst.ADAPTIVE_WIDTH)) {
             try {
-                int orientation = Integer.parseInt(localExtras.get(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION).toString());
-                int width = Integer.parseInt(localExtras.get(AdmobATConst.INLINE_ADAPTIVE_WIDTH).toString());
+                int adaptiveType = Integer.parseInt(localExtras.get(AdmobATConst.ADAPTIVE_TYPE).toString());
+                int orientation = Integer.parseInt(localExtras.get(AdmobATConst.ADAPTIVE_ORIENTATION).toString());
+                int width = Integer.parseInt(localExtras.get(AdmobATConst.ADAPTIVE_WIDTH).toString());
                 width = px2dip(activity, width);
                 switch (orientation) {
                     case AdmobATConst.ORIENTATION_PORTRAIT:
-                        adSize = AdSize.getPortraitInlineAdaptiveBannerAdSize(activity, width);
+                        if (adaptiveType == AdmobATConst.ADAPTIVE_INLINE) {
+                            adSize = AdSize.getPortraitInlineAdaptiveBannerAdSize(activity, width);
+                        } else {
+                            adSize = AdSize.getPortraitAnchoredAdaptiveBannerAdSize(activity, width);
+                        }
+
                         break;
                     case AdmobATConst.ORIENTATION_LANDSCAPE:
-                        adSize = AdSize.getLandscapeInlineAdaptiveBannerAdSize(activity, width);
+                        if (adaptiveType == AdmobATConst.ADAPTIVE_INLINE) {
+                            adSize = AdSize.getLandscapeInlineAdaptiveBannerAdSize(activity, width);
+                        } else {
+                            adSize = AdSize.getLandscapeAnchoredAdaptiveBannerAdSize(activity, width);
+                        }
+
                         break;
                     default:
-                        adSize = AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(activity, width);
+                        if (adaptiveType == AdmobATConst.ADAPTIVE_INLINE) {
+                            adSize = AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(activity, width);
+                        } else {
+                            adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, width);
+                        }
+
                         break;
                 }
             } catch (Throwable e) {
@@ -71,7 +87,7 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
             }
         }
 
-        if(adSize == null) {
+        if (adSize == null) {
             String size = "";
             if (serverExtras.containsKey("size")) {
                 size = serverExtras.get("size").toString();
@@ -134,6 +150,7 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onAdClosed() {
+
             }
         });
         mAdRequest = new AdRequest.Builder()

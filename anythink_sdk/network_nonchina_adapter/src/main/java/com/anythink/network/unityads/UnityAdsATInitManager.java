@@ -5,6 +5,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
+import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
 import com.unity3d.ads.metadata.MetaData;
@@ -14,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class UnityAdsATInitManager extends ATInitMediation {
 
-    private static final String TAG = UnityAdsATInitManager.class.getSimpleName();
     private String mGameId;
     private static UnityAdsATInitManager sIntance;
     private ConcurrentHashMap<String, Object> mLoadResultAdapterMap = new ConcurrentHashMap<>();
@@ -169,18 +169,43 @@ public class UnityAdsATInitManager extends ATInitMediation {
 
     @Override
     public synchronized void initSDK(Context context, Map<String, Object> serviceExtras) {
+        initSDK(context, serviceExtras, null);
+    }
+
+    public synchronized void initSDK(Context context, Map<String, Object> serviceExtras, final InitListener listener) {
         if (!(context instanceof Activity)) {
             return;
         }
 
-        String game_id = (String) serviceExtras.get("game_id");
+        final String game_id = (String) serviceExtras.get("game_id");
         if (!TextUtils.isEmpty(game_id)) {
-            if (TextUtils.isEmpty(mGameId) || !TextUtils.equals(mGameId, game_id)) {
+            if (!UnityAds.isInitialized() || TextUtils.isEmpty(mGameId) || !TextUtils.equals(mGameId, game_id)) {
                 UnityAds.addListener(mIUnityAdsExtendedListener);
-                UnityAds.initialize(((Activity) context), game_id);
-                mGameId = game_id;
+                UnityAds.initialize(context, game_id, new IUnityAdsInitializationListener() {
+                    @Override
+                    public void onInitializationComplete() {
+                        mGameId = game_id;
+                        UnityAds.addListener(mIUnityAdsExtendedListener);
+                        if (listener != null) {
+                            listener.onSuccess();
+                        }
+                    }
+
+                    @Override
+                    public void onInitializationFailed(UnityAds.UnityAdsInitializationError unityAdsInitializationError, String s) {
+                        if (listener != null) {
+                            listener.onError(unityAdsInitializationError.name(), s);
+                        }
+                    }
+                });
+
+            } else {
+                UnityAds.addListener(mIUnityAdsExtendedListener);
+                if (listener != null) {
+                    listener.onSuccess();
+                }
             }
-            UnityAds.addListener(mIUnityAdsExtendedListener);
+
         }
     }
 
@@ -192,5 +217,11 @@ public class UnityAdsATInitManager extends ATInitMediation {
     @Override
     public String getNetworkSDKClass() {
         return "com.unity3d.services.monetization.UnityMonetization";
+    }
+
+    public interface InitListener {
+        void onSuccess();
+
+        void onError(String error, String msg);
     }
 }

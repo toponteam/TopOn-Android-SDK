@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.strategy;
 
 import android.content.Context;
@@ -189,8 +196,6 @@ public class PlaceStrategyManager {
                                     if (curr.getIsPreLoadOfferRes() == 1) {
                                         MyOfferAPIProxy.getIntance().preLoadTopOnOffer(mContext, placeId);
                                     }
-
-                                    MonitoringPlatformManager.getInstance().parseMonitoringPlatformParams(curr.getImpressionRevenueForMonitoringPlatformString());
                                 }
 
                                 SDKContext.getInstance().runOnMainThread(new Runnable() {
@@ -306,8 +311,6 @@ public class PlaceStrategyManager {
                                 if (curr.getIsPreLoadOfferRes() == 1) {
                                     MyOfferAPIProxy.getIntance().preLoadTopOnOffer(mContext, placeId);
                                 }
-
-                                MonitoringPlatformManager.getInstance().parseMonitoringPlatformParams(curr.getImpressionRevenueForMonitoringPlatformString());
 
                                 if (strategyloadListener != null) {
                                     strategyloadListener.loadStrategySuccess(curr);

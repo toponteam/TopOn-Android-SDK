@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.app.Activity;
@@ -8,6 +15,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
+import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.out.BannerAdListener;
 import com.mintegral.msdk.out.BannerSize;
 import com.mintegral.msdk.out.CustomInfoManager;
@@ -240,5 +248,10 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
     @Override
     public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
+    }
+
+    @Override
+    public String getBiddingToken(Context context) {
+        return BidManager.getBuyerUid(context);
     }
 }

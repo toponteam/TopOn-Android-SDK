@@ -3,9 +3,6 @@ package com.anythink.network.awesome;
 import android.app.Activity;
 import android.content.Context;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 
 import java.util.Map;

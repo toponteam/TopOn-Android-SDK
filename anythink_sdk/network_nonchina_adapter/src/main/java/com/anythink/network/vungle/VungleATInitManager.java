@@ -186,12 +186,4 @@ public class VungleATInitManager extends ATInitMediation {
         return pluginMap;
     }
 
-    @Override
-    public List getActivityStatus() {
-        ArrayList<String> list = new ArrayList<>();
-        list.add("com.vungle.warren.ui.VungleActivity");
-        list.add("com.vungle.warren.ui.VungleFlexViewActivity");
-//        list.add("com.vungle.warren.ui.VungleWebViewActivity");
-        return list;
-    }
 }

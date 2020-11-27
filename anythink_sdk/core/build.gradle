@@ -14,16 +14,24 @@ android {
         versionCode 1
         versionName "1.0"
 
-        buildConfigField("String", "URL_APP_STRATEGY", '"' + "https://api.anythinktech.com/v1/open/app" + '"')
-        buildConfigField("String", "URL_PLACE_STRATEGY", '"' + "https://api.anythinktech.com/v1/open/placement" + '"')
-        buildConfigField("String", "URL_AGENT", '"' + "https://da.anythinktech.com/v1/open/da" + '"')
-        buildConfigField("String", "URL_TRACKING_STRATEGY", '"' + "https://tk.anythinktech.com/v1/open/tk" + '"')
-        buildConfigField("String", "GDPR_URL", '"' + "https://img.anythinktech.com/gdpr/PrivacyPolicySetting.html" + '"')
-        buildConfigField("String", "URL_TRAFFIC_CHECK", '"' + "https://api.anythinktech.com/v1/open/eu" + '"')
+//        buildConfigField("String", "URL_APP_STRATEGY", '"' + "https://api.anythinktech.com/v1/open/app" + '"')
+//        buildConfigField("String", "URL_PLACE_STRATEGY", '"' + "https://api.anythinktech.com/v1/open/placement" + '"')
+//        buildConfigField("String", "URL_AGENT", '"' + "https://da.anythinktech.com/v1/open/da" + '"')
+//        buildConfigField("String", "URL_TRACKING_STRATEGY", '"' + "https://tk.anythinktech.com/v1/open/tk" + '"')
+//        buildConfigField("String", "GDPR_URL", '"' + "https://img.anythinktech.com/gdpr/PrivacyPolicySetting.html" + '"')
+//        buildConfigField("String", "URL_TRAFFIC_CHECK", '"' + "https://api.anythinktech.com/v1/open/eu" + '"')
         SDK_VERSION_NAME = "UA_${SDK_VERSION}" //版本号
 
         buildConfigField("String", "SDK_VERSION_NAME", '"' + SDK_VERSION_NAME + '"')
         buildConfigField("boolean", "SDK_DEBUG", SDK_DEBUG) //DEBUG状态
+
+        
+        
+
+//        String releaseType = properties.getProperty("sdk_release_type")
+
+        
+        buildConfigField("String", "CHINA_PLUGIN_NAME", '"com.anythink.china.api.ATChinaSDKHandler"')
 
 
     }
@@ -39,9 +47,11 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 
     compileOnly 'com.adjust.sdk:adjust-android:4.24.0'
     compileOnly 'com.android.installreferrer:installreferrer:2.1'
+
+    compileOnly 'com.appsflyer:af-android-sdk:5.4.0'
 }
 

@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
@@ -95,8 +93,7 @@ public class FacebookATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         RewardedVideoAd.RewardedVideoAdLoadConfigBuilder adConfig = rewardedVideoAd
                 .buildLoadAdConfig()
                 .withAdListener(rewardedVideoAdListener)
-                .withFailOnCacheFailureEnabled(true)
-                .withRVChainEnabled(true);
+                .withFailOnCacheFailureEnabled(true);
 
         adConfig.withRewardData(new RewardData(mUserId, mUserData));
 
@@ -110,7 +107,6 @@ public class FacebookATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     public void destory() {
         try {
             if (rewardedVideoAd != null) {
-                rewardedVideoAd.setAdListener(null);
                 rewardedVideoAd.destroy();
             }
         } catch (Exception e) {

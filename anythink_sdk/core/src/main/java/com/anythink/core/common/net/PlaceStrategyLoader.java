@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.net;
 
 import android.content.Context;
@@ -126,7 +133,7 @@ public class PlaceStrategyLoader extends AbsHttpLoader {
             pObject.put("session_id", sessionId);
             pObject.put(ApiRequestParam.JSON_REQUEST_COMMON_NW_VERSION, CommonDeviceUtil.getAllNetworkVersion());
             pObject.put("exclude_myofferid", MyOfferAPIProxy.getIntance().getOutOfCapOfferIds(mContext));
-            pObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
+//            pObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
 
             try {
                 List<String> packageList = SDKContext.getInstance().getExcludeMyOfferPkgList();

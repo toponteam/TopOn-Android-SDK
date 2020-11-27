@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.rewardvideo.api;
 
 import android.app.Activity;
@@ -7,6 +14,7 @@ import android.util.Log;
 
 import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATAdInfo;
+import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
@@ -191,6 +199,20 @@ public class ATRewardVideoAd {
         boolean isAdReady = mAdLoadManager.isAdReady(mContext);
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_ISREADY, String.valueOf(isAdReady), "");
         return isAdReady;
+    }
+
+    public ATAdStatusInfo checkAdStatus() {
+        if (SDKContext.getInstance().getContext() == null
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
+            Log.e(TAG, "SDK init error!");
+            return new ATAdStatusInfo(false, false, null);
+        }
+
+        ATAdStatusInfo adStatusInfo = mAdLoadManager.checkAdStatus(mContext);
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_AD_STATUS, adStatusInfo.toString(), "");
+
+        return adStatusInfo;
     }
 
     @Deprecated

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.gdt;
 
 import android.app.Activity;
@@ -112,13 +119,6 @@ public class GDTATInitManager extends ATInitMediation {
     public List getServiceStatus() {
         ArrayList<String> list = new ArrayList<>();
         list.add("com.qq.e.comm.DownloadService");
-        return list;
-    }
-
-    @Override
-    public List getProviderStatus() {
-        ArrayList<String> list = new ArrayList<>();
-        list.add("com.anythink.network.gdt.GDTATFileProvider");
         return list;
     }
 

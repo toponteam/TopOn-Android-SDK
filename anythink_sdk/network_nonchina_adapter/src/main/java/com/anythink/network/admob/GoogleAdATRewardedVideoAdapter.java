@@ -39,15 +39,15 @@ public class GoogleAdATRewardedVideoAdapter extends CustomRewardVideoAdapter {
      */
     private void init(Context context) {
 
-        boolean exitRewardAD = false;
+        boolean existRewardAD = false;
         try {
             Class.forName("com.google.android.gms.ads.rewarded.RewardedAd");
-            exitRewardAD = true;
+            existRewardAD = true;
         } catch (Exception e) {
 
         }
 
-        if (exitRewardAD) {
+        if (existRewardAD) {
             mRewardedAd = new RewardedAd(context.getApplicationContext(), unitid);
         } else {
             mRewardedVideoAd = MobileAds.getRewardedVideoAdInstance(context.getApplicationContext());

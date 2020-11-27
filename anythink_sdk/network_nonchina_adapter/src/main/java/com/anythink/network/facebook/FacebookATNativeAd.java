@@ -10,7 +10,6 @@ import android.widget.FrameLayout;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
-import com.facebook.ads.AdIconView;
 import com.facebook.ads.AdOptionsView;
 import com.facebook.ads.MediaView;
 import com.facebook.ads.MediaViewListener;
@@ -30,17 +29,21 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
     NativeAd mFacebookNativeAd;
     Context mContext;
 
+    FBNativeLoadListener mFBNativeLoadListener;
+
     public FacebookATNativeAd(Context context, NativeAd nativeAd) {
         mContext = context.getApplicationContext();
         mFacebookNativeAd = nativeAd;
-        mFacebookNativeAd.setAdListener(this);
     }
 
-    public void loadAd(String bidPayload) {
+    public void loadAd(String bidPayload, FBNativeLoadListener fbNativeLoadListener) {
+        mFBNativeLoadListener = fbNativeLoadListener;
         if (TextUtils.isEmpty(bidPayload)) {
-            mFacebookNativeAd.loadAd();
+            NativeAd.NativeLoadAdConfig loadConfigBuilder = mFacebookNativeAd.buildLoadAdConfig().withAdListener(this).build();
+            mFacebookNativeAd.loadAd(loadConfigBuilder);
         } else {
-            mFacebookNativeAd.loadAdFromBid(bidPayload);
+            NativeAd.NativeLoadAdConfig loadConfigBuilder = mFacebookNativeAd.buildLoadAdConfig().withAdListener(this).withBid(bidPayload).build();
+            mFacebookNativeAd.loadAd(loadConfigBuilder);
         }
 
     }
@@ -160,7 +163,7 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
     }
 
 
-    AdIconView mAdIconView;
+    MediaView mAdIconView;
 
     @Override
     public View getAdIconView() {
@@ -169,7 +172,7 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
                 mAdIconView.destroy();
                 mAdIconView = null;
             }
-            mAdIconView = new AdIconView(mContext);
+            mAdIconView = new MediaView(mContext);
             return mAdIconView;
         } catch (Exception e) {
             e.printStackTrace();
@@ -193,7 +196,6 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
     @Override
     public void destroy() {
         if (mFacebookNativeAd != null) {
-            mFacebookNativeAd.setAdListener(null);
             mFacebookNativeAd.unregisterView();
             mFacebookNativeAd.destroy();
             mFacebookNativeAd = null;
@@ -217,11 +219,18 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
 
     @Override
     public void onError(Ad ad, AdError adError) {
-
+        if (mFBNativeLoadListener != null) {
+            mFBNativeLoadListener.onLoadFail(adError.getErrorCode() + "", adError.getErrorMessage());
+        }
+        mFBNativeLoadListener = null;
     }
 
     @Override
     public void onAdLoaded(Ad ad) {
+        if (mFBNativeLoadListener != null) {
+            mFBNativeLoadListener.onLoadSuccess();
+        }
+        mFBNativeLoadListener = null;
     }
 
     @Override
@@ -275,5 +284,11 @@ public class FacebookATNativeAd extends CustomNativeAd implements NativeAdListen
     @Override
     public void onMediaDownloaded(Ad ad) {
 
+    }
+
+    interface FBNativeLoadListener {
+        void onLoadSuccess();
+
+        void onLoadFail(String code, String message);
     }
 }

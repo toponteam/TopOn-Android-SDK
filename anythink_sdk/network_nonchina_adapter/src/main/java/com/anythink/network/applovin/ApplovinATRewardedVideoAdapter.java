@@ -39,6 +39,7 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private void init(Context context, Map<String, Object> serverExtras) {
 
         AppLovinSdk mApplovinSdk = ApplovinATInitManager.getInstance().initSDK(context, sdkkey, serverExtras);
+        mApplovinSdk.setUserIdentifier(mUserId);
 
         mInterstitial = AppLovinIncentivizedInterstitial.create(zoneid, mApplovinSdk);
 
@@ -105,8 +106,6 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 }
             }
         };
-        mInterstitial.setUserIdentifier(mUserId);
-
     }
 
     /***

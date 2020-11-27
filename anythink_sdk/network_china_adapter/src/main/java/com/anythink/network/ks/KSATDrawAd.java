@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.ks;
 
 import android.content.Context;
@@ -48,6 +55,31 @@ public class KSATDrawAd extends CustomNativeAd {
 
             @Override
             public void onAdShow() {
+
+            }
+
+            @Override
+            public void onVideoPlayStart() {
+                notifyAdVideoStart();
+            }
+
+            @Override
+            public void onVideoPlayPause() {
+
+            }
+
+            @Override
+            public void onVideoPlayResume() {
+
+            }
+
+            @Override
+            public void onVideoPlayEnd() {
+                notifyAdVideoEnd();
+            }
+
+            @Override
+            public void onVideoPlayError() {
 
             }
         });

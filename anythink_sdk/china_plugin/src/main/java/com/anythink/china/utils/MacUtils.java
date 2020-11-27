@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.china.utils;
 
 import android.content.Context;
@@ -5,6 +12,9 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.text.TextUtils;
+
+import com.anythink.china.api.ChinaDeviceDataInfo;
+import com.anythink.core.common.base.SDKContext;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -81,6 +91,10 @@ public class MacUtils {
      * @return
      */
     static String getMac(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ChinaDeviceDataInfo.MAC)) {
+            return "";
+        }
+
         String mac = "";
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             mac = getMacDefault(context);

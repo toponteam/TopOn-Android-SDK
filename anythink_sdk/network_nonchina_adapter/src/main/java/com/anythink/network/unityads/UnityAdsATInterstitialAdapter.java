@@ -42,8 +42,20 @@ public class UnityAdsATInterstitialAdapter extends CustomInterstitialAdapter {
             }
         } else {
             UnityAdsATInitManager.getInstance().putLoadResultAdapter(placement_id, this);
-            UnityAdsATInitManager.getInstance().initSDK(context, serverExtras);
-            UnityAds.load(placement_id);
+            UnityAdsATInitManager.getInstance().initSDK(context, serverExtras, new UnityAdsATInitManager.InitListener() {
+                @Override
+                public void onSuccess() {
+                    UnityAds.load(placement_id);
+                }
+
+                @Override
+                public void onError(String error, String msg) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(error, msg);
+                    }
+                }
+            });
+
         }
     }
 
@@ -70,16 +82,16 @@ public class UnityAdsATInterstitialAdapter extends CustomInterstitialAdapter {
         }
     }
 
-    @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-        if (serverExtras != null) {
-            if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
-                placement_id = (String) serverExtras.get("placement_id");
-                return true;
-            }
-        }
-        return false;
-    }
+//    @Override
+//    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+//        if (serverExtras != null) {
+//            if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
+//                placement_id = (String) serverExtras.get("placement_id");
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     void notifyLoaded(String placementId) {
         if (placementId.equals(placement_id)) {

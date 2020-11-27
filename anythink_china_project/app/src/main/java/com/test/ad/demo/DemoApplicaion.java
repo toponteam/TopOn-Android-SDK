@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.test.ad.demo;
 
 import android.os.Build;
@@ -83,7 +90,30 @@ public class DemoApplicaion extends MultiDexApplication {
         Stetho.initializeWithDefaults(getApplicationContext());
         ATSDK.setNetworkLogDebug(true);
         ATSDK.integrationChecking(getApplicationContext());
-
+//        ATSDK.deniedUploadDeviceInfo(
+//                DeviceDataInfo.DEVICE_SCREEN_SIZE
+//                , DeviceDataInfo.ANDROID_ID
+//                , DeviceDataInfo.APP_PACKAGE_NAME
+//                , DeviceDataInfo.APP_VERSION_CODE
+//                , DeviceDataInfo.APP_VERSION_NAME
+//                , DeviceDataInfo.BRAND
+//                , DeviceDataInfo.GAID
+//                , DeviceDataInfo.LANGUAGE
+//                , DeviceDataInfo.MCC
+//                , DeviceDataInfo.MNC
+//                , DeviceDataInfo.MODEL
+//                , DeviceDataInfo.ORIENTATION
+//                , DeviceDataInfo.OS_VERSION_CODE
+//                , DeviceDataInfo.OS_VERSION_NAME
+//                , DeviceDataInfo.TIMEZONE
+//                , DeviceDataInfo.USER_AGENT
+//                , DeviceDataInfo.NETWORK_TYPE
+//                , ChinaDeviceDataInfo.IMEI
+//                , ChinaDeviceDataInfo.MAC
+//                , ChinaDeviceDataInfo.OAID
+//                , DeviceDataInfo.INSTALLER
+//
+//        );
         ATSDK.init(this, appid, appKey);
 
     }

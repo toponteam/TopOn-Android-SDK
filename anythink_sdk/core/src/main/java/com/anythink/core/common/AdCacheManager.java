@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common;
 
 import android.content.Context;
@@ -7,13 +14,16 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.cap.AdPacingManager;
+import com.anythink.core.common.adx.AdxCacheController;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.api.BaseAd;
+import com.anythink.core.common.entity.BiddingResult;
 import com.anythink.core.common.entity.TrackerInfo;
 import com.anythink.core.common.entity.UnitgroupCacheInfo;
+import com.anythink.core.hb.BiddingCacheManager;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.CustomAdapterFactory;
@@ -49,9 +59,10 @@ public class AdCacheManager {
     private AdCacheManager() {
         cacheMap = new ConcurrentHashMap<>();
         canInitReadyNetworkMap.put(6, true); //Mintegral
-        canInitReadyNetworkMap.put(12, true); //UnityAds
+//        canInitReadyNetworkMap.put(12, true); //UnityAds
         canInitReadyNetworkMap.put(17, true); //Oneway
         canInitReadyNetworkMap.put(35, true); //MyOffer
+        canInitReadyNetworkMap.put(Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID, true);// Adx
     }
 
 
@@ -170,7 +181,7 @@ public class AdCacheManager {
 
             List<PlaceStrategy.UnitGroupInfo> newestUgList = ShowWaterfallManager.getInstance().getNewestWaterFallForPlacementId(placementId);
             String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(placementId);
-
+            currentRequestId = TextUtils.isEmpty(currentRequestId) ? CommonSDKUtil.createRequestId(context) : currentRequestId;
 
             if (newestUgList != null) {
                 unitGroupInfos.addAll(newestUgList);
@@ -207,6 +218,7 @@ public class AdCacheManager {
                         continue;
                     }
 
+
                     boolean isAdReady = false;
 
                     UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap != null ?
@@ -215,6 +227,8 @@ public class AdCacheManager {
                     AdCacheInfo adCacheInfo = unitgroupCacheInfo != null ? unitgroupCacheInfo.getAdCacheInfo() : null;
                     /**Check the isReady status of Adapter**/
                     if (unitgroupCacheInfo == null || adCacheInfo == null) {
+
+
                         ATBaseAdAdapter baseAdapter = null;
 
                         Boolean canReady = canInitReadyNetworkMap.get(unitGroupInfo.networkType);
@@ -223,13 +237,12 @@ public class AdCacheManager {
                         }
 
                         if (baseAdapter != null) {
-                            final Map<String, Object> serviceExtras = PlaceStrategy.getServerExtrasMap(placementId, unitGroupInfo, placeStrategy.getMyOfferSetting());
+                            final Map<String, Object> serviceExtras = placeStrategy.getServerExtrasMap(placementId, currentRequestId, unitGroupInfo);
                             final Map<String, Object> localExtras = PlacementAdManager.getInstance().getPlacementLocalSettingMap(placementId);
                             BaseAd baseAdObject = null;
                             try {
                                 boolean initSuccess = baseAdapter.internalInitNetworkObjectByPlacementId(context, serviceExtras, localExtras);
                                 if (initSuccess) {
-                                    currentRequestId = TextUtils.isEmpty(currentRequestId) ? CommonSDKUtil.createRequestId(context) : currentRequestId;
                                     initReadyCacheTrackingInfo(baseAdapter, currentRequestId, placementId, placeStrategy, unitGroupInfo, level);
                                 }
 
@@ -247,6 +260,15 @@ public class AdCacheManager {
                             }
 
                             if (isAdReady) {
+
+                                /**Check Adx HB Status**/
+                                if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
+                                    BiddingResult cacheResponse = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
+                                    if (cacheResponse == null || cacheResponse.isExpire()) {
+                                        addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_ADX_BID_EXPIRE_REASON);
+                                        continue;
+                                    }
+                                }
 
                                 List<BaseAd> baseAdList = null;
                                 if (baseAdObject != null) {
@@ -287,6 +309,15 @@ public class AdCacheManager {
                     }
 
                     if (isAdReady) {
+                        /**Check Adx HB Status**/
+                        if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
+                            BiddingResult cacheResponse = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
+                            if (cacheResponse == null || cacheResponse.isExpire()) {
+                                addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_ADX_BID_EXPIRE_REASON);
+                                continue;
+                            }
+                        }
+
                         if (adCacheInfo.getUpdateTime() + adCacheInfo.getCacheTime() > System.currentTimeMillis()) {
                             //AdCache is available
                             ATBaseAdAdapter baseAdapter = adCacheInfo.getBaseAdapter();
@@ -338,7 +369,7 @@ public class AdCacheManager {
                 }
 
                 if (defaultUnitGroupInfo != null) {
-                    Map<String, Object> defaultExtras = PlaceStrategy.getServerExtrasMap(placementId, defaultUnitGroupInfo, placeStrategy.getMyOfferSetting());
+                    Map<String, Object> defaultExtras = placeStrategy.getServerExtrasMap(placementId, currentRequestId, defaultUnitGroupInfo);
                     defaultExtras.put(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG, true);
                     int defaultMyOfferLevel = unitGroupInfos.indexOf(defaultUnitGroupInfo);
                     try {
@@ -346,7 +377,6 @@ public class AdCacheManager {
                         boolean initSuccess = baseAdapter.initNetworkObjectByPlacementId(context, defaultExtras, PlacementAdManager.getInstance().getPlacementLocalSettingMap(placementId));
                         if (initSuccess) {
                             /**Save AdCache**/
-                            currentRequestId = TextUtils.isEmpty(currentRequestId) ? CommonSDKUtil.createRequestId(context) : currentRequestId;
                             initReadyCacheTrackingInfo(baseAdapter, currentRequestId, placementId, placeStrategy, defaultUnitGroupInfo, defaultMyOfferLevel);
                         }
                         boolean isAdReady = false;
@@ -518,11 +548,10 @@ public class AdCacheManager {
      * Save impression
      *
      * @param context
-     * @param adCacheInfo
      */
-    public void saveShowTime(final Context context, final AdCacheInfo adCacheInfo) {
+    public void saveShowTimeToDisk(final Context context, final ATBaseAdAdapter baseAdAdapter, final boolean isLasCache) {
         synchronized (AdCacheManager.this) {
-            final AdTrackingInfo adTrackingInfo = adCacheInfo.getBaseAdapter().getTrackingInfo();
+            final AdTrackingInfo adTrackingInfo = baseAdAdapter != null ? baseAdAdapter.getTrackingInfo() : null;
 
             if (adTrackingInfo != null) {
                 /**Being setted in the impression of format**/
@@ -531,15 +560,20 @@ public class AdCacheManager {
                     @Override
                     public void run() {
                         synchronized (AdCacheManager.this) {
+                            if (adTrackingInfo.getmNetworkType() == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
+                                BiddingCacheManager.getInstance().removeCache(adTrackingInfo.getmUnitGroupUnitId(), Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID);
+                                AdxCacheController.getInstance().removeAdxOfferInfo(context, adTrackingInfo.getmBidId());
+                            }
+
                             CommonAdManager commonAdManager = PlacementAdManager.getInstance().getAdManager(adTrackingInfo.getmPlacementId());
-                            commonAdManager.notifyMediationManagerImpression(adTrackingInfo.getmRequestId(), adCacheInfo.getBaseAdapter().getmUnitgroupInfo().ecpm);
+                            commonAdManager.notifyMediationManagerImpression(adTrackingInfo.getmRequestId(), baseAdAdapter.getmUnitgroupInfo().ecpm);
                             //Save cap
                             AdCapV2Manager.getInstance(context).saveOneCap(adTrackingInfo.getmAdType(), adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
                             //Recore time
                             AdPacingManager.getInstance().savePlacementShowTime(adTrackingInfo.getmPlacementId());
                             AdPacingManager.getInstance().saveUnitGropuShowTime(adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
 
-                            if (adCacheInfo.isLast()) {
+                            if (isLasCache) {
                                 //If the last offer of AdSource had been showed, it would be removed from caches.
                                 forceCleanCache(adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
                             }

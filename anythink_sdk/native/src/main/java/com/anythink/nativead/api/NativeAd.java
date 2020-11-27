@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.nativead.api;
 
 
@@ -34,7 +41,7 @@ public class NativeAd {
     private Context mContext;
     protected BaseNativeAd mBaseNativeAd;
     private ATNativeAdRenderer mAdRender;
-    private String mAdUnitId;
+    private String mPlacementId;
     private ATNativeEventListener mNativeEventListener;
     private ATNativeDislikeListener mDislikeListener;
 
@@ -47,11 +54,11 @@ public class NativeAd {
     private AdCacheInfo mAdCacheInfo;
 
     protected NativeAd(Context context,
-                       final String adUnitId,
+                       final String placementId,
                        AdCacheInfo cacheInfo) {
         mContext = context.getApplicationContext();
 
-        mAdUnitId = adUnitId;
+        mPlacementId = placementId;
 
         mAdCacheInfo = cacheInfo;
 
@@ -122,11 +129,21 @@ public class NativeAd {
                 /**Mark ad has been showed**/
                 mAdCacheInfo.setShowTime(mAdCacheInfo.getShowTime() + 1);
 
-                CommonAdManager adManager = PlacementAdManager.getInstance().getAdManager(mAdUnitId);
+                //If render native ad, it would remove the cache
+                if (adTrackingInfo != null) {
+                    AdCacheManager.getInstance().forceCleanCache(mPlacementId, adTrackingInfo.getmUnitGroupUnitId());
+                }
+
+                CommonAdManager adManager = PlacementAdManager.getInstance().getAdManager(mPlacementId);
                 if (adManager != null) {
                     adManager.notifyNewestCacheHasBeenShow(mAdCacheInfo);
                     adManager.cancelCountdown();
                 }
+            }
+
+            final long timestamp = System.currentTimeMillis();
+            if (adTrackingInfo != null) {
+                adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
             }
 
             TaskManager.getInstance().run_proxy(new Runnable() {
@@ -135,18 +152,17 @@ public class NativeAd {
                     if (mIsDestroyed) {
                         return;
                     }
-                    if (mBaseNativeAd != null) {
-
+                    if (mAdCacheInfo != null) {
                         /**synchronized to fill show time**/
-                        String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(mAdUnitId);
+                        String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(mPlacementId);
 
                         fillNativeTrackinInfoShowTime(adTrackingInfo, currentRequestId);
 
                         /**Show Tracking**/
-                        AdTrackingManager.getInstance(mContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo);
+                        AdTrackingManager.getInstance(mContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo, timestamp);
 
 
-                        AdCacheManager.getInstance().saveShowTime(mContext.getApplicationContext(), mAdCacheInfo);
+                        AdCacheManager.getInstance().saveShowTimeToDisk(mContext.getApplicationContext(), mAdCacheInfo.getBaseAdapter(), mAdCacheInfo.isLast());
                     }
                 }
             });
@@ -169,7 +185,7 @@ public class NativeAd {
     }
 
     private void renderViewToWindow(final View developerView) {
-        ATSDK.apiLog(mAdUnitId, Const.LOGKEY.API_NATIVE, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_NATIVE, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
 
         //Clear previous Ad before render current Ad
 //        try {
@@ -267,11 +283,7 @@ public class NativeAd {
 
         if (mBaseNativeAd != null) {
             mBaseNativeAd.destroy();
-            mBaseNativeAd = null;
         }
-
-        mAdCacheInfo = null;
-        mContext = null;
     }
 
 
@@ -294,19 +306,14 @@ public class NativeAd {
                         AdTrackingInfo adTrackingInfo = null;
 
                         adTrackingInfo = mBaseNativeAd.getDetail();
-                        mBaseNativeAd.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+                        CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
                         /**synchronized to fill show time**/
-                        String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(mAdUnitId);
+                        String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(mPlacementId);
                         fillNativeTrackinInfoShowTime(adTrackingInfo, currentRequestId);
 
-                        long timestamp = System.currentTimeMillis();
-                        if (adTrackingInfo != null) {
-                            adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
-                        }
-
                         /**Impression Tracking**/
-                        AdTrackingManager.getInstance(mContext.getApplicationContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
+                        AdTrackingManager.getInstance(mContext.getApplicationContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo);
 
                         SDKContext.getInstance().runOnMainThread(new Runnable() {
                             @Override
@@ -331,8 +338,9 @@ public class NativeAd {
         }
 
         if (mBaseNativeAd != null) {
-            mBaseNativeAd.log(Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
             AdTrackingInfo adTrackingInfo = mBaseNativeAd.getDetail();
+
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
 
             AdTrackingManager.getInstance(mContext.getApplicationContext()).addAdTrackingInfo(TrackingV2Loader.AD_CLICK_TYPE, adTrackingInfo);
         }

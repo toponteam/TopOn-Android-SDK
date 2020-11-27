@@ -3,8 +3,6 @@ package com.anythink.network.nend;
 import android.app.Activity;
 import android.content.Context;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 
 import net.nend.android.NendAdFullBoard;

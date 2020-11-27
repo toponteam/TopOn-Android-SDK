@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.gdt;
 
 import android.app.Activity;
@@ -10,9 +17,6 @@ import com.qq.e.ads.rewardvideo.RewardVideoADListener;
 
 import java.util.Map;
 
-/**
- * Copyright (C) 2018 {XX} Science and Technology Co., Ltd.
- */
 public class GDTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     RewardVideoAD mRewardVideoAD;
 

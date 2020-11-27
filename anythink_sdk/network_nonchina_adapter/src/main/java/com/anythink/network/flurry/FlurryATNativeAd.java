@@ -4,8 +4,6 @@ import android.content.Context;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.flurry.android.FlurryAgent;
 import com.flurry.android.ads.FlurryAdErrorType;

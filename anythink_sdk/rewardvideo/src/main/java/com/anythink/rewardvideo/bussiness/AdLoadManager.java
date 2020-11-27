@@ -1,10 +1,16 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.rewardvideo.bussiness;
 
 import android.app.Activity;
 import android.content.Context;
 
 import com.anythink.core.api.ATAdInfo;
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.core.common.AdCacheManager;
@@ -17,13 +23,11 @@ import com.anythink.core.common.entity.AdCacheInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
-import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.rewardvideo.api.ATRewardVideoListener;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-
-import java.util.HashMap;
 
 /**
  * Ad Request Manager
@@ -82,16 +86,20 @@ public class AdLoadManager extends CommonAdManager<RewardedVideoLoadParams> {
                 @Override
                 public void run() {
                     final AdTrackingInfo adTrackingInfo = adCacheInfo.getBaseAdapter().getTrackingInfo();
+                    long timestamp = System.currentTimeMillis();
+
                     if (adTrackingInfo != null) {
                         adTrackingInfo.setCurrentRequestId(mRequestId);
                         adTrackingInfo.setmScenario(scenario);
+                        adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
+
                         /**Must set before AdCacheManager.saveShowTime()，don't suggest to do it in UI-Thread**/
                         TrackingInfoUtil.fillTrackingInfoShowTime(mApplicationContext, adTrackingInfo);
                     }
 
-                    AdTrackingManager.getInstance(mApplicationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo);
+                    AdTrackingManager.getInstance(mApplicationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo, timestamp);
 
-                    AdCacheManager.getInstance().saveShowTime(mApplicationContext, adCacheInfo);
+                    AdCacheManager.getInstance().saveShowTimeToDisk(mApplicationContext, adCacheInfo.getBaseAdapter(), adCacheInfo.isLast());
 
 
                     final CustomRewardVideoAdapter customRewardVideoAdapter = ((CustomRewardVideoAdapter) adCacheInfo.getBaseAdapter());
@@ -102,6 +110,7 @@ public class AdLoadManager extends CommonAdManager<RewardedVideoLoadParams> {
                     SDKContext.getInstance().runOnMainThread(new Runnable() {
                         @Override
                         public void run() {
+                            customRewardVideoAdapter.setScenario(scenario);
                             customRewardVideoAdapter.internalShow(activity, new RewardedVideoEventListener(customRewardVideoAdapter, listener));
                         }
                     });

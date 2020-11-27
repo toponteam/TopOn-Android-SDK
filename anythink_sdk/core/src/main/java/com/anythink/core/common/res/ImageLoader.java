@@ -1,14 +1,18 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.res;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.text.TextUtils;
 
 import com.anythink.core.common.base.Const;
+import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.res.image.ImageUrlLoader;
 import com.anythink.core.common.utils.BitmapUtil;
 import com.anythink.core.common.utils.CommonLogUtil;
@@ -17,25 +21,20 @@ import com.anythink.core.common.utils.task.TaskManager;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 public class ImageLoader {
     private static final String TAG = "ImageLoader";
-    private static final int MESSAGE_WHAT_SUCCESS = 1;
-    private static final int MESSAGE_WHAT_FAILED = 2;
-
-    private static final String MESSAGE_DATA_URL = "image_key";
-    private static final String MESSAGE_DATA_DESC = "image_message";
 
     private static ImageLoader mInstance;
 
     /**
      * Lru Image Map
      */
-    private ImageLruCache<String, WeakReference<Bitmap>> mMemoryCache;
+    private ImageLruCache<String, SoftReference<Bitmap>> mMemoryCache;
 
     private final Object mDiskCacheLock = new Object();
 
@@ -43,13 +42,10 @@ public class ImageLoader {
     // Download callback listener
     private LinkedHashMap<String, List<ImageLoaderListener>> mListenerMap = new LinkedHashMap<String, List<ImageLoaderListener>>();
 
-    // Main Thread Callback
-    private Handler handler = new Handler(Looper.getMainLooper()) {
-        public void handleMessage(final Message message) {
-            if (message.what == MESSAGE_WHAT_SUCCESS) {
-                final String url = message.getData().getString(MESSAGE_DATA_URL);
-                final Bitmap bitmap = getBitmapFromMemCache(url);
-
+    private void onCallbackSuccess(final String url, final Bitmap bitmap) {
+        SDKContext.getInstance().runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
                 LinkedList<ImageLoaderListener> list = (LinkedList<ImageLoaderListener>) mListenerMap.get(url);
                 if (list != null) {
                     for (ImageLoaderListener listener : list) {
@@ -64,23 +60,28 @@ public class ImageLoader {
                     }
                 }
                 mListenerMap.remove(url);
+            }
+        });
+    }
 
-            } else if (message.what == MESSAGE_WHAT_FAILED) {
-                String url = message.getData().getString(MESSAGE_DATA_URL);
-                String description = message.getData().getString(MESSAGE_DATA_DESC);
-
+    private void onCallbackError(final String url, final String errorMsg) {
+        SDKContext.getInstance().runOnMainThread(new Runnable() {
+            @Override
+            public void run() {
                 LinkedList<ImageLoaderListener> list = (LinkedList<ImageLoaderListener>) mListenerMap.get(url);
                 if (list != null) {
                     for (ImageLoaderListener listener : list) {
                         if (listener != null) {
-                            listener.onFail(url, description);
+                            listener.onFail(url, errorMsg);
                         }
                     }
                 }
                 mListenerMap.remove(url);
             }
-        }
-    };
+        });
+
+    }
+
 
     /**
      * Add Bitmap to Memory Cache
@@ -90,24 +91,24 @@ public class ImageLoader {
      */
     public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
         if (getBitmapFromMemCache(key) == null && bitmap != null) {
-            mMemoryCache.put(key, new WeakReference<Bitmap>(bitmap));
+            mMemoryCache.put(key, new SoftReference<Bitmap>(bitmap));
         }
     }
 
 
     /**
-     *  Get Bitmap from Memory Cache
+     * Get Bitmap from Memory Cache
      *
      * @param key
      * @return
      */
     public Bitmap getBitmapFromMemCache(String key) {
-        WeakReference<Bitmap> bitmapWeakRef = mMemoryCache.get(key);
+        SoftReference<Bitmap> bitmapWeakRef = mMemoryCache.get(key);
         return bitmapWeakRef != null ? bitmapWeakRef.get() : null;
     }
 
     /**
-     *  Get Bitmap from Disk Cache
+     * Get Bitmap from Disk Cache
      */
     public Bitmap getBitmapFromDiskCache(ResourceEntry entry, int width, int height) {
         if (entry == null || TextUtils.isEmpty(entry.resourceUrl)) {
@@ -154,10 +155,10 @@ public class ImageLoader {
         int mCacheSize = maxMemory / 5;
 
         CommonLogUtil.e(TAG, "ImageLoad init cache size: " + mCacheSize + "B");
-        mMemoryCache = new ImageLruCache<String, WeakReference<Bitmap>>(mCacheSize) {
+        mMemoryCache = new ImageLruCache<String, SoftReference<Bitmap>>(mCacheSize) {
 
             @Override
-            protected int sizeOf(String key, WeakReference<Bitmap> value) {
+            protected int sizeOf(String key, SoftReference<Bitmap> value) {
                 Bitmap bitmap = value != null ? value.get() : null;
                 int size = bitmap != null ? bitmap.getRowBytes() * bitmap.getHeight() : 0;
                 CommonLogUtil.e(TAG, "sizeOf: Bitmap size:" + size + "B.");
@@ -165,7 +166,7 @@ public class ImageLoader {
             }
 
             @Override
-            protected void entryRemoved(boolean evicted, String key, WeakReference<Bitmap> oldValue, WeakReference<Bitmap> newValue) {
+            protected void entryRemoved(boolean evicted, String key, SoftReference<Bitmap> oldValue, SoftReference<Bitmap> newValue) {
                 super.entryRemoved(evicted, key, oldValue, newValue);
                 try {
                     Bitmap oldBitmap = oldValue != null ? oldValue.get() : null;
@@ -191,7 +192,7 @@ public class ImageLoader {
     }
 
 
-    public static ImageLoader getInstance(Context context) {
+    public synchronized static ImageLoader getInstance(Context context) {
         if (mInstance == null) {
             mInstance = new ImageLoader(context);
         }
@@ -229,13 +230,8 @@ public class ImageLoader {
                         LinkedList<ImageLoaderListener> list = new LinkedList<ImageLoaderListener>();
                         list.add(listener);
                         mListenerMap.put(resourceEntry.resourceUrl, list);
-                        Message message = handler.obtainMessage();
-                        message.what = MESSAGE_WHAT_SUCCESS;
-                        Bundle bundle = new Bundle();
-                        bundle.putString(MESSAGE_DATA_URL, resourceEntry.resourceUrl);
-                        message.setData(bundle);
-                        handler.sendMessage(message);
 
+                        onCallbackSuccess(resourceEntry.resourceUrl, bitmap);
                     } else {
                         loadFormUrl(resourceEntry, width, height, listener);
                     }
@@ -248,7 +244,7 @@ public class ImageLoader {
     /**
      * Load Bitmap from Net
      */
-    private void loadFormUrl(ResourceEntry resourceEntry, final int width, final int height,
+    private void loadFormUrl(final ResourceEntry resourceEntry, final int width, final int height,
                              ImageLoaderListener listener) {
 
         if (!mListenerMap.containsKey(resourceEntry.resourceUrl)) {
@@ -260,26 +256,18 @@ public class ImageLoader {
                 @Override
                 public void onLoadSuccess(ResourceEntry entry) {
                     CommonLogUtil.e(TAG, "Load Success:" + entry.resourceUrl);
-                    Message message = handler.obtainMessage();
-                    message.what = MESSAGE_WHAT_SUCCESS;
-                    Bundle bundle = new Bundle();
-                    bundle.putString(MESSAGE_DATA_URL, entry.resourceUrl);
-                    message.setData(bundle);
+
                     final Bitmap bitmap = getBitmapFromDiskCache(entry, width, height);
                     if (bitmap != null) {
                         addBitmapToMemoryCache(entry.resourceUrl, bitmap);
                     }
-                    handler.sendMessage(message);
+
+                    onCallbackSuccess(resourceEntry.resourceUrl, bitmap);
                 }
 
                 @Override
                 public void onLoadFail(ResourceEntry entry, String errorMsg) {
-                    Message message = handler.obtainMessage();
-                    message.what = MESSAGE_WHAT_FAILED;
-                    Bundle bundle = new Bundle();
-                    bundle.putString(MESSAGE_DATA_URL, entry.resourceUrl);
-                    message.setData(bundle);
-                    handler.sendMessage(message);
+                    onCallbackError(entry.resourceUrl, errorMsg);
                 }
             });
 

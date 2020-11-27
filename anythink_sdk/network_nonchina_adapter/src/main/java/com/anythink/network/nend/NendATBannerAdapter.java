@@ -3,10 +3,7 @@ package com.anythink.network.nend;
 import android.content.Context;
 import android.view.View;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 
 import net.nend.android.NendAdInformationListener;
 import net.nend.android.NendAdView;

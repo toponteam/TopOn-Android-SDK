@@ -1,7 +1,15 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.ks;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -109,32 +117,37 @@ public class KSATNativeAd extends CustomNativeAd {
             }
         });
 
-        ksNativeAd.setDownloadListener(new KsAppDownloadListener() {
-            @Override
-            public void onIdle() {
-
-            }
-
-            @Override
-            public void onProgressUpdate(int i) {
-
-            }
-
-            @Override
-            public void onDownloadFinished() {
-
-            }
-
-            @Override
-            public void onDownloadFailed() {
-
-            }
-
-            @Override
-            public void onInstalled() {
-
-            }
-        });
+//        ksNativeAd.setDownloadListener(new KsAppDownloadListener() {
+//            @Override
+//            public void onIdle() {
+//
+//            }
+//
+//            @Override
+//            public void onDownloadStarted() {
+//
+//            }
+//
+//            @Override
+//            public void onProgressUpdate(int i) {
+//
+//            }
+//
+//            @Override
+//            public void onDownloadFinished() {
+//
+//            }
+//
+//            @Override
+//            public void onDownloadFailed() {
+//
+//            }
+//
+//            @Override
+//            public void onInstalled() {
+//
+//            }
+//        });
     }
 
     @Override

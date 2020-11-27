@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="73dp"
@@ -18,47 +25,52 @@
         android:textColor="@android:color/white"
         android:textSize="15sp" />
 
-    <com.anythink.myoffer.ui.component.RoundImageView
+    <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_iv_banner_icon"
         android:layout_width="51dp"
         android:layout_height="51dp"
         android:layout_centerVertical="true"
         android:layout_marginLeft="11dp" />
 
-    <TextView
-        android:id="@+id/anythink_myoffer_tv_banner_title"
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@id/anythink_myoffer_iv_banner_icon"
-        android:layout_marginLeft="7dp"
-        android:layout_marginTop="5dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="11dp"
         android:layout_marginRight="11dp"
         android:layout_toLeftOf="@id/anythink_myoffer_btn_banner_cta"
         android:layout_toRightOf="@id/anythink_myoffer_iv_banner_icon"
-        android:singleLine="true"
-        android:textColor="#2A2D34"
-        android:textSize="15sp" />
+        android:gravity="center_vertical"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/anythink_myoffer_tv_banner_desc"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/anythink_myoffer_tv_banner_title"
-        android:layout_alignLeft="@id/anythink_myoffer_tv_banner_title"
-        android:layout_marginTop="5dp"
-        android:layout_marginRight="11dp"
-        android:layout_toLeftOf="@id/anythink_myoffer_btn_banner_cta"
-        android:singleLine="true"
-        android:textColor="#2A2D34"
-        android:textSize="12sp" />
+        <TextView
+            android:id="@+id/anythink_myoffer_tv_banner_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/anythink_myoffer_iv_banner_icon"
+            android:singleLine="true"
+            android:textColor="#333333"
+            android:textSize="15sp" />
 
-    <com.anythink.myoffer.ui.component.RoundImageView
+        <TextView
+            android:id="@+id/anythink_myoffer_tv_banner_desc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_toLeftOf="@id/anythink_myoffer_btn_banner_cta"
+            android:singleLine="true"
+            android:textColor="#2A2D34"
+            android:textSize="12sp"/>
+    </LinearLayout>
+
+    <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_iv_logo"
         android:layout_width="36dp"
         android:layout_height="9.5dp"
         android:layout_below="@id/anythink_myoffer_btn_banner_cta"
         android:layout_alignRight="@id/anythink_myoffer_btn_banner_cta"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="1dp"
         android:layout_marginRight="2.5dp"
         />
 

@@ -12,6 +12,7 @@ android {
         versionName "1.0"
         multiDexEnabled true
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -25,7 +26,7 @@ android {
     }
 }
 
-repositories{
+repositories {
     flatDir {
         dirs 'libs'
     }
@@ -35,7 +36,7 @@ dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
 
 
-    implementation ('com.facebook.stetho:stetho:1.3.1') {
+    implementation('com.facebook.stetho:stetho:1.3.1') {
         exclude module: 'support-v4'
     }
 
@@ -45,7 +46,6 @@ dependencies {
 
     implementation project(':anythink:core')
     implementation project(':anythink:banner')
-    implementation project(':anythink:headbidding')
     implementation project(':anythink:Interstitial')
     implementation project(':anythink:myoffer')
     implementation project(':anythink:native')
@@ -62,3 +62,16 @@ dependencies {
 //    implementation 'com.android.support:recyclerview-v7:28.0.0'
 
 }
+
+task initReleaseType {
+    doLast {
+        def properties = new Properties()
+        properties.load(new FileReader(rootDir.absolutePath + '/../anythink_sdk/package.properties'))
+        properties.setProperty("sdk_release_type", "1")
+        properties.setProperty("china_plugin_class", "com.anythink.china.api.ATChinaSDKHandler")
+        properties.store(new FileOutputStream(rootDir.absolutePath + '/../anythink_sdk/package.properties'), "Do NOT commit this file, just an build modification !")
+    }
+}
+
+
+preBuild.dependsOn 'initReleaseType'

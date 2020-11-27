@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.app.Activity;
@@ -10,6 +17,7 @@ import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.interstitialvideo.out.InterstitialVideoListener;
 import com.mintegral.msdk.interstitialvideo.out.MTGBidInterstitialVideoHandler;
 import com.mintegral.msdk.interstitialvideo.out.MTGInterstitialVideoHandler;
+import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.out.CustomInfoManager;
 import com.mintegral.msdk.out.InterstitialListener;
 import com.mintegral.msdk.out.MTGInterstitialHandler;
@@ -137,9 +145,6 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
                 @Override
                 public void onAdClose(boolean isCompleteView) {
                     if (mImpressListener != null) {
-                        if (isCompleteView) {
-                            mImpressListener.onInterstitialAdVideoEnd();
-                        }
                         mImpressListener.onInterstitialAdClose();
                     }
                 }
@@ -319,4 +324,10 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
     public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
     }
+
+    @Override
+    public String getBiddingToken(Context context) {
+        return BidManager.getBuyerUid(context);
+    }
+
 }

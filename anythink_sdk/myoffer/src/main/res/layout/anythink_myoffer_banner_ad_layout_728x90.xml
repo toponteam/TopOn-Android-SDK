@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/anythink_myoffer_banner_root"
     android:layout_width="728dp"
@@ -7,7 +14,7 @@
     android:orientation="vertical">
 
 
-    <com.anythink.myoffer.ui.component.RoundImageView
+    <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_banner_main_image"
         android:layout_width="144dp"
         android:layout_height="72dp"
@@ -16,7 +23,7 @@
         android:scaleType="centerCrop" />
 
 
-    <com.anythink.myoffer.ui.component.RoundImageView
+    <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_banner_icon"
         android:layout_width="72dp"
         android:layout_height="72dp"
@@ -49,13 +56,13 @@
         android:layout_marginRight="46dp"
         />
 
-    <com.anythink.myoffer.ui.AdTextView
+    <com.anythink.basead.ui.AdTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="2dp"
         android:layout_marginTop="2dp"/>
 
-    <com.anythink.myoffer.ui.component.RoundImageView
+    <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_banner_self_ad_logo"
         android:layout_width="39dp"
         android:layout_height="11dp"

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.nativead.unitgroup;
 
 import android.view.View;
@@ -194,38 +201,38 @@ public abstract class BaseNativeAd extends BaseAd {
         mDownLoadProgressListener = pDownLoadProgressListener;
     }
 
-    public void log(String action, String status, String extraMsg) {
-        if (ATSDK.isNetworkLogDebug()) {
-            if (mAdTrackingInfo != null) {
-                try {
-                    JSONObject jsonObject = new JSONObject();
-                    if (mAdTrackingInfo.ismIsDefaultNetwork()) {
-                        jsonObject.put("isDefault", true);
-                    }
-                    jsonObject.put("placementId", mAdTrackingInfo.getmPlacementId());
-                    jsonObject.put("adType", mAdTrackingInfo.getAdTypeString());
-                    jsonObject.put("action", action);
-                    jsonObject.put("refresh", mAdTrackingInfo.getmRefresh());
-                    jsonObject.put("result", status);
-                    jsonObject.put("position", mAdTrackingInfo.getRequestLevel());
-                    jsonObject.put("networkType", mAdTrackingInfo.getmNetworkType());
-                    jsonObject.put("networkName", mAdTrackingInfo.getNetworkName());
-                    jsonObject.put("networkVersion", mAdTrackingInfo.getmNetworkVersion());
-                    jsonObject.put("networkUnit", mAdTrackingInfo.getmNetworkContent());
-                    jsonObject.put("isHB", mAdTrackingInfo.getmBidType());
-                    jsonObject.put("msg", extraMsg);
-                    jsonObject.put("hourly_frequency", mAdTrackingInfo.getmHourlyFrequency());
-                    jsonObject.put("daily_frequency", mAdTrackingInfo.getmDailyFrequency());
-                    jsonObject.put("network_list", mAdTrackingInfo.getmNetworkList());
-                    jsonObject.put("request_network_num", mAdTrackingInfo.getmRequestNetworkNum());
-                    jsonObject.put("handle_class", getClass().getName());
-                    SDKContext.getInstance().printJson(Const.RESOURCE_HEAD + "_network", jsonObject.toString());
-                } catch (Exception e) {
-
-                }
-            }
-        }
-    }
+//    public void log(String action, String status, String extraMsg) {
+//        if (ATSDK.isNetworkLogDebug()) {
+//            if (mAdTrackingInfo != null) {
+//                try {
+//                    JSONObject jsonObject = new JSONObject();
+//                    if (mAdTrackingInfo.ismIsDefaultNetwork()) {
+//                        jsonObject.put("isDefault", true);
+//                    }
+//                    jsonObject.put("placementId", mAdTrackingInfo.getmPlacementId());
+//                    jsonObject.put("adType", mAdTrackingInfo.getAdTypeString());
+//                    jsonObject.put("action", action);
+//                    jsonObject.put("refresh", mAdTrackingInfo.getmRefresh());
+//                    jsonObject.put("result", status);
+//                    jsonObject.put("position", mAdTrackingInfo.getRequestLevel());
+//                    jsonObject.put("networkType", mAdTrackingInfo.getmNetworkType());
+//                    jsonObject.put("networkName", mAdTrackingInfo.getNetworkName());
+//                    jsonObject.put("networkVersion", mAdTrackingInfo.getmNetworkVersion());
+//                    jsonObject.put("networkUnit", mAdTrackingInfo.getmNetworkContent());
+//                    jsonObject.put("isHB", mAdTrackingInfo.getmBidType());
+//                    jsonObject.put("msg", extraMsg);
+//                    jsonObject.put("hourly_frequency", mAdTrackingInfo.getmHourlyFrequency());
+//                    jsonObject.put("daily_frequency", mAdTrackingInfo.getmDailyFrequency());
+//                    jsonObject.put("network_list", mAdTrackingInfo.getmNetworkList());
+//                    jsonObject.put("request_network_num", mAdTrackingInfo.getmRequestNetworkNum());
+//                    jsonObject.put("handle_class", getClass().getName());
+//                    SDKContext.getInstance().printJson(Const.RESOURCE_HEAD + "_network", jsonObject.toString());
+//                } catch (Exception e) {
+//
+//                }
+//            }
+//        }
+//    }
 
 
 }

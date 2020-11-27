@@ -7,11 +7,9 @@ import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.huawei.hms.ads.AdParam;
 import com.huawei.hms.ads.reward.Reward;
 import com.huawei.hms.ads.reward.RewardAd;
-import com.huawei.hms.ads.reward.RewardAdListener;
 import com.huawei.hms.ads.reward.RewardAdLoadListener;
 import com.huawei.hms.ads.reward.RewardAdStatusListener;
 import com.huawei.hms.ads.reward.RewardVerifyConfig;
-import com.ironsource.sdk.listeners.OnRewardedVideoListener;
 
 import java.util.Map;
 

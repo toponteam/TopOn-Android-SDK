@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.content.Context;
@@ -108,6 +115,7 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
 
     private void startLoad(final ViewGroup container) {
         splashHandler = new MTGSplashHandler(placementId, unitId, allowSkip, countdown, orientation, 0, 0);
+        splashHandler.setLoadTimeOut(5);//unit: second
         splashHandler.setSplashLoadListener(new MTGSplashLoadListener() {
             @Override
             public void onLoadSuccessed(int i) {

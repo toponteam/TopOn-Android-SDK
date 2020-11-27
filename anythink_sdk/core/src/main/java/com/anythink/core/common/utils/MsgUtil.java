@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.utils;
 
 import android.content.Context;
@@ -57,7 +64,7 @@ public class MsgUtil {
             deviceJSONObject.put(JSON_REQUEST_COMMON_OS_VERSION_CODE, CommonDeviceUtil.getOsVersion());
             deviceJSONObject.put(JSON_REQUEST_COMMON_APP_PACKAGE_NAME, CommonDeviceUtil.getPackageName(context));
             deviceJSONObject.put(JSON_REQUEST_COMMON_APP_VERSION_NAME, CommonDeviceUtil.getVersionName(context));
-            deviceJSONObject.put(JSON_REQUEST_COMMON_APP_VERSION_CODE, CommonDeviceUtil.getVersionCode(context) + "");
+            deviceJSONObject.put(JSON_REQUEST_COMMON_APP_VERSION_CODE, CommonDeviceUtil.getVersionCode(context));
             deviceJSONObject.put(JSON_REQUEST_COMMON_BRAND, CommonDeviceUtil.getPhoneBrand());
             deviceJSONObject.put(JSON_REQUEST_COMMON_MODEL, CommonDeviceUtil.getModel());
             deviceJSONObject.put(JSON_REQUEST_COMMON_SCREEN_SIZE, CommonDeviceUtil.getScreenSize(context));
@@ -104,8 +111,9 @@ public class MsgUtil {
 
                 }
             }
-            mainObject.put(JSON_REQUEST_ANDROID_ID, isUpLoadAndroidId ? CommonDeviceUtil.getAndroidID(context) : "");
+            mainObject.put(JSON_REQUEST_ANDROID_ID, (isUpLoadAndroidId ? CommonDeviceUtil.getAndroidID(context) : ""));
             mainObject.put(JSON_REQUEST_COMMON_GAID, CommonDeviceUtil.getGoogleAdId());
+
             IATChinaSDKHandler chinaSDKHandler = SDKContext.getInstance().getChinaHandler();
             if (chinaSDKHandler != null) {
                 chinaSDKHandler.fillRequestData(mainObject, appStrategy);

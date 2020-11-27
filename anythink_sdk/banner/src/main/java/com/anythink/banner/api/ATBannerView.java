@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.banner.api;
 
 import android.content.Context;
@@ -19,7 +26,6 @@ import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.core.common.AdCacheManager;
-import com.anythink.core.common.MonitoringPlatformManager;
 import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.ShowWaterfallManager;
 import com.anythink.core.common.base.Const;
@@ -213,7 +219,12 @@ public class ATBannerView extends FrameLayout {
         super(context, attrs, defStyleAttr);
     }
 
+    @Deprecated
     public void setUnitId(String placementId) {
+        setPlacementId(placementId);
+    }
+
+    public void setPlacementId(String placementId) {
         mAdLoadManager = AdLoadManager.getInstance(getContext(), placementId);
         mPlacementId = placementId;
     }
@@ -416,30 +427,33 @@ public class ATBannerView extends FrameLayout {
     }
 
     private void notifyBannerShow(final Context context, final AdCacheInfo adCacheInfo) {
+        ATBaseAdAdapter baseAdAdapter = adCacheInfo.getBaseAdapter();
+        final AdTrackingInfo adTrackingInfo = baseAdAdapter.getTrackingInfo();
+        final long timestamp = System.currentTimeMillis();
+        if (adTrackingInfo != null) {
+            adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
+        }
+
         TaskManager.getInstance().run_proxy(new Runnable() {
             @Override
             public void run() {
-                ATBaseAdAdapter baseAdAdapter = adCacheInfo.getBaseAdapter();
-                AdTrackingInfo adTrackingInfo = baseAdAdapter.getTrackingInfo();
                 if (adTrackingInfo != null) {
                     /**Debug log**/
-                    baseAdAdapter.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+                    CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
                     String placementId = adTrackingInfo.getmPlacementId();
                     String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(placementId);
                     adTrackingInfo.setCurrentRequestId(currentRequestId);
-                    long timestamp = System.currentTimeMillis();
-                    adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
+
 
                     /**Must set before AdCacheManager.saveShowTime()，don't suggest to do it in UI-Thread**/
                     TrackingInfoUtil.fillTrackingInfoShowTime(context, adTrackingInfo);
                     //Ad Tracking
-                    AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
-                    AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo);
+                    AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo, timestamp);
+                    AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo);
 
                     //保存展示
-                    AdCacheManager.getInstance().saveShowTime(context.getApplicationContext(), adCacheInfo);
-
+                    AdCacheManager.getInstance().saveShowTimeToDisk(context.getApplicationContext(), adCacheInfo.getBaseAdapter(), adCacheInfo.isLast());
                 }
             }
         });

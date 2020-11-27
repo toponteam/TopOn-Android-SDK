@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.vungle.warren.AdConfig;
 import com.vungle.warren.LoadAdCallback;
@@ -44,7 +42,6 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
             // Called when user exits the ad and control is returned to your application
             // if wasSuccessfulView is true, the user watched the ad and could be rewarded
             // if wasCallToActionClicked is true, the user clicked the call to action button in the ad.
-
 
 
         }
@@ -141,7 +138,7 @@ public class VungleATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return "";
+        return VungleATConst.getNetworkVersion();
     }
 
     @Override

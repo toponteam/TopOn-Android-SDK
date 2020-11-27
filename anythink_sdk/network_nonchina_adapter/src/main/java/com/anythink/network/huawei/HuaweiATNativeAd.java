@@ -36,7 +36,6 @@ public class HuaweiATNativeAd extends CustomNativeAd {
     }
 
     protected void loadAd(Map<String, Object> serverExtras, final LoadCallbackListener callbackListener) {
-        //TODO Server Setting
         boolean isMuted = true;
 
         int mediaViewAspect = NativeAdConfiguration.MediaAspect.ASPECT_ANY;

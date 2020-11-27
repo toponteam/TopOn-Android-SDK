@@ -1,9 +1,18 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common;
 
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.anythink.core.api.ATAdInfo;
+import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
@@ -11,14 +20,16 @@ import com.anythink.core.api.ErrorCode;
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.cap.AdLoadCapManager;
 import com.anythink.core.cap.AdPacingManager;
+import com.anythink.core.common.adx.AdxCacheController;
+import com.anythink.core.common.adx.AdxUrlAddressManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.entity.PlacementImpressionInfo;
-import com.anythink.core.common.entity.S2SHBResponse;
+import com.anythink.core.common.entity.BiddingResult;
 import com.anythink.core.common.entity.UnitgroupCacheInfo;
-import com.anythink.core.common.hb.HBS2SCacheManager;
+import com.anythink.core.hb.BiddingCacheManager;
 import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
@@ -28,6 +39,8 @@ import com.anythink.core.common.utils.CommonUtil;
 import com.anythink.core.common.utils.NetworkLogUtil;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.hb.ATHeadBiddingHandler;
+import com.anythink.core.common.entity.ATHeadBiddingRequest;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 
@@ -356,8 +369,8 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                                 @Override
                                 public void run() {
                                     synchronized (CommonAdManager.this) {
-                                        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), false);
-                                        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getHeadbiddingUnitGroupListStr(), true);
+                                        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), PlaceStrategy.UnitGroupInfo.TYPE_NORMAL);
+                                        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseHeadBiddingUnitGroupInfoList(placeStrategy.getS2SHeadbiddingUnitGroupListStr(), placeStrategy.getAdxUnitGroupListStr(), placeStrategy.getC2SHeadbiddingUnitGroupListStr());
                                         insertHBUnitInfoToNormalList(originNormalList, originHbList, mPlacementId);
 
                                         ShowWaterfallManager.getInstance().refreshPlacementWaterFall(mPlacementId, requestId, placeStrategy, originNormalList);
@@ -393,8 +406,8 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
             , final PlaceStrategy placeStrategy, final AdTrackingInfo adTrackingInfo, final T formatLoadParams) {
 
         /**Create New Adsource Object to Request**/
-        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), false);
-        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getHeadbiddingUnitGroupListStr(), true);
+        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), PlaceStrategy.UnitGroupInfo.TYPE_NORMAL);
+        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseHeadBiddingUnitGroupInfoList(placeStrategy.getS2SHeadbiddingUnitGroupListStr(), placeStrategy.getAdxUnitGroupListStr(), placeStrategy.getC2SHeadbiddingUnitGroupListStr());
 
         /**It will refresh waterfall before start to filter AdSource List.**/
         ShowWaterfallManager.getInstance().refreshPlacementWaterFall(placementId, requestId, placeStrategy, originNormalList);
@@ -445,8 +458,8 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
         ShowWaterfallManager.getInstance().refreshPlacementWaterFall(placementId, requestId, placeStrategy, updateWaterFallList);
 
         boolean isFinalWaterFall = false;
-        HeadBiddingFactory.IHeadBiddingS2SHandler hbHandler = HeadBiddingFactory.createS2SHeadBiddingHandler();
-        if (hbHandler == null || hbFilterList == null || hbFilterList.size() == 0) {
+
+        if (hbFilterList == null || hbFilterList.size() == 0) {
             ShowWaterfallManager.getInstance().finishFinalWaterFall(placementId, requestId);
             isFinalWaterFall = true;
         }
@@ -484,9 +497,20 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                 /**
                  * Start to Headbidding of UnitGroup
                  */
+
+                ATHeadBiddingRequest atHeadBiddingRequest = new ATHeadBiddingRequest();
+                atHeadBiddingRequest.context = context;
+                atHeadBiddingRequest.requestId = requestId;
+                atHeadBiddingRequest.placementId = placementId;
+                atHeadBiddingRequest.format = placeStrategy.getFormat();
+                atHeadBiddingRequest.hbWaitingToReqeustTime = placeStrategy.getHbWaitingToRequestTime();
+                atHeadBiddingRequest.hbBidMaxTimeOut = placeStrategy.getHbBidTimeout();
+                atHeadBiddingRequest.s2sBidUrl = AdxUrlAddressManager.getInstance().getBidRequestUrl();
+                atHeadBiddingRequest.hbList = hbFilterList;
+
+                HeadBiddingFactory.IHeadBiddingHandler hbHandler = new ATHeadBiddingHandler(atHeadBiddingRequest);
                 hbHandler.setTestMode(ATSDK.isNetworkLogDebug());
-                hbHandler.initS2SHbInfo(context, requestId, placementId, placeStrategy.getFormat(), placeStrategy.getHbBidTimeout(), hbFilterList);
-                hbHandler.startS2SHbInfo(placeStrategy.getHbRequestUrl(), new HeadBiddingFactory.IHeadBiddingCallback() {
+                hbHandler.startHeadBiddingRequest(new HeadBiddingFactory.IHeadBiddingCallback() {
 
                     @Override
                     public void onSuccess(String requestId, List<PlaceStrategy.UnitGroupInfo> successList) {
@@ -693,12 +717,21 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
      */
     private boolean checkAdSourceHBTokenIsReady(PlaceStrategy.UnitGroupInfo unitGroupInfo) {
         try {
-            S2SHBResponse hiBidCache = HBS2SCacheManager.getInstance().getCache(unitGroupInfo.unitId);
-            if (hiBidCache != null) {
+            //TODO Test
+            BiddingResult hiBidCache = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
+            if (hiBidCache != null && !hiBidCache.isExpire()) {
                 unitGroupInfo.ecpm = hiBidCache.price;
-                unitGroupInfo.payload = hiBidCache.bidId;
+                unitGroupInfo.payload = hiBidCache.token;
                 unitGroupInfo.sortType = 2; //use cache token
                 return true;
+            }
+
+            //Clear S2S HeadBidding Cache
+            BiddingCacheManager.getInstance().removeCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
+
+            /**If Adx Adsource, it would remove Adx Offer**/
+            if (hiBidCache != null && hiBidCache.networkFirmId == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
+                AdxCacheController.getInstance().removeAdxOfferInfo(SDKContext.getInstance().getContext(), hiBidCache.token);
             }
 
         } catch (Throwable e) {
@@ -1001,6 +1034,17 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
     public boolean isAdReady(Context context) {
         AdCacheInfo adCacheInfo = isAdReady(context, false);
         return adCacheInfo != null;
+    }
+
+    public ATAdStatusInfo checkAdStatus(Context context) {
+        boolean isLoading = isLoading();
+        AdCacheInfo adCacheInfo = isAdReady(context, false);
+
+        ATAdInfo atAdInfo = null;
+        if (adCacheInfo != null) {
+            atAdInfo = ATAdInfo.fromAdapter(adCacheInfo.getBaseAdapter());
+        }
+        return new ATAdStatusInfo(isLoading, adCacheInfo != null, atAdInfo);
     }
 
     protected AdCacheInfo isAdReady(Context context, boolean isShowCall) {

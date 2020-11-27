@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.splashad.bussiness;
 
 import android.content.Context;
@@ -7,8 +14,7 @@ import android.view.ViewGroup;
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.AdError;
-import com.anythink.core.cap.AdCapV2Manager;
-import com.anythink.core.cap.AdPacingManager;
+import com.anythink.core.common.AdCacheManager;
 import com.anythink.core.common.CommonMediationManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
@@ -18,6 +24,7 @@ import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.splashad.api.ATSplashAdListener;
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 import com.anythink.splashad.unitgroup.api.CustomSplashEventListener;
@@ -41,6 +48,7 @@ public class MediationGroupManager extends CommonMediationManager {
             @Override
             public void run() {
                 AdTrackingInfo adTrackingInfo = null;
+                PlaceStrategy.UnitGroupInfo unitGroupInfo = null;
                 if (customSplashAd != null) {
 
                     adTrackingInfo = customSplashAd.getTrackingInfo();
@@ -52,7 +60,7 @@ public class MediationGroupManager extends CommonMediationManager {
 
                     AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
 
-                    customSplashAd.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+                    CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
                     if (adTrackingInfo != null) {
                         adTrackingInfo.setCurrentRequestId(mRequestId);
@@ -64,14 +72,16 @@ public class MediationGroupManager extends CommonMediationManager {
                     mCallbackListener.onAdShow(ATAdInfo.fromAdapter(customSplashAd));
                 }
 
-
-                if (adTrackingInfo != null) {
-                    //Update impression
-                    AdCapV2Manager.getInstance(mApplcationContext).saveOneCap(adTrackingInfo.getmAdType(), mPlacementId, adTrackingInfo.getmUnitGroupUnitId());
-                    //Record impression time
-                    AdPacingManager.getInstance().savePlacementShowTime(mPlacementId);
-                    AdPacingManager.getInstance().saveUnitGropuShowTime(mPlacementId, adTrackingInfo.getmUnitGroupUnitId());
-                }
+                //Save AdSource show time
+                AdCacheManager.getInstance().saveShowTimeToDisk(mApplcationContext, customSplashAd, true);
+//                if (adTrackingInfo != null) {
+//                    //Update impression
+//                    AdCapV2Manager.getInstance(mApplcationContext).saveOneCap(adTrackingInfo.getmAdType(), mPlacementId, adTrackingInfo.getmUnitGroupUnitId());
+//                    //Record impression time
+//                    AdPacingManager.getInstance().savePlacementShowTime(mPlacementId);
+//                    AdPacingManager.getInstance().saveUnitGropuShowTime(mPlacementId, adTrackingInfo.getmUnitGroupUnitId());
+//                    notifyImpression(unitGroupInfo != null ? unitGroupInfo.ecpm : 0);
+//                }
             }
         });
 
@@ -86,7 +96,7 @@ public class MediationGroupManager extends CommonMediationManager {
 
             AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_CLICK_TYPE, adTrackingInfo);
 
-            customSplashAd.log(Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
 
         }
 
@@ -150,7 +160,7 @@ public class MediationGroupManager extends CommonMediationManager {
         if (!hasDismiss) {
             hasDismiss = true;
             if (splashAdapter != null && splashAdapter.getTrackingInfo() != null) {
-                splashAdapter.log(Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
+                CommonSDKUtil.printAdTrackingInfoStatusLog(splashAdapter.getTrackingInfo(), Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
             }
             mContainer = null;
 

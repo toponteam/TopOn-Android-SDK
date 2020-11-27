@@ -149,12 +149,6 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        //TODO Local Config
-//        if (mSetting != null) {
-//
-//            mAdConfig.setMuted(mSetting.isSoundEnable());
-//            mAdConfig.setBackButtonImmediatelyEnabled(mSetting.isBackButtonImmediatelyEnable());
-//        }
 
         VungleATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new VungleATInitManager.InitListener() {
             @Override
@@ -213,7 +207,7 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return "";
+        return VungleATConst.getNetworkVersion();
     }
 
 }

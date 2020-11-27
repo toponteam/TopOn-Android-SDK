@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.splashad.bussiness;
 
 import android.app.Activity;
@@ -10,12 +17,12 @@ import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.ATCustomLoadListener;
 import com.anythink.core.api.ATMediationRequestInfo;
 import com.anythink.core.api.AdError;
+import com.anythink.core.api.BaseAd;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdTrackingInfo;
-import com.anythink.core.api.BaseAd;
 import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
@@ -51,7 +58,7 @@ public class DefaultAdSourceManager {
 
         if (customSplashAd != null) {
             customSplashAd.getTrackingInfo().setFillTime(System.currentTimeMillis() - mStartTime);
-            customSplashAd.log(Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(customSplashAd.getTrackingInfo(), Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.SUCCESS, "");
             AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_LOAD_SUCCESS_TYPE, customSplashAd.getTrackingInfo());
 
             AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_REQUEST_SUCCESS_TYPE, customSplashAd.getTrackingInfo());
@@ -72,7 +79,7 @@ public class DefaultAdSourceManager {
             SDKContext.getInstance().removeMainThreadRunnable(timeOutRunnable);
         }
         if (adapter != null) {
-            adapter.log(Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.FAIL, adError.printStackTrace());
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adapter.getTrackingInfo(), Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.FAIL, adError.printStackTrace());
         }
         isReturResult = true;
         isLoading = false;
@@ -96,7 +103,7 @@ public class DefaultAdSourceManager {
 
             AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
 
-            customSplashAd.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
         }
 
@@ -115,7 +122,7 @@ public class DefaultAdSourceManager {
 
             AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_CLICK_TYPE, adTrackingInfo);
 
-            customSplashAd.log(Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
 
         }
 
@@ -179,7 +186,7 @@ public class DefaultAdSourceManager {
                 adTrackingInfo.setRequestType(AdTrackingInfo.HANDLE_REQUEST);
 
                 anyThinkBaseAdapter.setTrackingInfo(adTrackingInfo);
-                anyThinkBaseAdapter.log(Const.LOGKEY.REQUEST, Const.LOGKEY.START, "");
+                CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.REQUEST, Const.LOGKEY.START, "");
                 AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_LOAD_TYPE, adTrackingInfo);
 
                 AdTrackingManager.getInstance(mApplcationContext).addAdTrackingInfo(TrackingV2Loader.AD_REQUEST_TYPE, adTrackingInfo);
@@ -194,7 +201,7 @@ public class DefaultAdSourceManager {
             }
         } catch (Throwable e) {
             if (mCallbackListener != null) {
-                AdError adError = ErrorCode.getErrorCode(ErrorCode.adapterNotExistError, "", "");
+                AdError adError = ErrorCode.getErrorCode(ErrorCode.adapterNotExistError, "", e.getMessage());
                 mCallbackListener.onNoAdError(adError);
             }
         }
@@ -221,7 +228,7 @@ public class DefaultAdSourceManager {
         if (!hasDismiss) {
             hasDismiss = true;
             if (splashAdapter != null && splashAdapter.getTrackingInfo() != null) {
-                splashAdapter.log(Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
+                CommonSDKUtil.printAdTrackingInfoStatusLog(splashAdapter.getTrackingInfo(), Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
             }
 
             if (mCallbackListener != null) {

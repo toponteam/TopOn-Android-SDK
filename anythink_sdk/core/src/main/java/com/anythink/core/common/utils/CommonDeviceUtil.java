@@ -1,23 +1,25 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.utils;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Rect;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Looper;
 import android.provider.Settings;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.view.Display;
-import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
@@ -25,23 +27,17 @@ import com.anythink.core.common.base.AdvertisingIdClient;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.base.UploadDataLevelManager;
+import com.anythink.core.common.net.ApiRequestParam;
+import com.anythink.core.common.track.AgentEventManager;
 
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class CommonDeviceUtil {
@@ -100,6 +96,11 @@ public class CommonDeviceUtil {
      * @return
      */
     public static String getMCC(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_MCC)) {
+            return "";
+        }
+
+
         try {
             //如果上报等级不为PERSONALIZED，则不会传入该字段信息
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
@@ -118,6 +119,11 @@ public class CommonDeviceUtil {
      * @return
      */
     public static String getMNC(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_MNC)) {
+            return "";
+        }
+
+
         try {
             //如果上报等级不为PERSONALIZED，则不会传入该字段信息
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
@@ -138,6 +144,11 @@ public class CommonDeviceUtil {
     private static String androidId_click;
 
     public static String getAndroidID(Context context) {
+
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_ANDROID_ID)) {
+            return "";
+        }
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -167,6 +178,11 @@ public class CommonDeviceUtil {
      * @return
      */
     public static String getModel() {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_MODEL)) {
+            return "";
+        }
+
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -184,6 +200,11 @@ public class CommonDeviceUtil {
      * @return
      */
     public static String getPhoneBrand() {
+
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_BRAND)) {
+            return "";
+        }
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -200,6 +221,11 @@ public class CommonDeviceUtil {
      * @return
      */
     public static String getLanguage(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_LANGUAGE)) {
+            return "";
+        }
+
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -223,6 +249,10 @@ public class CommonDeviceUtil {
      */
     public static int orientation(Context c) {
 
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_ORIENTATION)) {
+            return 0;
+        }
+
         Configuration cf = c.getResources().getConfiguration();
 
         int ori = cf.orientation;
@@ -242,18 +272,23 @@ public class CommonDeviceUtil {
      *
      * @return
      */
-    public static int getVersionCode(Context context) {
+    public static String getVersionCode(Context context) {
+
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_APP_VERSION_CODE)) {
+            return "";
+        }
+
         if (versionCode == 0) {
             try {
                 PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                 versionCode = pi.versionCode;
-                return versionCode;
+                return versionCode + "";
             } catch (Exception e) {
                 e.printStackTrace();
-                return -1;
+                return "";
             }
         }
-        return versionCode;
+        return versionCode + "";
     }
 
     /**
@@ -262,6 +297,9 @@ public class CommonDeviceUtil {
      * @return
      */
     public static String getVersionName(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_APP_VERSION_NAME)) {
+            return "";
+        }
 
         try {
             if (TextUtils.isEmpty(versionName)) {
@@ -290,6 +328,11 @@ public class CommonDeviceUtil {
     }
 
     public static String getScreenSize(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_SCREEN_SIZE)) {
+            return "";
+        }
+
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -304,6 +347,9 @@ public class CommonDeviceUtil {
      * @return
      */
     public static String getPackageName(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_APP_PACKAGE_NAME)) {
+            return "";
+        }
 
         try {
             if (TextUtils.isEmpty(packageName)) {
@@ -322,10 +368,15 @@ public class CommonDeviceUtil {
 
     /**
      * Get install package name
+     *
      * @param context
      * @return
      */
     public static String getSourceInstallPackageName(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_INSTALL_SOURCE)) {
+            return "";
+        }
+
         try {
             if (TextUtils.isEmpty(sourceInstallPackageName)) {
                 sourceInstallPackageName = context.getPackageManager().getInstallerPackageName(getPackageName(context));
@@ -394,45 +445,50 @@ public class CommonDeviceUtil {
      * @param context
      * @return
      */
-    public static int getNetworkType(Context context) {
+    public static String getNetworkType(Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_NETWORK_TYPE)) {
+            return "";
+        }
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
-                return -1;
+                return "";
             }
         } catch (Exception e) {
-            return -1;
+            return "";
         }
+
         int netType = Const.NET_TYPE_UNKNOW;
         try {
             if (context == null) {
-                return Const.NET_TYPE_UNKNOW;
+                return Const.NET_TYPE_UNKNOW + "";
             }
 
             ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
             if (cm == null) {
-                return Const.NET_TYPE_UNKNOW;
+                return Const.NET_TYPE_UNKNOW + "";
             }
             if (CommonUtil.isGranted("android.permission.ACCESS_NETWORK_STATE", context)) {
 
                 NetworkInfo netInfo = cm.getActiveNetworkInfo();
                 if (netInfo == null) {
-                    return Const.NET_TYPE_UNKNOW;
+                    return Const.NET_TYPE_UNKNOW + "";
                 }
                 if (netInfo.getType() == ConnectivityManager.TYPE_WIFI) {
-                    return Const.NET_TYPE_WIFI;
+                    return Const.NET_TYPE_WIFI + "";
                 }
                 TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
                 if (tm == null) {
-                    return Const.NET_TYPE_UNKNOW;
+                    return Const.NET_TYPE_UNKNOW + "";
                 }
                 netType = tm.getNetworkType();
-                return getNetworkClass(netType);
+                return getNetworkClass(netType) + "";
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return Const.NET_TYPE_UNKNOW;
+            return Const.NET_TYPE_UNKNOW + "";
         }
-        return netType;
+        return netType + "";
     }
 
 
@@ -463,6 +519,11 @@ public class CommonDeviceUtil {
 
 
     public static String getTimeZone() {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_TIMEZONE)) {
+            return "";
+        }
+
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -487,9 +548,14 @@ public class CommonDeviceUtil {
 
     /**
      * OS Version
+     *
      * @return
      */
     public static String getOsVersion() {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_OS_VERSION_CODE)) {
+            return "";
+        }
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -497,6 +563,7 @@ public class CommonDeviceUtil {
         } catch (Exception e) {
             return "";
         }
+
         if (TextUtils.isEmpty(osversion)) {
             int osversion_int = getOsVersionInt();
             osversion = osversion_int + "";
@@ -506,6 +573,10 @@ public class CommonDeviceUtil {
     }
 
     public static String getOSversionName() {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_QS_VERSION_NAME)) {
+            return "";
+        }
+
         if (TextUtils.isEmpty(osversionname)) {
             osversionname = Build.VERSION.RELEASE;
         }
@@ -613,6 +684,10 @@ public class CommonDeviceUtil {
     }
 
     public static synchronized String getDefaultUA() {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_UA)) {
+            return "";
+        }
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return "";
@@ -634,11 +709,17 @@ public class CommonDeviceUtil {
             return "";
         }
     }
+
     /**
      * User Agent
+     *
      * @return
      */
-    public static synchronized void getDefaultUserAgent_UI(final Context context) {
+    public static void getDefaultUserAgent_UI(final Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_UA)) {
+            return;
+        }
+
         try {
             if (!UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).canUpLoadDeviceData()) {
                 return;
@@ -646,6 +727,7 @@ public class CommonDeviceUtil {
         } catch (Exception e) {
             return;
         }
+
         userAgent = SPUtil.getString(context, Const.SPU_NAME, Const.SPU_LOCAL_USERAGENT, "");
         String os_version = SPUtil.getString(context, Const.SPU_NAME, Const.SPU_LOCAL_OS, "");
 
@@ -686,11 +768,13 @@ public class CommonDeviceUtil {
      * init upid
      */
     public static synchronized void initUpId(Context context) {
+        if (!TextUtils.isEmpty(SDKContext.getInstance().getUpId())) {
+            return;
+        }
         String deviceId = "";
         deviceId = getGaid(context);
-        CommonDeviceUtil.setGoogleAdId(deviceId);
         if (TextUtils.isEmpty(deviceId) || isGaidInvalid(deviceId)) {
-            deviceId = Settings.Secure.getString(SDKContext.getInstance().getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+            deviceId = getAndroidID(context);
         }
         if (TextUtils.isEmpty(deviceId)) {
             /**if deviceid is null，create the uuid**/
@@ -698,28 +782,79 @@ public class CommonDeviceUtil {
         }
         SDKContext.getInstance().setUpId(CommonMD5.getMD5(deviceId));
 
+        //init upid agent
+        AgentEventManager.sdkInitEvent("", "3", "", String.valueOf(System.currentTimeMillis()));
     }
 
-    private static String getGaid(Context context) {
-        try {
-            Class clz = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
-            Class clzInfo = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient$Info");
-            Method m = clz.getMethod("getAdvertisingIdInfo", Context.class);
-            Object o = m.invoke(null, context);
+
+    /**
+     * Must run on other thread
+     *
+     * @param context
+     * @return
+     */
+    private static String getGaid(final Context context) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_GAID)) {
+            return "";
+        }
+
+        if (SDKContext.getInstance().getChinaHandler() != null) {
+            return "";
+        }
+
+        final ExecutorService service = Executors.newFixedThreadPool(2);
+        final String[] gaid = new String[1];
+
+        service.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Class clz = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+                    Class clzInfo = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient$Info");
+                    Method m = clz.getMethod("getAdvertisingIdInfo", Context.class);
+                    Object o = m.invoke(null, context);
 //                                Class<? extends Object> infoClass = o.getClass();
 
-            Method m2 = clzInfo.getMethod("getId");
-            return (String) m2.invoke(o);
+                    Method m2 = clzInfo.getMethod("getId");
+                    gaid[0] = (String) m2.invoke(o);
 
-        } catch (Exception e) {
-            // try to get from google play app library
-            try {
-                AdvertisingIdClient.AdInfo adInfo = new AdvertisingIdClient().getAdvertisingIdInfo(context);
-                return adInfo.getId();
+                } catch (Exception e) {
+                    // try to get from google play app library
+                    try {
+                        AdvertisingIdClient.AdInfo adInfo = new AdvertisingIdClient().getAdvertisingIdInfo(context);
+                        gaid[0] = adInfo.getId();
 
-            } catch (Exception e1) {
+                    } catch (Exception e1) {
+                    }
+                }
+
+                if (!TextUtils.isEmpty(gaid[0]) && !isGaidInvalid(gaid[0])) {
+                    CommonDeviceUtil.setGoogleAdId(gaid[0]);
+                }
+
+                try {
+                    synchronized (service) {
+                        service.notifyAll();
+                    }
+                } catch (Throwable e) {
+
+                }
+
             }
+        });
+
+
+        try {
+            synchronized (service) {
+                service.wait(2000);
+            }
+            service.shutdown();
+            return gaid[0] != null ? gaid[0] : "";
+        } catch (Exception e) {
+
         }
+
+
         return "";
     }
 

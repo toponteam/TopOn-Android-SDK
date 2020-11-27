@@ -7,11 +7,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
+import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.out.BannerAdListener;
 import com.mintegral.msdk.out.BannerSize;
 import com.mintegral.msdk.out.CustomInfoManager;
@@ -239,5 +236,10 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
     @Override
     public String getNetworkPlacementId() {
         return unitId;
+    }
+
+    @Override
+    public String getBiddingToken(Context context) {
+        return BidManager.getBuyerUid(context);
     }
 }

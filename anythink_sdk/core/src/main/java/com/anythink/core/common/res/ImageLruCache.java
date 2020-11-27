@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.res;
 
 
@@ -63,7 +70,9 @@ public class ImageLruCache<K, V> {
     private final LinkedHashMap<K, V> map;
 //	private final LinkedHashMap<K, V> tempMap = new LinkedHashMap<>();
 
-    /** Size of this cache in units. Not necessarily the number of elements. */
+    /**
+     * Size of this cache in units. Not necessarily the number of elements.
+     */
     private int size;
     private int maxSize;
 
@@ -74,11 +83,10 @@ public class ImageLruCache<K, V> {
     private int missCount;
 
     /**
-     * @param maxSize
-     *            for caches that do not override {@link #sizeOf}, this is the
-     *            maximum number of entries in the cache. For all other caches,
-     *            this is the maximum sum of the sizes of the entries in this
-     *            cache.
+     * @param maxSize for caches that do not override {@link #sizeOf}, this is the
+     *                maximum number of entries in the cache. For all other caches,
+     *                this is the maximum sum of the sizes of the entries in this
+     *                cache.
      */
     public ImageLruCache(int maxSize) {
         if (maxSize <= 0) {
@@ -91,9 +99,7 @@ public class ImageLruCache<K, V> {
     /**
      * Sets the size of the cache.
      *
-     * @param maxSize
-     *            The new maximum size.
-     *
+     * @param maxSize The new maximum size.
      * @hide
      */
     public void resize(int maxSize) {
@@ -191,19 +197,24 @@ public class ImageLruCache<K, V> {
     }
 
     /**
-     * @param maxSize
-     *            the maximum size of the cache before returning. May be -1 to
-     *            evict even 0-sized elements.
+     * @param maxSize the maximum size of the cache before returning. May be -1 to
+     *                evict even 0-sized elements.
      */
     private void trimToSize(int maxSize) {
         while (true) {
             K key;
             V value;
             synchronized (this) {
-                if (size < 0 || (map.isEmpty() && size != 0)) {
-                    throw new IllegalStateException(getClass().getName()
-                            + ".sizeOf() is reporting inconsistent results!");
+                try {
+                    if (size < 0 || (map.isEmpty() && size != 0)) {
+                        throw new IllegalStateException(getClass().getName()
+                                + ".sizeOf() is reporting inconsistent results!");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    break;
                 }
+
 
                 if (size <= maxSize) {
                     break;
@@ -261,13 +272,11 @@ public class ImageLruCache<K, V> {
      * The method is called without synchronization: other threads may access
      * the cache while this method is executing.
      *
-     * @param evicted
-     *            true if the entry is being removed to make space, false if the
-     *            removal was caused by a {@link #put} or {@link #remove}.
-     * @param newValue
-     *            the new value for {@code key}, if it exists. If non-null, this
-     *            removal was caused by a {@link #put}. Otherwise it was caused
-     *            by an eviction or a {@link #remove}.
+     * @param evicted  true if the entry is being removed to make space, false if the
+     *                 removal was caused by a {@link #put} or {@link #remove}.
+     * @param newValue the new value for {@code key}, if it exists. If non-null, this
+     *                 removal was caused by a {@link #put}. Otherwise it was caused
+     *                 by an eviction or a {@link #remove}.
      */
     protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) {
     }
@@ -392,10 +401,8 @@ public class ImageLruCache<K, V> {
                 hitCount, missCount, hitPercent);
     }
 
-    public void clear(){
+    public void clear() {
         synchronized (map) {
-
-
 
 
             while (true) {

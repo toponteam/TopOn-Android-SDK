@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.content.Context;
@@ -16,6 +23,7 @@ import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.mtgjscommon.base.BaseWebView;
 import com.mintegral.msdk.mtgnative.a.b;
 import com.mintegral.msdk.nativex.view.MTGMediaView;
+import com.mintegral.msdk.out.ChannelManager;
 import com.mintegral.msdk.out.MIntegralSDKFactory;
 import com.mintegral.msdk.playercommon.PlayerView;
 import com.mintegral.msdk.reward.player.MTGRewardVideoActivity;
@@ -65,6 +73,8 @@ public class MintegralATInitManager extends ATInitMediation {
                 if (!TextUtils.isEmpty(appid) && !TextUtils.isEmpty(appkey)) {
                     try {
                         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mAppKey) || !TextUtils.equals(mAppId, appid) || !TextUtils.equals(mAppKey, appkey)) {
+                            ChannelManager.setChannel("Y+H6DFttYrPQYcIeicKwJQKQYrN=");
+
                             MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
                             Map<String, String> map = sdk.getMTGConfigurationMap(appid, appkey);
 

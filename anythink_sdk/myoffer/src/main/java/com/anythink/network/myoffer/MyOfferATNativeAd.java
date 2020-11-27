@@ -1,11 +1,19 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.myoffer;
 
 import android.content.Context;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.anythink.myoffer.network.base.MyOfferAdListener;
-import com.anythink.myoffer.network.nativead.MyOfferNativeAd;
+import com.anythink.basead.entity.OfferError;
+import com.anythink.basead.listeners.AdListener;
+import com.anythink.basead.myoffer.MyOfferNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 
 import java.util.List;
@@ -17,14 +25,19 @@ public class MyOfferATNativeAd extends CustomNativeAd {
     public MyOfferATNativeAd(Context context, MyOfferNativeAd myOfferNativeAd) {
         mContext = context.getApplicationContext();
         mMyOfferNativeAd = myOfferNativeAd;
-        mMyOfferNativeAd.setListener(new MyOfferAdListener() {
+        mMyOfferNativeAd.setListener(new AdListener() {
             @Override
-            public void onAdLoaded() {
+            public void onAdDataLoaded() {
 
             }
 
             @Override
-            public void onAdLoadFailed(MyOfferError error) {
+            public void onAdCacheLoaded() {
+
+            }
+
+            @Override
+            public void onAdLoadFailed(OfferError error) {
 
             }
 

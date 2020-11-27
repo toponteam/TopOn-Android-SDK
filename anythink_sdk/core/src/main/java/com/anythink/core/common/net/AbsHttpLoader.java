@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.net;
 
 import android.content.Context;
@@ -333,6 +340,10 @@ public abstract class AbsHttpLoader {
 
                         onCancelCallback(reqCode);
                         return;
+                    }
+
+                    if (SDKContext.getInstance().containDeniedDeviceKey(ApiRequestParam.JSON_REQUEST_COMMON_UA)) {
+                        httpConn.addRequestProperty("User-Agent", Const.SDK_VERSION_NAME);
                     }
 
                     httpConn.setConnectTimeout(20000);

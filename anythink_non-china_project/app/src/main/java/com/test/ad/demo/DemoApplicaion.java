@@ -1,3 +1,11 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ *
+ */
+
 package com.test.ad.demo;
 
 import android.os.Build;
@@ -7,6 +15,7 @@ import android.webkit.WebView;
 import androidx.multidex.MultiDexApplication;
 
 import com.anythink.core.api.ATSDK;
+//import com.anythink.core.api.DeviceDataInfo;
 import com.anythink.core.api.NetTrafficeCallback;
 import com.facebook.stetho.Stetho;
 
@@ -80,6 +89,7 @@ public class DemoApplicaion extends MultiDexApplication {
     public static final String mPlacementId_banner_googleAdManager = "b5f1ea93f1793b";
     public static final String mPlacementId_banner_myoffer = "b5f33a1409b96b";
     public static final String mPlacementId_banner_huawei = "b5f35312714b7f";
+    public static final String mPlacementId_banner_unityads = "b5f7fd2c9a50a8";
 
     //Interstitial
     public static final String mPlacementId_interstitial_all = "b5baca53984692";
@@ -107,6 +117,7 @@ public class DemoApplicaion extends MultiDexApplication {
     public static final String mPlacementId_interstitial_huawei = "b5f3531369a785";
 
     //Splash
+    public static final String mPlacementId_splash_admob = "b5f73fe0c5db29";
     public static final String mPlacementId_splash_mintegral = "b5ee8ae8611366";
     public static final String mPlacementId_splash_myoffer = "b5f33a1598fe94";
     public static final String mPlacementId_splash_huawei = "b5f3531509b722";
@@ -127,10 +138,31 @@ public class DemoApplicaion extends MultiDexApplication {
             }
         }
 
-
         Stetho.initializeWithDefaults(getApplicationContext());
         ATSDK.setNetworkLogDebug(true);
         ATSDK.integrationChecking(this);
+
+//        ATSDK.deniedUploadDeviceInfo(
+//                DeviceDataInfo.DEVICE_SCREEN_SIZE
+//                , DeviceDataInfo.ANDROID_ID
+//                , DeviceDataInfo.APP_PACKAGE_NAME
+//                , DeviceDataInfo.APP_VERSION_CODE
+//                , DeviceDataInfo.APP_VERSION_NAME
+//                , DeviceDataInfo.BRAND
+//                , DeviceDataInfo.GAID
+//                , DeviceDataInfo.LANGUAGE
+//                , DeviceDataInfo.MCC
+//                , DeviceDataInfo.MNC
+//                , DeviceDataInfo.MODEL
+//                , DeviceDataInfo.ORIENTATION
+//                , DeviceDataInfo.OS_VERSION_CODE
+//                , DeviceDataInfo.OS_VERSION_NAME
+//                , DeviceDataInfo.TIMEZONE
+//                , DeviceDataInfo.USER_AGENT
+//                , DeviceDataInfo.NETWORK_TYPE
+//                , DeviceDataInfo.INSTALLER
+//
+//        );
 
         ATSDK.checkIsEuTraffic(this, new NetTrafficeCallback() {
 
@@ -156,12 +188,12 @@ public class DemoApplicaion extends MultiDexApplication {
         Log.i("Demoapplication", "isChinaSDK:" + ATSDK.isChinaSDK());
         Log.i("Demoapplication", "SDKVersionName:" + ATSDK.getSDKVersionName());
 
-        Map custommap = new HashMap();
+        Map<String, Object> custommap = new HashMap<String, Object>();
         custommap.put("key1","initCustomMap1");
         custommap.put("key2","initCustomMap2");
         ATSDK.initCustomMap(custommap);
 
-        Map subcustommap = new HashMap();
+        Map<String, Object> subcustommap = new HashMap<String, Object>();
         subcustommap.put("key1","initPlacementCustomMap1");
         subcustommap.put("key2","initPlacementCustomMap2");
         ATSDK.initPlacementCustomMap("b5aa1fa4165ea3",subcustommap);//native  facebook

@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.chartboost.sdk.CBLocation;
 import com.chartboost.sdk.Chartboost;
@@ -20,7 +18,6 @@ import java.util.Map;
 
 public class ChartboostATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
-    ChartboostRewardedVideoSetting mChartboostMediationSetting;
     String location = CBLocation.LOCATION_DEFAULT;
 
     /***

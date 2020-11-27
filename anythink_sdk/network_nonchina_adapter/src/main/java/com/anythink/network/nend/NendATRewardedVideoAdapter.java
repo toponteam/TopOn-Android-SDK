@@ -3,8 +3,6 @@ package com.anythink.network.nend;
 import android.app.Activity;
 import android.content.Context;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 
 import net.nend.android.NendAdRewardItem;

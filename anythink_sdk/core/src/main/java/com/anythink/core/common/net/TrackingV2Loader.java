@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.net;
 
 import android.content.Context;
@@ -173,7 +180,25 @@ public class TrackingV2Loader extends AbsHttpLoader {
                 String key = iterator.next();
                 commonObject.put(key, mainObject.opt(key));
             }
-            commonObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
+
+            Map<String, Object> customMap = SDKContext.getInstance().getCustomMap();
+            try {
+                if (customMap != null && customMap.size() > 0) {
+                    if (customMap != null) {
+                        JSONObject customObject = new JSONObject();
+                        for (String key : customMap.keySet()) {
+                            Object itemObject = customMap.get(key);
+                            if (itemObject != null) {
+                                customObject.put(key, itemObject.toString());
+                            }
+                        }
+                        commonObject.put(ApiRequestParam.JSON_REQUEST_CUSTOM, customObject);
+                    }
+                }
+            } catch (Throwable e) {
+
+            }
+//            commonObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(mContext).getUploadDataLevel()));
         } catch (JSONException e) {
             if (Const.DEBUG) {
                 e.printStackTrace();

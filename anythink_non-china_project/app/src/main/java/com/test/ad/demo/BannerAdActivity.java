@@ -1,3 +1,11 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ *
+ */
+
 package com.test.ad.demo;
 
 import android.app.Activity;
@@ -22,7 +30,7 @@ import java.util.Map;
 public class BannerAdActivity extends Activity {
 
 
-    String unitIds[] = new String[]{
+    String placementIds[] = new String[]{
             DemoApplicaion.mPlacementId_banner_all
             , DemoApplicaion.mPlacementId_banner_admob
             , DemoApplicaion.mPlacementId_banner_facebook
@@ -40,6 +48,7 @@ public class BannerAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_banner_googleAdManager
             , DemoApplicaion.mPlacementId_banner_myoffer
             , DemoApplicaion.mPlacementId_banner_huawei
+            , DemoApplicaion.mPlacementId_banner_unityads
 
     };
 
@@ -60,7 +69,8 @@ public class BannerAdActivity extends Activity {
             "Chartboost",
             "Google Ad Manager",
             "MyOffer",
-            "Huawei"
+            "Huawei",
+            "UnityAds"
     };
 
     ATBannerView mBannerView;
@@ -77,7 +87,7 @@ public class BannerAdActivity extends Activity {
         Spinner spinner = (Spinner) findViewById(R.id.banner_spinner);
         final FrameLayout frameLayout = findViewById(R.id.adview_container);
         mBannerView = new ATBannerView(this);
-        mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+        mBannerView.setPlacementId(placementIds[mCurrentSelectIndex]);
         frameLayout.addView(mBannerView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, dip2px(300)));
         mBannerView.setBannerAdListener(new ATBannerListener() {
             @Override
@@ -145,7 +155,7 @@ public class BannerAdActivity extends Activity {
                         parent.getItemAtPosition(position).toString(),
                         Toast.LENGTH_SHORT).show();
                 mCurrentSelectIndex = position;
-                mBannerView.setUnitId(unitIds[mCurrentSelectIndex]);
+                mBannerView.setPlacementId(placementIds[mCurrentSelectIndex]);
                 mBannerView.setVisibility(View.VISIBLE);
             }
 
@@ -161,10 +171,11 @@ public class BannerAdActivity extends Activity {
                 HashMap<String, String> maps = new HashMap<>();
                 //since v5.6.5
                 Map<String, Object> localExtra = new HashMap<>();
-                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION, AdmobATConst.ORIENTATION_CURRENT);
+                localExtra.put(AdmobATConst.ADAPTIVE_TYPE, AdmobATConst.ADAPTIVE_ANCHORED);
+                localExtra.put(AdmobATConst.ADAPTIVE_ORIENTATION, AdmobATConst.ORIENTATION_CURRENT);
 //                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION, AdmobATConst.ORIENTATION_PORTRAIT);
 //                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_ORIENTATION, AdmobATConst.ORIENTATION_LANDSCAPE);
-                localExtra.put(AdmobATConst.INLINE_ADAPTIVE_WIDTH, getResources().getDisplayMetrics().widthPixels);
+                localExtra.put(AdmobATConst.ADAPTIVE_WIDTH, getResources().getDisplayMetrics().widthPixels);
                 mBannerView.setLocalExtra(localExtra);
 
                 mBannerView.loadAd();

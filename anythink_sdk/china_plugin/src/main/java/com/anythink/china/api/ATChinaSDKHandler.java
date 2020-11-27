@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.china.api;
 
 import android.content.Context;
@@ -13,6 +20,10 @@ import org.json.JSONObject;
 
 public class ATChinaSDKHandler implements IATChinaSDKHandler {
 
+    public static final String JSON_REQUEST_MAC = "mac";
+    public static final String JSON_REQUEST_IMEI = "imei";
+    public static final String JSON_REQUEST_OAID = "oaid";
+
     @Override
     public void initDeviceInfo(Context context) {
         ChinaDeviceUtils.initDeviceInfo(context);
@@ -23,9 +34,9 @@ public class ATChinaSDKHandler implements IATChinaSDKHandler {
         String dataLevel = appStrategy != null ? appStrategy.getDataLevel() : "";
         if (TextUtils.isEmpty(dataLevel)) {
             try {
-                jsonObject.put("mac", ChinaDeviceUtils.getMac());
-                jsonObject.put("imei", ChinaDeviceUtils.getImei(SDKContext.getInstance().getContext()));
-                jsonObject.put("oaid", ChinaDeviceUtils.getOaid());
+                jsonObject.put(JSON_REQUEST_MAC, ChinaDeviceUtils.getMac());
+                jsonObject.put(JSON_REQUEST_IMEI, ChinaDeviceUtils.getImei(SDKContext.getInstance().getContext()));
+                jsonObject.put(JSON_REQUEST_OAID, ChinaDeviceUtils.getOaid());
             } catch (Exception e) {
 
             }
@@ -41,9 +52,9 @@ public class ATChinaSDKHandler implements IATChinaSDKHandler {
             }
 
             try {
-                jsonObject.put("mac", macOpen == 1 ? ChinaDeviceUtils.getMac() : "");
-                jsonObject.put("imei", imeiOpen == 1 ? ChinaDeviceUtils.getImei(SDKContext.getInstance().getContext()) : "");
-                jsonObject.put("oaid", ChinaDeviceUtils.getOaid());
+                jsonObject.put(JSON_REQUEST_MAC, (macOpen == 1 ? ChinaDeviceUtils.getMac() : ""));
+                jsonObject.put(JSON_REQUEST_IMEI, (imeiOpen == 1 ? ChinaDeviceUtils.getImei(SDKContext.getInstance().getContext()) : ""));
+                jsonObject.put(JSON_REQUEST_OAID, ChinaDeviceUtils.getOaid());
             } catch (Exception e) {
 
             }

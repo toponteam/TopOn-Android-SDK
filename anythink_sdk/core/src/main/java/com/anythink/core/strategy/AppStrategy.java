@@ -1,9 +1,17 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.strategy;
 
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.base.UploadDataLevelManager;
+import com.anythink.core.common.entity.AdxApiUrlSetting;
 import com.anythink.core.common.entity.NetworkInfoBean;
 import com.anythink.core.common.utils.CommonLogUtil;
 
@@ -167,6 +175,21 @@ public class AppStrategy {
     private String systemId;
 
     private String bkId;
+
+    /**
+     * v5.7.0 AdxSetting
+     *
+     * @return
+     */
+    private AdxApiUrlSetting adxSetting;
+
+    public AdxApiUrlSetting getAdxSetting() {
+        return adxSetting;
+    }
+
+    public void setAdxSetting(AdxApiUrlSetting adxSetting) {
+        this.adxSetting = adxSetting;
+    }
 
     public String getSystemId() {
         return systemId;
@@ -396,6 +419,15 @@ public class AppStrategy {
          * 5.6.6
          */
         private static String system_id = "sy_id";
+
+        /**
+         * 5.7.0 AdxSetting
+         */
+        private static String adx_setting_key = "adx";
+        private static String adx_req_addr_key = "req_addr";
+        private static String adx_bid_addr_key = "bid_addr";
+        private static String adx_tk_addr_key = "tk_addr";
+
 
     }
 
@@ -821,6 +853,22 @@ public class AppStrategy {
                 strategy.setSystemId("");
             } else {
                 strategy.setSystemId(jsonObject.optString(ResponseKey.system_id));
+            }
+
+            /**
+             * v5.7.0
+             */
+            if (jsonObject.isNull(ResponseKey.adx_setting_key)) {
+                strategy.setAdxSetting(null);
+            } else {
+                AdxApiUrlSetting adxSetting = new AdxApiUrlSetting();
+                JSONObject adxSettingObject = jsonObject.optJSONObject(ResponseKey.adx_setting_key);
+
+                adxSetting.setAdxRequestHttpUrl(adxSettingObject.optString(ResponseKey.adx_req_addr_key));
+                adxSetting.setAdxBidRequestHttpUrl(adxSettingObject.optString(ResponseKey.adx_bid_addr_key));
+                adxSetting.setAdxTrackRequestHttpUrl(adxSettingObject.optString(ResponseKey.adx_tk_addr_key));
+
+                strategy.setAdxSetting(adxSetting);
             }
 
         } catch (Exception e) {

@@ -1,20 +1,24 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.myoffer;
 
 import android.app.Activity;
 import android.content.Context;
-import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
+import com.anythink.basead.entity.OfferError;
+import com.anythink.basead.listeners.VideoAdListener;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.AdTrackingInfo;
-import com.anythink.core.common.entity.MyOfferSetting;
+import com.anythink.core.common.entity.MyOfferRequestInfo;
 import com.anythink.core.common.utils.CommonDeviceUtil;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.anythink.core.common.MyOfferAPIProxy;
-import com.anythink.myoffer.network.base.MyOfferBaseAd;
-import com.anythink.myoffer.network.interstitial.MyOfferInterstitialAd;
-import com.anythink.myoffer.network.interstitial.MyOfferInterstitialAdListener;
+import com.anythink.basead.myoffer.MyOfferBaseAd;
+import com.anythink.basead.myoffer.MyOfferInterstitialAd;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,34 +26,23 @@ import java.util.Map;
 public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
 
     private String offer_id = "";
-    private MyOfferSetting myOfferSetting;
-    private String placement_id = "";
     private MyOfferInterstitialAd mMyOfferInterstitialAd;
     private boolean isDefaultOffer = false; //用于判断兜底offer的
 
+    MyOfferRequestInfo mMyOfferRequestInfo;
+
     /**
      * @param context
-     * @param serverExtras  key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
+     * @param serverExtras key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
      */
     @Override
-    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String,Object> localMap) {
+    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localMap) {
 
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey("myoffer_setting")) {
-            myOfferSetting = (MyOfferSetting) serverExtras.get("myoffer_setting");
-        }
-        if (serverExtras.containsKey("topon_placement")) {
-            placement_id = serverExtras.get("topon_placement").toString();
-        }
-
-
-        if (TextUtils.isEmpty(offer_id) || TextUtils.isEmpty(placement_id)) {
-            if (mLoadListener != null) {
-                mLoadListener.onAdLoadError("", "my_oid、topon_placement can not be null!");
-            }
-            return;
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
         }
 
         initInterstitialAdObject(context);
@@ -58,8 +51,8 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     private void initInterstitialAdObject(Context context) {
-        mMyOfferInterstitialAd = new MyOfferInterstitialAd(context, placement_id, offer_id, myOfferSetting, isDefaultOffer);
-        mMyOfferInterstitialAd.setListener(new MyOfferInterstitialAdListener() {
+        mMyOfferInterstitialAd = new MyOfferInterstitialAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, isDefaultOffer);
+        mMyOfferInterstitialAd.setListener(new VideoAdListener() {
             @Override
             public void onVideoAdPlayStart() {
                 if (mImpressListener != null) {
@@ -75,21 +68,26 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
             }
 
             @Override
-            public void onVideoShowFailed(MyOfferError error) {
+            public void onVideoShowFailed(OfferError error) {
                 if (mImpressListener != null) {
                     mImpressListener.onInterstitialAdVideoError(error.getCode(), error.getDesc());
                 }
             }
 
             @Override
-            public void onAdLoaded() {
+            public void onAdDataLoaded() {
+
+            }
+
+            @Override
+            public void onAdCacheLoaded() {
                 if (mLoadListener != null) {
                     mLoadListener.onAdCacheLoaded();
                 }
             }
 
             @Override
-            public void onAdLoadFailed(MyOfferError error) {
+            public void onAdLoadFailed(OfferError error) {
                 if (mLoadListener != null) {
                     mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
                 }
@@ -115,33 +113,32 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
                     mImpressListener.onInterstitialAdClicked();
                 }
             }
+
+            @Override
+            public void onRewarded() {
+
+            }
         });
     }
 
     /**
      * @param context
-     * @param serverExtras     key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
+     * @param serverExtras key: myoffer_setting(Play Setting)，topon_placement(PlacementId)，my_oid(MyOfferId)
      * @param localMap
      * @return
      */
     @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String,Object> localMap) {
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localMap) {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey("myoffer_setting")) {
-            myOfferSetting = (MyOfferSetting) serverExtras.get("myoffer_setting");
-        }
-        if (serverExtras.containsKey("topon_placement")) {
-            placement_id = serverExtras.get("topon_placement").toString();
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
         }
         if (serverExtras.containsKey(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG)) {
             isDefaultOffer = (Boolean) serverExtras.get(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG);
         }
 
-        if (TextUtils.isEmpty(offer_id) || TextUtils.isEmpty(placement_id)) {
-            return false;
-        }
 
         initInterstitialAdObject(context);
         return true;
@@ -151,15 +148,10 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
     public void show(Activity activity) {
         if (isAdReady()) {
             Map<String, Object> extraMap = new HashMap<>(1);
-            AdTrackingInfo trackingInfo = getTrackingInfo();
 
             int orientation = CommonDeviceUtil.orientation(activity);
-            if (trackingInfo != null) {
-                String requestId = trackingInfo.getmRequestId();
-                extraMap.put(MyOfferBaseAd.EXTRA_REQUEST_ID, requestId);
-                String scenario = trackingInfo.getmScenario();
-                extraMap.put(MyOfferBaseAd.EXTRA_SCENARIO, scenario);
-            }
+            extraMap.put(MyOfferBaseAd.EXTRA_REQUEST_ID, mMyOfferRequestInfo.requestId);
+            extraMap.put(MyOfferBaseAd.EXTRA_SCENARIO, mScenario);
             extraMap.put(MyOfferBaseAd.EXTRA_ORIENTATION, orientation);
             mMyOfferInterstitialAd.show(extraMap);
         }

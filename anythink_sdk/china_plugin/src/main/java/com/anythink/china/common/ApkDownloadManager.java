@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.china.common;
 
 import android.annotation.TargetApi;
@@ -39,6 +46,12 @@ public class ApkDownloadManager implements IApkManager {
     public static final String TAG = ApkDownloadManager.class.getSimpleName();
     private static ApkDownloadManager sInstance;
     private Context mContext;
+
+    public static final String ACTION_APK_DOWNLOAD_START = "action_apk_download_start";
+    public static final String ACTION_APK_DOWNLOAD_END = "action_apk_download_end";
+    public static final String ACTION_APK_INSTALL_SUCCESSFUL = "action_apk_install_successful";
+    public static final String RECEIVER_EXTRA_OFFER_ID = "receiver_extra_offer_id";
+
 
     private LinkedList<ApkRequest> mRequestQueue;
     private Map<String, ApkRequest> mDownloadingRequestMap;//url -> apkRequest
@@ -192,6 +205,12 @@ public class ApkDownloadManager implements IApkManager {
                             ApkNotificationManager.getInstance(mContext).showNotification(apkRequest, progress, all);
                         }
 
+                        Intent intent = new Intent();
+                        intent.setAction(ApkDownloadManager.ACTION_APK_DOWNLOAD_START);
+                        intent.setPackage(mContext.getPackageName());
+                        intent.putExtra(ApkDownloadManager.RECEIVER_EXTRA_OFFER_ID, apkRequest.offerId);
+                        mContext.sendBroadcast(intent);
+
                         AgentEventManager.onApkDownload(apkRequest.requestId, apkRequest.offerId, apkRequest.url, 1, null, 0, all);
                     }
                 });
@@ -212,6 +231,12 @@ public class ApkDownloadManager implements IApkManager {
 
                         checkPermissionAndInstall(apkRequest);
                         ApkNotificationManager.getInstance(mContext).showClickInstallNotification(apkRequest);
+
+                        Intent intent = new Intent();
+                        intent.setAction(ApkDownloadManager.ACTION_APK_DOWNLOAD_END);
+                        intent.setPackage(mContext.getPackageName());
+                        intent.putExtra(ApkDownloadManager.RECEIVER_EXTRA_OFFER_ID, apkRequest.offerId);
+                        mContext.sendBroadcast(intent);
 
                         AgentEventManager.onApkDownload(apkRequest.requestId, apkRequest.offerId, apkRequest.url, 2, null, downloadTime, apkRequest.apkSize);
 
@@ -572,6 +597,12 @@ public class ApkDownloadManager implements IApkManager {
             mInstallingPackageMap.remove(packageName);
             mSuccessRequestMap.remove(apkRequest.url);
             ApkNotificationManager.getInstance(mContext).cancelNotification(apkRequest);
+
+            Intent intent = new Intent();
+            intent.setAction(ApkDownloadManager.ACTION_APK_INSTALL_SUCCESSFUL);
+            intent.setPackage(mContext.getPackageName());
+            intent.putExtra(ApkDownloadManager.RECEIVER_EXTRA_OFFER_ID, apkRequest.offerId);
+            mContext.sendBroadcast(intent);
 
             AgentEventManager.onApkDownload(apkRequest.requestId, apkRequest.offerId, apkRequest.url, 5, null, 0, 0);
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.net;
 
 import android.content.Context;
@@ -55,6 +62,7 @@ public class ApiRequestParam {
 
     public static final String JSON_REQUEST_APPID = "app_id";
     public static final String JSON_REQUEST_API_VERSION = "api_ver";
+    public static final String JSON_REQUEST_CUSTOM = "custom";
 
     /**
      * For Agent & TK
@@ -82,10 +90,7 @@ public class ApiRequestParam {
      * @return
      */
     public static JSONObject getBaseInfoObject() {
-        if (TextUtils.isEmpty(SDKContext.getInstance().getUpId())) {
-            CommonDeviceUtil.initUpId(SDKContext.getInstance().getContext());
-            AgentEventManager.sdkInitEvent("", "3", "", String.valueOf(System.currentTimeMillis()));
-        }
+        CommonDeviceUtil.initUpId(SDKContext.getInstance().getContext());
 
         JSONObject deviceJSONObject = new JSONObject();
         Context context = SDKContext.getInstance().getContext();
@@ -95,11 +100,11 @@ public class ApiRequestParam {
             deviceJSONObject.put(JSON_REQUEST_COMMON_OS_VERSION_CODE, CommonDeviceUtil.getOsVersion());
             deviceJSONObject.put(JSON_REQUEST_COMMON_APP_PACKAGE_NAME, CommonDeviceUtil.getPackageName(context));
             deviceJSONObject.put(JSON_REQUEST_COMMON_APP_VERSION_NAME, CommonDeviceUtil.getVersionName(context));
-            deviceJSONObject.put(JSON_REQUEST_COMMON_APP_VERSION_CODE, CommonDeviceUtil.getVersionCode(context) + "");
+            deviceJSONObject.put(JSON_REQUEST_COMMON_APP_VERSION_CODE, CommonDeviceUtil.getVersionCode(context));
             deviceJSONObject.put(JSON_REQUEST_COMMON_BRAND, CommonDeviceUtil.getPhoneBrand());
             deviceJSONObject.put(JSON_REQUEST_COMMON_MODEL, CommonDeviceUtil.getModel());
             deviceJSONObject.put(JSON_REQUEST_COMMON_SCREEN_SIZE, CommonDeviceUtil.getScreenSize(context));
-            deviceJSONObject.put(JSON_REQUEST_COMMON_NETWORK_TYPE, String.valueOf(CommonDeviceUtil.getNetworkType(context)));
+            deviceJSONObject.put(JSON_REQUEST_COMMON_NETWORK_TYPE, CommonDeviceUtil.getNetworkType(context));
             deviceJSONObject.put(JSON_REQUEST_COMMON_MNC, CommonDeviceUtil.getMNC(context));
             deviceJSONObject.put(JSON_REQUEST_COMMON_MCC, CommonDeviceUtil.getMCC(context));
             deviceJSONObject.put(JSON_REQUEST_COMMON_LANGUAGE, CommonDeviceUtil.getLanguage(context));
@@ -127,6 +132,8 @@ public class ApiRequestParam {
 
             deviceJSONObject.put(JSON_REQUEST_FIRST_INIT_TIME, SDKContext.getInstance().getFirstInitTime());
             deviceJSONObject.put(JSON_REQUEST_DAYS_FROM_FIRST_INIT, SDKContext.getInstance().getInitDays());
+
+            deviceJSONObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(context).getUploadDataLevel()));
 
         } catch (Exception e) {
             if (Const.DEBUG) {
@@ -158,7 +165,7 @@ public class ApiRequestParam {
 
                 }
             }
-            mainObject.put(JSON_REQUEST_ANDROID_ID, isUpLoadAndroidId ? CommonDeviceUtil.getAndroidID(context) : "");
+            mainObject.put(JSON_REQUEST_ANDROID_ID, (isUpLoadAndroidId ? CommonDeviceUtil.getAndroidID(context) : ""));
             mainObject.put(JSON_REQUEST_COMMON_GAID, CommonDeviceUtil.getGoogleAdId());
             IATChinaSDKHandler chinaSDKHandler = SDKContext.getInstance().getChinaHandler();
             if (chinaSDKHandler != null) {

@@ -24,12 +24,13 @@ public class FacebookATNativeBannerAd extends CustomNativeAd implements NativeAd
 
     NativeBannerAdView.Type mType = NativeBannerAdView.Type.HEIGHT_50;
 
+    FBNativeBannerLoadListener mFBNativeBannerLoadListener;
+
     public FacebookATNativeBannerAd(Context context
             , NativeBannerAd nativeBannerAd
             , String height) {
         mContext = context.getApplicationContext();
         mFacebookNativeAd = nativeBannerAd;
-        mFacebookNativeAd.setAdListener(this);
         switch (height) {
             case "50":
                 mType = NativeBannerAdView.Type.HEIGHT_50;
@@ -43,11 +44,14 @@ public class FacebookATNativeBannerAd extends CustomNativeAd implements NativeAd
         }
     }
 
-    public void loadAd(String bidPayload) {
+    public void loadAd(String bidPayload, FBNativeBannerLoadListener fbNativeBannerLoadListener) {
+        mFBNativeBannerLoadListener = fbNativeBannerLoadListener;
         if (TextUtils.isEmpty(bidPayload)) {
-            mFacebookNativeAd.loadAd();
+            NativeBannerAd.NativeLoadAdConfig nativeLoadAdConfig = mFacebookNativeAd.buildLoadAdConfig().withAdListener(this).build();
+            mFacebookNativeAd.loadAd(nativeLoadAdConfig);
         } else {
-            mFacebookNativeAd.loadAdFromBid(bidPayload);
+            NativeBannerAd.NativeLoadAdConfig nativeLoadAdConfig = mFacebookNativeAd.buildLoadAdConfig().withAdListener(this).withBid(bidPayload).build();
+            mFacebookNativeAd.loadAd(nativeLoadAdConfig);
         }
 
     }
@@ -88,7 +92,6 @@ public class FacebookATNativeBannerAd extends CustomNativeAd implements NativeAd
     public void destroy() {
         if (mFacebookNativeAd != null) {
             mFacebookNativeAd.unregisterView();
-            mFacebookNativeAd.setAdListener(null);
             mFacebookNativeAd.destroy();
             mFacebookNativeAd = null;
         }
@@ -102,10 +105,18 @@ public class FacebookATNativeBannerAd extends CustomNativeAd implements NativeAd
 
     @Override
     public void onError(Ad ad, AdError adError) {
+        if (mFBNativeBannerLoadListener != null) {
+            mFBNativeBannerLoadListener.onLoadFail(adError.getErrorCode() + "", adError.getErrorMessage());
+        }
+        mFBNativeBannerLoadListener = null;
     }
 
     @Override
     public void onAdLoaded(Ad ad) {
+        if (mFBNativeBannerLoadListener != null) {
+            mFBNativeBannerLoadListener.onLoadSuccess();
+        }
+        mFBNativeBannerLoadListener = null;
     }
 
 
@@ -124,4 +135,9 @@ public class FacebookATNativeBannerAd extends CustomNativeAd implements NativeAd
 
     }
 
+    interface FBNativeBannerLoadListener {
+        void onLoadSuccess();
+
+        void onLoadFail(String code, String message);
+    }
 }

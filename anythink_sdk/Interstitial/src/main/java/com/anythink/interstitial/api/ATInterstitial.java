@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.interstitial.api;
 
 import android.app.Activity;
@@ -6,6 +13,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.anythink.core.api.ATAdInfo;
+import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
@@ -203,6 +211,20 @@ public class ATInterstitial {
         boolean isAdReady = mAdLoadManager.isAdReady(mContext);
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_ISREADY, String.valueOf(isAdReady), "");
         return isAdReady;
+    }
+
+    public ATAdStatusInfo checkAdStatus() {
+        if (SDKContext.getInstance().getContext() == null
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
+            Log.e(TAG, "SDK init error!");
+            return new ATAdStatusInfo(false, false, null);
+        }
+
+        ATAdStatusInfo adStatusInfo = mAdLoadManager.checkAdStatus(mContext);
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_AD_STATUS, adStatusInfo.toString(), "");
+
+        return adStatusInfo;
     }
 
     public void show(Activity activity, String scenario) {

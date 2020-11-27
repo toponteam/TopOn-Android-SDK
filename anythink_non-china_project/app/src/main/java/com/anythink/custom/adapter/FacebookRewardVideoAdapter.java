@@ -1,3 +1,11 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ *
+ */
+
 package com.anythink.custom.adapter;
 
 import android.app.Activity;
@@ -13,6 +21,9 @@ import com.facebook.ads.RewardedVideoAdListener;
 
 import java.util.Map;
 
+/**
+ * Created by Z on 2018/6/27.
+ */
 
 public class FacebookRewardVideoAdapter extends CustomRewardVideoAdapter {
 
@@ -90,8 +101,7 @@ public class FacebookRewardVideoAdapter extends CustomRewardVideoAdapter {
         RewardedVideoAd.RewardedVideoAdLoadConfigBuilder adConfig = rewardedVideoAd
                 .buildLoadAdConfig()
                 .withAdListener(rewardedVideoAdListener)
-                .withFailOnCacheFailureEnabled(true)
-                .withRVChainEnabled(true);
+                .withFailOnCacheFailureEnabled(true);
 
         adConfig.withRewardData(new RewardData(mUserId, mUserData));
 
@@ -105,7 +115,6 @@ public class FacebookRewardVideoAdapter extends CustomRewardVideoAdapter {
     public void destory() {
         try {
             if (rewardedVideoAd != null) {
-                rewardedVideoAd.setAdListener(null);
                 rewardedVideoAd.destroy();
             }
         } catch (Exception e) {

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.api;
 
 import android.text.TextUtils;
@@ -17,6 +24,8 @@ import java.util.Map;
  * Mediation Info
  */
 public class ATAdInfo {
+
+    private ATBaseAdAdapter mBaseAdapter;
 
     private int mNetworkFirmId;
     private String mAdsourceId;
@@ -222,7 +231,11 @@ public class ATAdInfo {
 
     public static ATAdInfo fromAdapter(AnyThinkBaseAdapter adapter) {
         if (adapter != null) {
-            return fromAdTrackingInfo(adapter.getTrackingInfo());
+            ATAdInfo atAdInfo = fromAdTrackingInfo(adapter.getTrackingInfo());
+            if (adapter instanceof ATBaseAdAdapter) {
+                atAdInfo.mBaseAdapter = (ATBaseAdAdapter) adapter;
+            }
+            return atAdInfo;
         }
         return new ATAdInfo();
     }

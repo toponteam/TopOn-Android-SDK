@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.net.socket;
 
 import android.text.TextUtils;
@@ -104,7 +111,7 @@ public class TrackingSocketData extends SocketUploadData {
                 String key = iterator.next();
                 commonObject.put(key, mainObject.opt(key));
             }
-            commonObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).getUploadDataLevel()));
+//            commonObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(SDKContext.getInstance().getContext()).getUploadDataLevel()));
         } catch (JSONException e) {
             if (Const.DEBUG) {
                 e.printStackTrace();

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.rewardvideo.bussiness;
 
 import com.anythink.core.api.ATAdInfo;
@@ -10,7 +17,6 @@ import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
-import com.anythink.core.common.MonitoringPlatformManager;
 import com.anythink.rewardvideo.api.ATRewardVideoListener;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardedVideoEventListener;
@@ -34,14 +40,12 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
         impressionTime = System.currentTimeMillis();
         if (mRewardVideoAdapter != null) {
             AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
-            long timestamp = System.currentTimeMillis();
-            adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
 
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_RV_START_TYPE, adTrackingInfo);
 
-            AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
+            AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo);
 
-            mRewardVideoAdapter.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
 
         }
@@ -75,7 +79,7 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
             AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
 
 
-            mRewardVideoAdapter.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.FAIL, adError.printStackTrace());
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.FAIL, adError.printStackTrace());
 
             AgentEventManager.rewardedVideoPlayFail(adTrackingInfo, adError);
         }
@@ -99,7 +103,7 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
             AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
 
 
-            mRewardVideoAdapter.log(Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
 
             if (impressionTime != 0) {
                 AgentEventManager.onAdImpressionTimeAgent(adTrackingInfo, isReward, impressionTime, System.currentTimeMillis());
@@ -144,7 +148,7 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
 
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_CLICK_TYPE, adTrackingInfo);
 
-            mRewardVideoAdapter.log(Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
 
 
         }

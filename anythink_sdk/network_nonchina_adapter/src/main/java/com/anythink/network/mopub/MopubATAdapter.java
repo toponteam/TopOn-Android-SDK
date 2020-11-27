@@ -3,13 +3,9 @@ package com.anythink.network.mopub;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**

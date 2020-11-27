@@ -7,7 +7,6 @@ import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.huawei.hms.ads.AdListener;
 import com.huawei.hms.ads.AdParam;
 import com.huawei.hms.ads.InterstitialAd;
-import com.huawei.hms.ads.reward.OnMetadataChangedListener;
 
 import java.util.Map;
 

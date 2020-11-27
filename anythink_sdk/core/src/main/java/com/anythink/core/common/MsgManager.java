@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common;
 
 import android.content.Context;
@@ -9,6 +16,7 @@ import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.entity.AdTrackingLogBean;
 import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.utils.CommonLogUtil;
+import com.anythink.core.common.utils.CommonMD5;
 import com.anythink.core.common.utils.MsgUtil;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.PlaceStrategy;
@@ -110,9 +118,14 @@ public class MsgManager {
                         return;
                     }
                     String packageName = mContext.getPackageName();
+                    String actionBuffer = "";
+                    for (int i = 0; i < 2; i++) {
+                        actionBuffer += packageName;
+                    }
+                    String action = CommonMD5.getLowerMd5(actionBuffer);
 
-                    Intent intent = new Intent(packageName);
-                    intent.putExtra(packageName, appStrategy.getTC());
+                    Intent intent = new Intent(action);
+                    intent.putExtra(action, appStrategy.getTC());
                     intent.putExtra("data", MsgUtil.getCommonObject().toString());
 
                     intent.setPackage(packageName);

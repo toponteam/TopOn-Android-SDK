@@ -1,3 +1,11 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ *
+ */
+
 package com.test.ad.demo;
 
 import android.app.Activity;
@@ -10,6 +18,7 @@ import android.widget.Toast;
 
 import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATAdInfo;
+import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.rewardvideo.api.ATRewardVideoAd;
 import com.anythink.rewardvideo.api.ATRewardVideoListener;
@@ -20,7 +29,7 @@ import java.util.Map;
 public class RewardVideoAdActivity extends Activity {
 
     private static String TAG = "RewardVideoAdActivity";
-    String unitIds[] = new String[]{
+    String placementIds[] = new String[]{
             DemoApplicaion.mPlacementId_rewardvideo_all
             , DemoApplicaion.mPlacementId_rewardvideo_facebook
             , DemoApplicaion.mPlacementId_rewardvideo_admob
@@ -85,7 +94,7 @@ public class RewardVideoAdActivity extends Activity {
 
         mRadioGroup = (RadioGroup) findViewById(R.id.placement_select_group);
 
-        for (int i = 0; i < unitIds.length; i++) {
+        for (int i = 0; i < placementIds.length; i++) {
             RadioButton radioButton = new RadioButton(this);
             radioButton.setPadding(20, 20, 20, 20);
             radioButton.setText(unitGroupName[i]);
@@ -109,8 +118,9 @@ public class RewardVideoAdActivity extends Activity {
         findViewById(R.id.is_ad_ready_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean isReady = mRewardVideoAd.isAdReady();
-                Toast.makeText(RewardVideoAdActivity.this, "video ad ready status:" + isReady, Toast.LENGTH_SHORT).show();
+                ATAdStatusInfo atAdStatusInfo = mRewardVideoAd.checkAdStatus();
+                Toast.makeText(RewardVideoAdActivity.this, "video ad ready status:" + atAdStatusInfo.isReady(), Toast.LENGTH_SHORT).show();
+
             }
         });
 
@@ -132,7 +142,7 @@ public class RewardVideoAdActivity extends Activity {
 
 
     private void init() {
-        mRewardVideoAd = new ATRewardVideoAd(this, unitIds[mCurrentSelectIndex]);
+        mRewardVideoAd = new ATRewardVideoAd(this, placementIds[mCurrentSelectIndex]);
         String userid = "test_userid_001";
         String userdata = "test_userdata_001";
 //        mRewardVideoAd.setUserData(userid, userdata);

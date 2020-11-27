@@ -3,8 +3,12 @@
    public *;
 }
 
--dontwarn com.anythink.hb.**
--keep class com.anythink.hb.**{ *;}
+-dontwarn com.anythink.**
 
 -dontwarn com.anythink.china.api.**
 -keep class com.anythink.china.api.**{ *;}
+
+-keep class com.anythink.basead.ui.**{ *;}
+-keepclassmembers public class com.anythink.basead.ui.** {
+   public *;
+}

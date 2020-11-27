@@ -4,12 +4,6 @@ import android.content.Context;
 
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.huawei.hms.ads.AdListener;
-import com.huawei.hms.ads.AdParam;
-import com.huawei.hms.ads.VideoConfiguration;
-import com.huawei.hms.ads.nativead.NativeAd;
-import com.huawei.hms.ads.nativead.NativeAdConfiguration;
-import com.huawei.hms.ads.nativead.NativeAdLoader;
 
 import java.util.Map;
 

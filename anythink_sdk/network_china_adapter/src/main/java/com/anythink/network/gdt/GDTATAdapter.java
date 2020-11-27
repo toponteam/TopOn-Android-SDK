@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.gdt;
 
 import android.content.Context;
@@ -8,11 +15,8 @@ import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.qq.e.ads.nativ.ADSize;
 import com.qq.e.ads.nativ.NativeADUnifiedListener;
-import com.qq.e.ads.nativ.NativeMediaAD;
-import com.qq.e.ads.nativ.NativeMediaADData;
 import com.qq.e.ads.nativ.NativeUnifiedAD;
 import com.qq.e.ads.nativ.NativeUnifiedADData;
-import com.qq.e.comm.constants.AdPatternType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +46,8 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
             switch (ADTYPE) {
                 case 1:
                 case 2:
-                    if (mUnitVersion != 2) {
-                        //Picture + Video Self Rendering
-                        loadNativeVideoAD(context);
-                    } else { //adslot 2.0
-                        loadUnifiedAd(context);
-                    }
+                    //Self Rendering 2.0
+                    loadUnifiedAd(context);
                     break;
                 default:
                     //Picture + video template
@@ -104,86 +104,6 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
         nativeUnifiedAd.setVideoPlayPolicy(GDTATInitManager.getInstance().getVideoPlayPolicy(context, mVideoAutoPlay));
         nativeUnifiedAd.loadData(mAdCount);
 
-    }
-
-
-    /***
-     * init Self Rendering 1.0
-     */
-    private void loadNativeVideoAD(final Context context) {
-        NativeMediaAD.NativeMediaADListener listener = new NativeMediaAD.NativeMediaADListener() {
-
-            @Override
-            public void onADLoaded(List<NativeMediaADData> adList) {
-                GDTATNativeAd mGdtNativeAd;
-                if (adList.size() > 0) {
-                    List<CustomNativeAd> resultList = new ArrayList<>();
-                    for (NativeMediaADData _nativeMediaADData : adList) {
-                        NativeMediaADData mAD = _nativeMediaADData;
-                        mGdtNativeAd = new GDTATNativeAd(context, mAD, mVideoMuted, mVideoAutoPlay, mVideoDuration);
-                        resultList.add(mGdtNativeAd);
-                        if (mAD.getAdPatternType() == AdPatternType.NATIVE_VIDEO) {
-                            /**
-                             * If the native ad is an ad with video material, you also need to call the preLoadVideo interface to load the video material:
-                             *    - Loading success: NativeMediaADListener.onADVideoLoaded (NativeMediaADData adData)
-                             *    - Loading failed: NativeMediaADListener.onADError (NativeMediaADData adData, int errorCode) , error code is 700
-                             */
-                            mAD.preLoadVideo();
-                        }
-                    }
-
-                    CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
-                    customNativeAds = resultList.toArray(customNativeAds);
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdCacheLoaded(customNativeAds);
-                    }
-                }
-            }
-
-            @Override
-            public void onNoAD(com.qq.e.comm.util.AdError adError) {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdLoadError(adError.getErrorCode() + "", adError.getErrorMsg());
-                }
-            }
-
-            /**
-             * The advertising status changes. For App ads, the download / installation status and download progress can change.
-             *
-             * @param ad    Ad objects with changed status
-             */
-            @Override
-            public void onADStatusChanged(NativeMediaADData ad) {
-            }
-
-            @Override
-            public void onADError(NativeMediaADData adData, com.qq.e.comm.util.AdError adError) {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdLoadError(adError.getErrorCode() + "", adError.getErrorMsg());
-                }
-            }
-
-            @Override
-            public void onADVideoLoaded(NativeMediaADData adData) {
-
-            }
-
-            @Override
-            public void onADExposure(NativeMediaADData adData) {
-
-            }
-
-            @Override
-            public void onADClicked(NativeMediaADData adData) {
-
-            }
-        };
-
-        NativeMediaAD adManager = new NativeMediaAD(context, mUnitId, listener);
-        if (mVideoDuration != -1) {
-            adManager.setMaxVideoDuration(mVideoDuration);
-        }
-        adManager.loadAD(mAdCount);
     }
 
     @Override

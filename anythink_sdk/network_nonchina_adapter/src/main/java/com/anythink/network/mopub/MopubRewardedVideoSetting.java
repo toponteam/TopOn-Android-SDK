@@ -1,15 +1,14 @@
 package com.anythink.network.mopub;
 
 import android.location.Location;
-import android.text.TextUtils;
 
 import com.anythink.core.api.ATMediationSetting;
-import com.mopub.mobileads.MoPubRewardedVideoManager;
 
 /**
  * Created by zhou on 2018/6/27.
  */
 
+@Deprecated
 public class MopubRewardedVideoSetting implements ATMediationSetting {
 
     private String requestParameters_keywords;

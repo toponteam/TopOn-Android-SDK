@@ -33,8 +33,6 @@ public class AdmobATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private String unitid = "";
 
 
-    AdmobRewardedVideoSetting mAdmobATMediationSetting;
-
     Bundle extras = new Bundle();
 
     boolean isPlayComplete = false;
@@ -48,15 +46,15 @@ public class AdmobATRewardedVideoAdapter extends CustomRewardVideoAdapter {
      */
     private void init(Context context) {
 
-        boolean exitRewardAD = false;
+        boolean existRewardAD = false;
         try {
             Class.forName("com.google.android.gms.ads.rewarded.RewardedAd");
-            exitRewardAD = true;
+            existRewardAD = true;
         } catch (Exception e) {
 
         }
 
-        if (exitRewardAD) {
+        if (existRewardAD) {
             mRewardedAd = new RewardedAd(context.getApplicationContext(), unitid);
         } else {
             mRewardedVideoAd = MobileAds.getRewardedVideoAdInstance(context.getApplicationContext());
@@ -191,7 +189,6 @@ public class AdmobATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 mRewardedVideoAd = null;
             }
             mAdRequest = null;
-            mAdmobATMediationSetting = null;
             extras = null;
         } catch (Exception e) {
         }

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.app.Activity;
@@ -9,6 +16,7 @@ import com.anythink.core.api.ATAdConst;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.mintegral.msdk.MIntegralConstans;
+import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.out.AutoPlayMode;
 import com.mintegral.msdk.out.Campaign;
 import com.mintegral.msdk.out.CustomInfoManager;
@@ -439,5 +447,10 @@ public class MintegralATAdapter extends CustomNativeAdapter {
     @Override
     public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
+    }
+
+    @Override
+    public String getBiddingToken(Context context) {
+        return BidManager.getBuyerUid(context);
     }
 }

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.custom.adapter;
 
 import android.app.Activity;
@@ -83,11 +90,6 @@ public class PangleRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
 
         @Override
-        public void onRewardVerify(boolean rewardVerify, int rewardAmount, String rewardName) {
-
-        }
-
-        @Override
         public void onSkippedVideo() {
 
         }
@@ -96,6 +98,11 @@ public class PangleRewardedVideoAdapter extends CustomRewardVideoAdapter {
             if (mImpressionListener != null) {
                 mImpressionListener.onRewardedVideoAdPlayFailed("", "Callback VideoError");
             }
+        }
+
+        @Override
+        public void onRewardVerify(boolean rewardVerify, int rewardAmount, String rewardName, int errorCode, String errorMsg) {
+
         }
     };
 

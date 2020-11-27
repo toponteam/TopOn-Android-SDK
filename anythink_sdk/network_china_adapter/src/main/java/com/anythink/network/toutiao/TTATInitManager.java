@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.toutiao;
 
 import android.app.Application;
@@ -116,8 +123,12 @@ public class TTATInitManager extends ATInitMediation {
 
     private void doApplicationLifecycleStart(Context context) {
         try {
-            //todo
             if (!TTATConst.getNetworkVersion().startsWith("3.2")) {
+                return;
+            }
+
+            String verison = TTATConst.getNetworkVersion();
+            if (verison != null && Integer.parseInt(verison.replaceAll("\\.", "")) >= 3250) {
                 return;
             }
 

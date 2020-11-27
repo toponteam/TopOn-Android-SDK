@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.toutiao;
 
 import android.app.Activity;
@@ -213,7 +220,7 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         }
     };
 
-    private void startLoad(Context context, Map<String, Object> localExtra, int layoutType, String personalized_template) {
+    private void startLoad(Context context, Map<String, Object> localExtra, int layoutType, String personalized_template, String size) {
         TTAdManager ttAdManager = TTAdSdk.getAdManager();
 
         /**Get the width set by the developer**/
@@ -249,7 +256,17 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
                 float density = context.getResources().getDisplayMetrics().density;
                 /**If developer width is set to 0, the default width is used**/
                 int expressWidth = developerSetExpressWidth <= 0 ? (int) ((Math.min(width, height) - 30 * density) / density) : (int) (developerSetExpressWidth / density);
-                adSlotBuilder.setExpressViewAcceptedSize(expressWidth, 0);
+                int expressHeight = 0;
+                try {
+                    if (!TextUtils.isEmpty(size)) {
+                        String[] sizeArray = size.split(":");
+                        expressHeight = expressWidth / Integer.parseInt(sizeArray[0]) * Integer.parseInt(sizeArray[1]);
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+
+                adSlotBuilder.setExpressViewAcceptedSize(expressWidth, expressHeight);
                 AdSlot adSlot = adSlotBuilder.build();
                 mTTAdNative.loadInteractionExpressAd(adSlot, expressAdListener);
             } else {
@@ -317,14 +334,20 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
             layoutType = Integer.parseInt(serverExtra.get("layout_type").toString());
         }
 
+        String size = "1:1";
+        if (serverExtra.containsKey("size")) {
+            size = serverExtra.get("size").toString();
+        }
+
         final String personalized_template = (String) serverExtra.get("personalized_template");
 
         final int finalLayoutType = layoutType;
+        final String finalSize = size;
         TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
             @Override
             public void onFinish() {
                 try {
-                    startLoad(context, localExtra, finalLayoutType, personalized_template);
+                    startLoad(context, localExtra, finalLayoutType, personalized_template, finalSize);
                 } catch (Throwable e) {
                     if (mLoadListener != null) {
                         mLoadListener.onAdLoadError("", e.getMessage());

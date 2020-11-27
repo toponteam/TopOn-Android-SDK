@@ -2,6 +2,7 @@ package com.anythink.network.vungle;
 
 import com.anythink.core.api.ATMediationSetting;
 
+@Deprecated
 public class VungleRewardedVideoSetting implements ATMediationSetting {
 
     int orientation = 2 ; // 1: Automatic rotation based on device orientation  2:Video ads play in the best orientation

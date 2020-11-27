@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.gdt;
 
 import android.app.Activity;
@@ -6,9 +13,6 @@ import android.text.TextUtils;
 import android.view.View;
 
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.qq.e.ads.banner.ADSize;
-import com.qq.e.ads.banner.BannerADListener;
-import com.qq.e.ads.banner.BannerView;
 import com.qq.e.ads.banner2.UnifiedBannerADListener;
 import com.qq.e.ads.banner2.UnifiedBannerView;
 
@@ -25,124 +29,67 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
     int mRefreshTime;
 
     private void startLoadAd(Activity activity) {
-        if (mUnitVersion != 2) {
-            final BannerView bannerView = new BannerView(activity, ADSize.BANNER, mAppId, mUnitId);
-            if (mRefreshTime > 0) {
-                bannerView.setRefresh(mRefreshTime);
-            } else {
-                bannerView.setRefresh(0);
+        //2.0
+        final UnifiedBannerView unifiedBannerView = new UnifiedBannerView(activity, mUnitId, new UnifiedBannerADListener() {
+            @Override
+            public void onNoAD(com.qq.e.comm.util.AdError adError) {
+                mBannerView = null;
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(String.valueOf(adError.getErrorCode()), adError.getErrorMsg());
+                }
             }
-            bannerView.setADListener(new BannerADListener() {
-                @Override
-                public void onNoAD(com.qq.e.comm.util.AdError adError) {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdLoadError(String.valueOf(adError.getErrorCode()), adError.getErrorMsg());
-                    }
+
+            @Override
+            public void onADReceive() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
                 }
-
-                @Override
-                public void onADReceiv() {
-                    if (mLoadListener != null) {
-                        mBannerView = bannerView;
-                        mLoadListener.onAdCacheLoaded();
-                    }
-                }
-
-                @Override
-                public void onADExposure() {
-                    if (mImpressionEventListener != null) {
-                        mImpressionEventListener.onBannerAdShow();
-                    }
-                }
-
-                @Override
-                public void onADClosed() {
-                    if (mImpressionEventListener != null) {
-                        mImpressionEventListener.onBannerAdClose();
-                    }
-                }
-
-                @Override
-                public void onADClicked() {
-                    if (mImpressionEventListener != null) {
-                        mImpressionEventListener.onBannerAdClicked();
-                    }
-                }
-
-                @Override
-                public void onADLeftApplication() {
-                }
-
-                @Override
-                public void onADOpenOverlay() {
-                }
-
-                @Override
-                public void onADCloseOverlay() {
-                }
-            });
-            bannerView.loadAD();
-        } else { //2.0
-            final UnifiedBannerView unifiedBannerView = new UnifiedBannerView(activity, mUnitId, new UnifiedBannerADListener() {
-                @Override
-                public void onNoAD(com.qq.e.comm.util.AdError adError) {
-                    mBannerView = null;
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdLoadError(String.valueOf(adError.getErrorCode()), adError.getErrorMsg());
-                    }
-                }
-
-                @Override
-                public void onADReceive() {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdCacheLoaded();
-                    }
-                }
-
-                @Override
-                public void onADExposure() {
-                    if (mImpressionEventListener != null) {
-                        mImpressionEventListener.onBannerAdShow();
-                    }
-                }
-
-                @Override
-                public void onADClosed() {
-                    if (mImpressionEventListener != null) {
-                        mImpressionEventListener.onBannerAdClose();
-                    }
-                }
-
-                @Override
-                public void onADClicked() {
-                    if (mImpressionEventListener != null) {
-                        mImpressionEventListener.onBannerAdClicked();
-                    }
-                }
-
-                @Override
-                public void onADLeftApplication() {
-
-                }
-
-                @Override
-                public void onADOpenOverlay() {
-
-                }
-
-                @Override
-                public void onADCloseOverlay() {
-
-                }
-            });
-            if (mRefreshTime > 0) {
-                unifiedBannerView.setRefresh(mRefreshTime);
-            } else {
-                unifiedBannerView.setRefresh(0);
             }
-            mBannerView = unifiedBannerView;
-            unifiedBannerView.loadAD();
+
+            @Override
+            public void onADExposure() {
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
+                }
+            }
+
+            @Override
+            public void onADClosed() {
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClose();
+                }
+            }
+
+            @Override
+            public void onADClicked() {
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdClicked();
+                }
+            }
+
+            @Override
+            public void onADLeftApplication() {
+
+            }
+
+            @Override
+            public void onADOpenOverlay() {
+
+            }
+
+            @Override
+            public void onADCloseOverlay() {
+
+            }
+        });
+        if (mRefreshTime > 0) {
+            unifiedBannerView.setRefresh(mRefreshTime);
+        } else {
+            unifiedBannerView.setRefresh(0);
         }
+        mBannerView = unifiedBannerView;
+        unifiedBannerView.loadAD();
+
     }
 
     @Override
@@ -215,10 +162,7 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
     @Override
     public void destory() {
         if (mBannerView != null) {
-            if (mBannerView instanceof BannerView) {
-                ((BannerView) mBannerView).setADListener(null);
-                ((BannerView) mBannerView).destroy();
-            } else if (mBannerView instanceof UnifiedBannerView) {
+            if (mBannerView instanceof UnifiedBannerView) {
                 ((UnifiedBannerView) mBannerView).destroy();
             }
             mBannerView = null;

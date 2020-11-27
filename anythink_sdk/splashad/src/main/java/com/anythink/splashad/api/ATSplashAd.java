@@ -1,23 +1,31 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.splashad.api;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATMediationRequestInfo;
+import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
-import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
-import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.common.utils.task.TaskManager;
-import com.anythink.splashad.bussiness.AdLoadManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
+import com.anythink.splashad.bussiness.AdLoadManager;
 
 import java.util.Map;
 
@@ -57,6 +65,10 @@ public class ATSplashAd {
         public void onNoAdError(final AdError adError) {
             if (mAdLoadManager != null) {
                 mAdLoadManager.setLoadFail(adError);
+            }
+
+            if (mAdLoadManager != null) {
+                mAdLoadManager.releaseMediationManager();
             }
 
             SDKContext.getInstance().removeMainThreadRunnable(loadOverTimeRunnable);
@@ -238,5 +250,9 @@ public class ATSplashAd {
             mAdLoadManager.releaseMediationManager();
         }
 
+    }
+
+    public static void checkSplashDefaultConfigList(Context context, String splashPlacementId, Map<String, Object> customMap) {
+        SDKContext.getInstance().checkSplashDefaultConfig(context, splashPlacementId, customMap);
     }
 }

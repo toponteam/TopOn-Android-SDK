@@ -1,3 +1,11 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ *
+ */
+
 package com.anythink.custom.adapter;
 
 import android.app.Activity;
@@ -12,6 +20,9 @@ import com.facebook.ads.InterstitialAdListener;
 
 import java.util.Map;
 
+/**
+ * Created by Z on 2018/6/27.
+ */
 
 public class FacebookInterstitialAdapter extends CustomInterstitialAdapter {
 
@@ -85,7 +96,6 @@ public class FacebookInterstitialAdapter extends CustomInterstitialAdapter {
     public void destory() {
         try {
             if (mInterstitialAd != null) {
-                mInterstitialAd.setAdListener(null);
                 mInterstitialAd.destroy();
                 mInterstitialAd = null;
             }

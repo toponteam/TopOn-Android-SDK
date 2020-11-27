@@ -3,13 +3,9 @@ package com.anythink.network.vungle;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
-import com.anythink.banner.api.ATBannerView;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.vungle.warren.AdConfig;
 import com.vungle.warren.Banners;
 import com.vungle.warren.LoadAdCallback;
@@ -213,7 +209,7 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return "";
+        return VungleATConst.getNetworkVersion();
     }
 
 

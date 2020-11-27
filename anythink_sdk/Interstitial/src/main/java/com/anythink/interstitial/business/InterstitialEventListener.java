@@ -1,9 +1,15 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.interstitial.business;
 
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
-import com.anythink.core.common.MonitoringPlatformManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdTrackingInfo;
@@ -66,7 +72,7 @@ public class InterstitialEventListener implements CustomInterstitialEventListene
         if (mAdapter != null) {
             AdTrackingInfo adTrackingInfo = mAdapter.getTrackingInfo();
 
-            mAdapter.log(Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
 
             if (impressionTime != 0) {
                 AgentEventManager.onAdImpressionTimeAgent(adTrackingInfo, false, impressionTime, System.currentTimeMillis());
@@ -93,8 +99,8 @@ public class InterstitialEventListener implements CustomInterstitialEventListene
     @Override
     public void onInterstitialAdClicked() {
         if (mAdapter != null) {
-            mAdapter.log(Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
             AdTrackingInfo adTrackingInfo = mAdapter.getTrackingInfo();
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLICK, Const.LOGKEY.SUCCESS, "");
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_CLICK_TYPE, adTrackingInfo);
 
         }
@@ -108,13 +114,10 @@ public class InterstitialEventListener implements CustomInterstitialEventListene
 
         impressionTime = System.currentTimeMillis();
         if (mAdapter != null) {
-            mAdapter.log(Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
-
             AdTrackingInfo adTrackingInfo = mAdapter.getTrackingInfo();
-            long timestamp = System.currentTimeMillis();
-            adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
 
-            AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo, timestamp);
+            AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo);
 
         }
         if (mListener != null) {

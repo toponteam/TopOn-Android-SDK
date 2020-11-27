@@ -4,9 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
+import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.out.CustomInfoManager;
 import com.mintegral.msdk.out.MTGBidRewardVideoHandler;
 import com.mintegral.msdk.out.MTGRewardVideoHandler;
@@ -22,7 +21,6 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     MTGRewardVideoHandler mMvRewardVideoHandler;
     MTGBidRewardVideoHandler mMvBidRewardVideoHandler;
-    MintegralRewardedVideoSetting mMintegralMediationSetting;
     String placementId = "";
     String unitId = "";
     String mPayload;
@@ -221,7 +219,6 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             mMvRewardVideoHandler = null;
         }
 
-        mMintegralMediationSetting = null;
     }
 
 
@@ -267,5 +264,10 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public String getNetworkPlacementId() {
         return unitId;
+    }
+
+    @Override
+    public String getBiddingToken(Context context) {
+        return BidManager.getBuyerUid(context);
     }
 }

@@ -1,12 +1,21 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.utils;
 
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.anythink.core.api.ATSDK;
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.entity.PlacementImpressionInfo;
 import com.anythink.core.strategy.PlaceStrategy;
 
@@ -51,7 +60,7 @@ public class CommonSDKUtil {
      * create impression id
      */
     public static String creatImpressionId(String requestId, String adsourceId, long timeStamp) {
-        return CommonMD5.getMD5(requestId + adsourceId + timeStamp);
+        return requestId + "_" + adsourceId + "_" + timeStamp;
     }
 
 
@@ -161,6 +170,43 @@ public class CommonSDKUtil {
                     unitGroupInfoList.add(unitGroupInfo);
                     break;
                 }
+            }
+        }
+    }
+
+    public static void printAdTrackingInfoStatusLog(AdTrackingInfo adTrackingInfo, String action, String status, String extraMsg) {
+        if (ATSDK.isNetworkLogDebug()) {
+            if (adTrackingInfo != null) {
+                JSONObject jsonObject = new JSONObject();
+                try {
+
+                    if (adTrackingInfo.ismIsDefaultNetwork()) {
+                        jsonObject.put("isDefault", true);
+                    }
+                    jsonObject.put("placementId", adTrackingInfo.getmPlacementId());
+                    jsonObject.put("adType", adTrackingInfo.getAdTypeString());
+                    jsonObject.put("action", action);
+                    jsonObject.put("refresh", adTrackingInfo.getmRefresh());
+                    jsonObject.put("result", status);
+                    jsonObject.put("position", adTrackingInfo.getRequestLevel());
+                    jsonObject.put("networkType", adTrackingInfo.getmNetworkType());
+                    jsonObject.put("networkName", adTrackingInfo.getNetworkName());
+                    jsonObject.put("networkVersion", adTrackingInfo.getmNetworkVersion());
+                    jsonObject.put("networkUnit", adTrackingInfo.getmNetworkContent());
+                    jsonObject.put("isHB", adTrackingInfo.getmBidType());
+                    jsonObject.put("msg", extraMsg);
+                    jsonObject.put("hourly_frequency", adTrackingInfo.getmHourlyFrequency());
+                    jsonObject.put("daily_frequency", adTrackingInfo.getmDailyFrequency());
+                    jsonObject.put("network_list", adTrackingInfo.getmNetworkList());
+                    jsonObject.put("request_network_num", adTrackingInfo.getmRequestNetworkNum());
+                    jsonObject.put("handle_class", adTrackingInfo.getmHandlClassName());
+
+                } catch (Throwable e) {
+
+                }
+
+                SDKContext.getInstance().printJson(Const.RESOURCE_HEAD + "_network", jsonObject.toString());
+
             }
         }
     }

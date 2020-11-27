@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.strategy;
 
 import android.content.Context;
@@ -14,6 +21,7 @@ import com.anythink.core.common.entity.SDKConfigInfo;
 import com.anythink.core.common.net.AppStrategyLoader;
 import com.anythink.core.common.net.OnHttpLoaderListener;
 import com.anythink.core.common.utils.CommonLogUtil;
+import com.anythink.core.common.utils.CommonUtil;
 import com.anythink.core.common.utils.SPUtil;
 
 import org.json.JSONArray;
@@ -254,7 +262,8 @@ public class AppStrategyManager {
                         if (TextUtils.isEmpty(content)) {
                             continue;
                         }
-                        serverExtrasMap = PlaceStrategy.getServerExtrasMap(content);
+
+                        serverExtrasMap = CommonUtil.jsonObjectToMap(content);
                         adapters = jsonObject.optJSONArray("adapter");
 
                         adapterLength = adapters.length();

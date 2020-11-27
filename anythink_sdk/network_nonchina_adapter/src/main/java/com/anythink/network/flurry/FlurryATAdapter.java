@@ -3,8 +3,6 @@ package com.anythink.network.flurry;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 

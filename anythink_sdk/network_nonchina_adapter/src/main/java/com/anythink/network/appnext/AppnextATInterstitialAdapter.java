@@ -3,8 +3,6 @@ package com.anythink.network.appnext;
 import android.app.Activity;
 import android.content.Context;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.appnext.ads.interstitial.Interstitial;
 import com.appnext.core.AppnextAdCreativeType;

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.base;
 
 
@@ -9,7 +16,6 @@ public class Const {
      * SDK Version
      */
     public static final String SDK_VERSION_NAME = BuildConfig.SDK_VERSION_NAME;
-    public static final String KEY_MYOFFER_ID = "my_oid";
 
     public static final int SDK_VERSION_DB = 4;
 
@@ -41,6 +47,16 @@ public class Const {
      * Placement update check
      */
     public static final String SPU_PLACEMENT_STRATEGY_UPDATE_CHECK_NAME = RESOURCE_HEAD + "_placement_strategy_update_check";
+
+    public static class NETWORK_FIRM {
+        public static final int ADX_NETWORK_FIRM_ID = 66;
+    }
+
+    public static class NETWORK_REQUEST_PARAMS_KEY {
+        public static final String MYOFFER_PARAMS_KEY = "myoffer_params";
+        public static final String ADX_PARAMS_KEY = "adx_params";
+        public static final String BID_PAYLOAD_KEY = "payload";
+    }
 
     public static class FORMAT {
         public static final String NATIVE_FORMAT = "0";
@@ -81,7 +97,9 @@ public class Const {
 
         public static final String SPU_FIRST_INIT_TIME = "AT_INIT_TIME";
 
-        /**Only for exc_log**/
+        /**
+         * Only for exc_log
+         **/
         public static final String SPU_EXC_SYS = "exc_sys";
         public static final String SPU_EXC_BK = "exc_bk";
     }
@@ -96,24 +114,33 @@ public class Const {
         public static final int JSON_RESPONSE_STATUS_SUCCESS = 0;
         public static String JSON_DATA = "data";
 
-        public static final String URL_APP_STRATEGY = BuildConfig.URL_APP_STRATEGY;
-        public static final String URL_PLACE_STRATEGY = BuildConfig.URL_PLACE_STRATEGY;
-        public static final String URL_AGENT = BuildConfig.URL_AGENT;
-        public static final String URL_TRACKING_STRATEGY = BuildConfig.URL_TRACKING_STRATEGY;
-        public static final String URL_TRAFFIC_CHECK = BuildConfig.URL_TRAFFIC_CHECK;
-
-        /**Test API**/
+        public static final String URL_APP_STRATEGY = "https://api.anythinktech.com/v1/open/app";
+        public static final String URL_PLACE_STRATEGY = "https://api.anythinktech.com/v1/open/placement";
+        public static final String URL_AGENT = "https://da.anythinktech.com/v1/open/da";
+        public static final String URL_TRACKING_STRATEGY = "https://tk.anythinktech.com/v1/open/tk";
+        public static final String URL_TRAFFIC_CHECK = "https://api.anythinktech.com/v1/open/eu";
+        public static final String URL_HEADBIDDING = "https://adx.anythinktech.com/bid";
+        public static final String URL_ADX_REQUEST = "https://adx.anythinktech.com/request";
+        public static final String URL_ADX_TK = "https://adxtk.anythinktech.com/v1";
+        /**
+         * Test API
+         **/
+        //TODO TEST
 //        public static final String URL_APP_STRATEGY = "http://test.aa.toponad.com/v1/open/app";
 //        public static final String URL_PLACE_STRATEGY = "http://test.aa.toponad.com/v1/open/placement";
 //        public static final String URL_AGENT = "http://test.dd.toponad.com/v1/open/da";
 //        public static final String URL_TRACKING_STRATEGY = "http://test.tt.toponad.com/v1/open/tk";
 //        public static final String URL_TRAFFIC_CHECK = "http://test.aa.toponad.com/v1/open/eu";
+//        public static final String URL_HEADBIDDING = "http://test.adx.anythinktech.com/bid";
+//        public static final String URL_ADX_REQUEST = "http://test.adx.anythinktech.com/request";
+//        public static final String URL_ADX_TK = "http://test.adxtk.anythinktech.com/v1";
+
 
     }
 
 
     public static class URL {
-        public static final String GDPR_URL = BuildConfig.GDPR_URL;
+        public static final String GDPR_URL = "https://img.anythinktech.com/gdpr/PrivacyPolicySetting.html";
     }
 
     public static class LOGKEY {
@@ -137,6 +164,7 @@ public class Const {
         public static String API_LOAD = "load";
         public static String API_SHOW = "show";
         public static String API_ISREADY = "isready";
+        public static String API_AD_STATUS = "status";
 
 
         public static String HEADBIDDING = "headbidding";

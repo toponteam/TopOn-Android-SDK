@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.splashad.bussiness;
 
 import android.app.Activity;
@@ -13,9 +20,7 @@ import com.anythink.core.common.CommonMediationManager;
 import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.ShowWaterfallManager;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.splashad.api.ATSplashAdListener;
-import com.anythink.core.strategy.PlaceStrategy;
 
 /**
  * Ad Request Manager
@@ -107,6 +112,7 @@ public class AdLoadManager extends CommonAdManager<SplashLoadParams> {
             CommonMediationManager mediationGroupManager = mHistoryMediationManager.get(requestId);
             if (mediationGroupManager != null) {
                 mediationGroupManager.release();
+                mHistoryMediationManager.remove(requestId);
             }
 
         }

@@ -4,9 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.tapjoy.TJActionRequest;
 import com.tapjoy.TJConnectListener;

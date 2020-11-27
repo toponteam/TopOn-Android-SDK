@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.res;
 
 import android.content.Context;
@@ -67,18 +74,7 @@ public class ResourceDiskCacheManager {
 
         boolean result = false;
 
-        DiskLruCache diskLruCache = mFileTypeDiskLruCacheMap.get(fileType);
-        if (diskLruCache == null) {
-            try {
-                diskLruCache = DiskLruCache.open(diskCacheDir, 1, 1, getCacheMaxSize(fileType));
-                mFileTypeDiskLruCacheMap.put(fileType, diskLruCache);
-            } catch (Throwable e) {
-                if (SDKContext.getInstance().isNetworkLogDebug()) {
-                    Log.e(TAG, "Create DiskCache error.");
-                    e.printStackTrace();
-                }
-            }
-        }
+        DiskLruCache diskLruCache = getDiskLruCache(fileType, diskCacheDir);
 
 //        synchronized (mDiskCacheLock) {
         // Add to disk cache
@@ -143,18 +139,7 @@ public class ResourceDiskCacheManager {
             diskCacheDir.mkdirs();
         }
 
-        DiskLruCache diskLruCache = mFileTypeDiskLruCacheMap.get(fileType);
-        if (diskLruCache == null) {
-            try {
-                diskLruCache = DiskLruCache.open(diskCacheDir, 1, 1, getCacheMaxSize(fileType));
-                mFileTypeDiskLruCacheMap.put(fileType, diskLruCache);
-            } catch (Throwable e) {
-                if (SDKContext.getInstance().isNetworkLogDebug()) {
-                    Log.e(TAG, "Create DiskCache error.");
-                    e.printStackTrace();
-                }
-            }
-        }
+        DiskLruCache diskLruCache = getDiskLruCache(fileType, diskCacheDir);
 
 
         try {
@@ -176,6 +161,23 @@ public class ResourceDiskCacheManager {
 
         return null;
 
+    }
+
+    private synchronized DiskLruCache getDiskLruCache(int fileType, File diskCacheDir) {
+        DiskLruCache diskLruCache = mFileTypeDiskLruCacheMap.get(fileType);
+        if (diskLruCache == null) {
+            try {
+                diskLruCache = DiskLruCache.open(diskCacheDir, 1, 1, getCacheMaxSize(fileType));
+                mFileTypeDiskLruCacheMap.put(fileType, diskLruCache);
+            } catch (Throwable e) {
+                if (SDKContext.getInstance().isNetworkLogDebug()) {
+                    Log.e(TAG, "Create DiskCache error.");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return diskLruCache;
     }
 
 
@@ -205,7 +207,7 @@ public class ResourceDiskCacheManager {
     private long getCacheMaxSize(int fileType) {
         switch (fileType) {
             case ResourceEntry.INTERNAL_CACHE_TYPE:
-                return AppStrategyManager.getInstance(SDKContext.getInstance().getContext()).getMyOfferCacheSize() * 1024;
+                return AppStrategyManager.getInstance(mContext).getMyOfferCacheSize() * 1024;
         }
 
         return 25 * 1024 * 1024;

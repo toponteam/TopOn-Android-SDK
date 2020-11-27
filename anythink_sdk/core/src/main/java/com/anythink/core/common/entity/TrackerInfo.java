@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.entity;
 
 import com.anythink.core.common.base.SDKContext;
@@ -21,6 +28,7 @@ public abstract class TrackerInfo {
     public static final int AD_SOURCE_CAPPING_REASON = 2;
     public static final int AD_SOURCE_PACCING_REASON = 3;
     public static final int AD_SOURCE_NO_RESULT_REASON = 4;
+    public static final int AD_SOURCE_ADX_BID_EXPIRE_REASON = 5;
 
 
     public static final String AD_NATIVE_TYPE = "0";

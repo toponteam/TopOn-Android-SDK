@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.app.Activity;
@@ -5,6 +12,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
+import com.mintegral.msdk.mtgbid.out.BidManager;
 import com.mintegral.msdk.out.CustomInfoManager;
 import com.mintegral.msdk.out.MTGBidRewardVideoHandler;
 import com.mintegral.msdk.out.MTGRewardVideoHandler;
@@ -24,6 +32,8 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     String unitId = "";
     String mPayload;
     String mCustomData = "{}";
+
+    Context context;
 
     @Override
     public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
@@ -73,7 +83,7 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
      * init
      */
     private void init(Context context) {
-
+        this.context = context;
         RewardVideoListener videoListener = new RewardVideoListener() {
 
             @Override
@@ -255,5 +265,10 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public String getNetworkSDKVersion() {
         return MintegralATConst.getNetworkVersion();
+    }
+
+    @Override
+    public String getBiddingToken(Context context) {
+        return BidManager.getBuyerUid(context);
     }
 }

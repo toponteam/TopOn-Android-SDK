@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.sigmob;
 
 import android.app.Activity;
@@ -47,6 +54,7 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter {
             @Override
             public void onFinish() {
                 WindSplashAdRequest splashAdRequest = new WindSplashAdRequest(mPlacementId, "", null);
+                splashAdRequest.setFetchDelay(5);
                 splashAdRequest.setDisableAutoHideAd(true);
 
                 //show ad

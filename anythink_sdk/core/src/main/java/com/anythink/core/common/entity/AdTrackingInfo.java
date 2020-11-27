@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.entity;
 
 import android.text.TextUtils;
@@ -61,6 +68,7 @@ public class AdTrackingInfo extends TrackerInfo {
 
     int mBidType; //Bid type
     double mBidPrice; //Bid price
+    String mBidId; //Bid Id（Payload）
 
     public int mMyOfferShowType;//1:Default MyOffer，0：Normal MyOffer
 
@@ -90,6 +98,24 @@ public class AdTrackingInfo extends TrackerInfo {
 
     private long mHBWaitingToRequestTime;
     private long mHBBidTimeout;
+
+    private String mHandlClassName;
+
+    public String getmHandlClassName() {
+        return mHandlClassName;
+    }
+
+    public void setmHandlClassName(String mHandlClassName) {
+        this.mHandlClassName = mHandlClassName;
+    }
+
+    public String getmBidId() {
+        return mBidId;
+    }
+
+    public void setmBidId(String mBidId) {
+        this.mBidId = mBidId;
+    }
 
     public long getmHBWaitingToRequestTime() {
         return mHBWaitingToRequestTime;
@@ -501,6 +527,7 @@ public class AdTrackingInfo extends TrackerInfo {
                     jsonObject.put("aprn_auto_req", ismIsDefaultNetwork() ? 1 : 0);
                     jsonObject.put("bidtype", mBidType);
                     jsonObject.put("bidprice", String.valueOf(mBidPrice));
+                    jsonObject.put("bid_id", mBidId);
                     break;
 
                 case TrackingV2Loader.AD_REQUEST_SUCCESS_TYPE:
@@ -515,6 +542,7 @@ public class AdTrackingInfo extends TrackerInfo {
                     jsonObject.put("flag", mFlag);
                     jsonObject.put("bidtype", mBidType);
                     jsonObject.put("bidprice", String.valueOf(mBidPrice));
+                    jsonObject.put("bid_id", mBidId);
                     break;
 
                 case TrackingV2Loader.AD_SHOW_TYPE:
@@ -533,6 +561,7 @@ public class AdTrackingInfo extends TrackerInfo {
 
                     jsonObject.put("bidtype", mBidType);
                     jsonObject.put("bidprice", String.valueOf(mBidPrice));
+                    jsonObject.put("bid_id", mBidId);
 
                     //Add by v4.5.0
                     jsonObject.put("myoffer_showtype", mMyOfferShowType);
@@ -559,6 +588,7 @@ public class AdTrackingInfo extends TrackerInfo {
                     jsonObject.put("progress", mProgress);
                     jsonObject.put("bidtype", mBidType);
                     jsonObject.put("bidprice", String.valueOf(mBidPrice));
+                    jsonObject.put("bid_id", mBidId);
                     break;
 
                 case TrackingV2Loader.AD_RV_START_TYPE:
@@ -570,6 +600,7 @@ public class AdTrackingInfo extends TrackerInfo {
                     jsonObject.put("aprn_auto_req", ismIsDefaultNetwork() ? 1 : 0);
                     jsonObject.put("bidtype", mBidType);
                     jsonObject.put("bidprice", String.valueOf(mBidPrice));
+                    jsonObject.put("bid_id", mBidId);
                     //Add by v5.4.7
                     if (!TextUtils.isEmpty(mScenario)) {
                         jsonObject.put("scenario", mScenario);
@@ -596,6 +627,7 @@ public class AdTrackingInfo extends TrackerInfo {
                     jsonObject.put("gro_id", mGroupId);
                     jsonObject.put("bidtype", mBidType);
                     jsonObject.put("bidprice", String.valueOf(mBidPrice));
+                    jsonObject.put("bid_id", mBidId);
                     jsonObject.put("as_result", TextUtils.isEmpty(mAsResult) ? "[]" : new JSONArray(mAsResult));
                     jsonObject.put("new_req_id", mShowCurrentRequestId);
                     jsonObject.put("auto_req", mAutoRequest);

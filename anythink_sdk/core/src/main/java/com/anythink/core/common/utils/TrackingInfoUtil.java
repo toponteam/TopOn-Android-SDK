@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.utils;
 
 import android.content.Context;
@@ -91,6 +98,7 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmDailyFrequency(adSourceImpressionInfo != null ? adSourceImpressionInfo.dayShowCount : 0);
         adTrackingInfo.setmBidPrice(unitGroupInfo.getEcpm());
         adTrackingInfo.setmBidType(unitGroupInfo.bidType);
+        adTrackingInfo.setmBidId(unitGroupInfo.payload); //Add by v5.7.0
         adTrackingInfo.setmClickTkUrl(unitGroupInfo.getClickTkUrl());
         adTrackingInfo.setmClickTkDelayMinTime(unitGroupInfo.getClickTkDelayMinTime());
         adTrackingInfo.setmClickTkDelayMaxTime(unitGroupInfo.getClickTkDelayMaxTime());
@@ -104,6 +112,7 @@ public class TrackingInfoUtil {
         }
 
         adTrackingInfo.setNetworkName(baseAdapter.getNetworkName());
+        adTrackingInfo.setmHandlClassName(baseAdapter.getClass().getName());
 
         baseAdapter.setmUnitgroupInfo(unitGroupInfo);
         baseAdapter.setRefresh(adTrackingInfo.getmRefresh() == 1);

@@ -2,8 +2,6 @@ package com.anythink.network.nend;
 
 import android.content.Context;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 
@@ -60,9 +58,9 @@ public class NendATAdapter extends CustomNativeAdapter {
 
             @Override
             public void onFail(String errorCode, String errorMsg) {
-               if(mLoadListener != null){
-                   mLoadListener.onAdLoadError(errorCode, errorMsg);
-               }
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
+                }
             }
 
         };

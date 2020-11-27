@@ -43,7 +43,10 @@
 -keep public class * extends android.content.ContentProvider
 -keep public class com.anythink.china.common.NotificationBroadcaseReceiver
 -keep public class com.anythink.china.common.ApkFileProvider
-
+-keep public class * extends android.view.View
+-keepclassmembers public class * extends android.view.View {
+   public *;
+}
 
 -keep public class com.anythink.banner.api.*
 -keepclassmembers class com.anythink.banner.api.* {
@@ -130,10 +133,6 @@
    public *;
 }
 
--keep public class com.anythink.hb.**
--keepclassmembers class com.anythink.hb.** {
-   public *;
-}
 
 -keep public class com.**.api.** { *;}
 -keepclassmembers class com.**.api.** {

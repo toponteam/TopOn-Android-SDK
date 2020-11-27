@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.metadata.PlayerMetaData;
@@ -51,8 +49,19 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             }
         } else {
             UnityAdsATInitManager.getInstance().putLoadResultAdapter(placement_id, this);
-            UnityAdsATInitManager.getInstance().initSDK(context, serverExtras);
-            UnityAds.load(placement_id);
+            UnityAdsATInitManager.getInstance().initSDK(context, serverExtras, new UnityAdsATInitManager.InitListener() {
+                @Override
+                public void onSuccess() {
+                    UnityAds.load(placement_id);
+                }
+
+                @Override
+                public void onError(String error, String msg) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError(error, msg);
+                    }
+                }
+            });
         }
     }
 
@@ -74,16 +83,16 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
     }
 
-    @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-        if (serverExtras != null) {
-            if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
-                placement_id = (String) serverExtras.get("placement_id");
-                return true;
-            }
-        }
-        return false;
-    }
+//    @Override
+//    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+//        if (serverExtras != null) {
+//            if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
+//                placement_id = (String) serverExtras.get("placement_id");
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     @Override
     public void destory() {

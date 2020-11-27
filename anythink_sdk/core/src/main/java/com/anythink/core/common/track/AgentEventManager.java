@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.core.common.track;
 
 import android.text.TextUtils;
@@ -326,7 +333,7 @@ public class AgentEventManager {
         handleEventSend(agentInfoBean);
     }
 
-    public static void myOfferVideoUrlDownloadEvent(String placementId, String offerId, String downloadUrl, String downloadResult, long fileSize, String failMsg, long downloadStartTime, long downloadEndTime) {
+    public static void offerVideoUrlDownloadEvent(String placementId, String offerId, String downloadUrl, String downloadResult, long fileSize, String failMsg, long downloadStartTime, long downloadEndTime, int offerType) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004638";
         agentInfoBean.unitId = placementId;
@@ -338,6 +345,7 @@ public class AgentEventManager {
         agentInfoBean.msg5 = String.valueOf(downloadStartTime);
         agentInfoBean.msg6 = String.valueOf(downloadEndTime);
         agentInfoBean.msg7 = "1".equals(downloadResult) ? String.valueOf(downloadEndTime - downloadStartTime) : null;
+        agentInfoBean.msg8 = String.valueOf(offerType);
 
         handleEventSend(agentInfoBean);
     }
@@ -549,12 +557,12 @@ public class AgentEventManager {
     /**
      * Click error agent
      */
-    public static void sendClickFailAgent(String placementId, String offerId, String offerType, String clickUrl, String clickFailUrl, String errorCode, String errorMsg) {
+    public static void sendClickFailAgent(String placementId, String offerId, int offerType, String clickUrl, String clickFailUrl, String errorCode, String errorMsg) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004648";
         agentInfoBean.unitId = placementId;
         agentInfoBean.msg = offerId;
-        agentInfoBean.msg1 = offerType;
+        agentInfoBean.msg1 = String.valueOf(offerType);
         agentInfoBean.msg2 = clickUrl;
         agentInfoBean.msg3 = clickFailUrl;
         agentInfoBean.msg4 = errorCode;
@@ -566,12 +574,12 @@ public class AgentEventManager {
     /**
      * DeepLink Agent
      */
-    public static void sendDeepLinkAgent(String placementId, String offerId, String offerType, String deepLinkUrl, String result) {
+    public static void sendDeepLinkAgent(String placementId, String offerId, int offerType, String deepLinkUrl, String result) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004650";
         agentInfoBean.unitId = placementId;
         agentInfoBean.msg = offerId;
-        agentInfoBean.msg1 = offerType;
+        agentInfoBean.msg1 = String.valueOf(offerType);
         agentInfoBean.msg2 = deepLinkUrl;
         agentInfoBean.msg3 = result;
 

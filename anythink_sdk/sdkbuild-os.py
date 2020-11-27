@@ -7,8 +7,6 @@ import shutil
 import sys
 import subprocess
 import zipfile
-import platform
-
 
 
 # 获取脚本文件的当前路径
@@ -22,7 +20,7 @@ def cur_file_dir():
         return os.path.dirname(path)
 
 def cur_command():
-    cmd = '../gradlew'
+    cmd = COMMAND + ''
 
     cur_platform = platform.system().strip()
     if "Windows" == cur_platform:
@@ -40,10 +38,10 @@ def runcmd(cmd):
         sys.exit(0)
     print '\rstep %s success' % cmd
 
+
 # gradle
 ROOT_DIR = cur_file_dir()
 COMMAND = cur_command()
-
 
 def clean():
     os.chdir(ROOT_DIR)
@@ -52,7 +50,6 @@ def clean():
 
 def buildOnce(brand):
     packageModuel = 'packagemodule-os'
-
 
     if os.path.exists(ROOT_DIR + "/outputs"):
         shutil.rmtree(ROOT_DIR + "/outputs")
@@ -74,10 +71,6 @@ def buildOnce(brand):
     os.chdir(ROOT_DIR + '/myoffer')
     runcmd(COMMAND + ' assembleRelease')
 
-    if os.path.exists(ROOT_DIR + "/headbidding/build"):
-        shutil.rmtree(ROOT_DIR + '/headbidding/build')
-    os.chdir(ROOT_DIR + '/headbidding')
-    runcmd(COMMAND + ' assembleRelease')
 
     if os.path.exists(ROOT_DIR + "/native/build"):
         shutil.rmtree(ROOT_DIR + '/native/build')
@@ -148,15 +141,11 @@ def buildOnce(brand):
     shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
     runcmd(COMMAND + ' outputSplashAdAAR')
 
-    runcmd(COMMAND + ' makeHeadBiddingAARRes')
-    shutil.rmtree(ROOT_DIR + '/' + packageModuel +'/build')
-    runcmd(COMMAND + ' outputHeadBiddingAAR')
-
 
 
     #Anythink Network Adapter
-    china_network = ['baidu', 'gdt', 'kuaishou', 'ksyun', 'mintegral-china', 'oneway',
-                     'sigmob', 'pangle-china', 'uniplay'];
+    china_network = ['baidu', 'gdt', 'kuaishou', 'mintegral-china',
+                     'sigmob', 'pangle-china'];
     nonchina_network = ['adcolony', 'admob', 'applovin', 'appnext', 'superawesome', 'chartboost',
                         'facebook', 'flurry', 'inmobi', 'ironsource', 'maio', 'mintegral-nonchina',
                         'mopub', 'nend', 'ogury', 'startapp', 'tapjoy', 'pangle-nonchina',

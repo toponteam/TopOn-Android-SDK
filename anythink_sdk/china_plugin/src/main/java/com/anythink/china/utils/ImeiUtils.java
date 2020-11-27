@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.china.utils;
 
 import android.annotation.TargetApi;
@@ -8,6 +15,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+
+import com.anythink.china.api.ChinaDeviceDataInfo;
+import com.anythink.core.common.base.SDKContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -111,6 +121,9 @@ public class ImeiUtils {
 
 
     public static String getIMEI(Context ctx) {
+        if (SDKContext.getInstance().containDeniedDeviceKey(ChinaDeviceDataInfo.IMEI)) {
+            return "";
+        }
 
         String imei = "";
         try {

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
 <resources>
     <declare-styleable name="SAFragment"><attr format="string" name="placementID"/><attr format="boolean" name="testMode"/><attr format="boolean" name="showInstantly"/><attr format="boolean" name="isParentalGateEnabled"/></declare-styleable>
     <declare-styleable name="SAVideoFragment"><attr format="boolean" name="playInstantly"/></declare-styleable>

@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.chartboost.sdk.CBLocation;
 import com.chartboost.sdk.Chartboost;
@@ -21,7 +19,6 @@ import java.util.Map;
 public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
     private final String TAG = ChartboostATInterstitialAdapter.class.getSimpleName();
 
-    ChartboostRewardedVideoSetting mChartboostMediationSetting;
     String location = CBLocation.LOCATION_DEFAULT;
 
     boolean isRewared = false;

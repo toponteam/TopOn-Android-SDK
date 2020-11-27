@@ -4,9 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.ironsource.mediationsdk.IronSource;
 import com.ironsource.mediationsdk.integration.IntegrationHelper;
@@ -83,7 +81,7 @@ public class IronsourceATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return "";
+        return IronsourceATConst.getNetworkVersion();
     }
 
     @Override
