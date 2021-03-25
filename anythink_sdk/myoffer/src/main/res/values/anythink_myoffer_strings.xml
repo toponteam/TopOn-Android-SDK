@@ -8,4 +8,6 @@
 
 <resources>
     <string name="anythink_myoffer_splash_skip_text">Skip</string>
+    <string name="anythink_basead_click_fail">Failed to open Ads</string>
+    <string name="anythink_basead_click_empty">This ads does not support click to open</string>
 </resources>

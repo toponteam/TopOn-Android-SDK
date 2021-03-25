@@ -16,10 +16,6 @@ import com.anythink.core.common.entity.FailRequestInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Z on 2017/12/29.
- * Record fail request
- */
 
 public class FailRequestInfoDao extends BaseDao<FailRequestInfo> {
     private static final String Tag = FailRequestInfoDao.class.getName();

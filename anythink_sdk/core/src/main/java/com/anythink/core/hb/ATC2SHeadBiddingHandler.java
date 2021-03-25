@@ -7,6 +7,7 @@
 
 package com.anythink.core.hb;
 
+import android.os.SystemClock;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATBaseAdAdapter;
@@ -23,6 +24,7 @@ import com.anythink.core.common.utils.CustomAdapterFactory;
 import com.anythink.core.common.utils.NetworkLogUtil;
 import com.anythink.core.hb.callback.BiddingCallback;
 import com.anythink.core.strategy.PlaceStrategy;
+import com.anythink.core.strategy.PlaceStrategyManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +58,7 @@ public class ATC2SHeadBiddingHandler extends BaseHeadBiddingHandler {
         List<PlaceStrategy.UnitGroupInfo> c2sHbList = this.mRequest.hbList;
         int size = c2sHbList.size();
 
-        mStartBiddingTime = System.currentTimeMillis();
+        mStartBiddingTime = SystemClock.elapsedRealtime();
 
         for (int i = 0; i < size; i++) {
             final PlaceStrategy.UnitGroupInfo unitGroupInfo = c2sHbList.get(i);
@@ -78,7 +80,8 @@ public class ATC2SHeadBiddingHandler extends BaseHeadBiddingHandler {
                     };
 
                     CommonLogUtil.i(TAG, "start c2s bid request: " + adapter.getNetworkName());
-                    Map<String, Object> serviceExtras = CommonUtil.jsonObjectToMap(unitGroupInfo.content);
+                    PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(mRequest.context).getPlaceStrategyByAppIdAndPlaceId(mRequest.placementId);
+                    Map<String, Object> serviceExtras = placeStrategy.getServerExtrasMap(mRequest.placementId, mRequest.requestId, unitGroupInfo);//CommonUtil.jsonObjectToMap(unitGroupInfo.content);
                     if (!adapter.startBiddingRequest(mRequest.context, serviceExtras, bidListener)) {
                         ATBiddingResult failedC2SBidingResult = getFailedC2SBidingResult("This network don't support head bidding in current TopOn's version.");
                         handleResult(false, failedC2SBidingResult, unitGroupInfo);
@@ -132,7 +135,7 @@ public class ATC2SHeadBiddingHandler extends BaseHeadBiddingHandler {
     }
 
     private synchronized void handleResult(boolean isSuccess, ATBiddingResult ATBiddingResult, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
-        ATC2SHeadBiddingHandler.this.processUnitGrouInfo(unitGroupInfo, ATBiddingResult, System.currentTimeMillis() - mStartBiddingTime);
+        ATC2SHeadBiddingHandler.this.processUnitGrouInfo(unitGroupInfo, ATBiddingResult, SystemClock.elapsedRealtime() - mStartBiddingTime);
 
         if (!isFinishHB.get()) {
             mResultLists.add(unitGroupInfo);
@@ -170,7 +173,7 @@ public class ATC2SHeadBiddingHandler extends BaseHeadBiddingHandler {
                 mResultLists.add(unitGroupInfo);
 
                 ATBiddingResult failedC2SBidingResult = getFailedC2SBidingResult("bid timeout!");
-                ATC2SHeadBiddingHandler.this.processUnitGrouInfo(unitGroupInfo, failedC2SBidingResult, System.currentTimeMillis() - mStartBiddingTime);
+                ATC2SHeadBiddingHandler.this.processUnitGrouInfo(unitGroupInfo, failedC2SBidingResult, SystemClock.elapsedRealtime() - mStartBiddingTime);
             }
             mProcessSets.clear();
 

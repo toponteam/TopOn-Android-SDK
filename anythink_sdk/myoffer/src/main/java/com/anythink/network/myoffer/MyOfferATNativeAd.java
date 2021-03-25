@@ -11,8 +11,7 @@ import android.content.Context;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.listeners.AdListener;
+import com.anythink.basead.listeners.AdEventListener;
 import com.anythink.basead.myoffer.MyOfferNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 
@@ -25,25 +24,11 @@ public class MyOfferATNativeAd extends CustomNativeAd {
     public MyOfferATNativeAd(Context context, MyOfferNativeAd myOfferNativeAd) {
         mContext = context.getApplicationContext();
         mMyOfferNativeAd = myOfferNativeAd;
-        mMyOfferNativeAd.setListener(new AdListener() {
-            @Override
-            public void onAdDataLoaded() {
-
-            }
-
-            @Override
-            public void onAdCacheLoaded() {
-
-            }
-
-            @Override
-            public void onAdLoadFailed(OfferError error) {
-
-            }
+        mMyOfferNativeAd.setListener(new AdEventListener() {
 
             @Override
             public void onAdShow() {
-
+                notifyAdImpression();
             }
 
             @Override
@@ -54,6 +39,11 @@ public class MyOfferATNativeAd extends CustomNativeAd {
             @Override
             public void onAdClick() {
                 notifyAdClicked();
+            }
+
+            @Override
+            public void onDeeplinkCallback(boolean isSuccess) {
+
             }
         });
 
@@ -73,14 +63,14 @@ public class MyOfferATNativeAd extends CustomNativeAd {
     @Override
     public void prepare(View view, List<View> clickViewList, FrameLayout.LayoutParams layoutParams) {
         if (mMyOfferNativeAd != null) {
-            mMyOfferNativeAd.registerAdView(getDetail().getmRequestId(), view, clickViewList);
+            mMyOfferNativeAd.registerAdView(view, clickViewList);
         }
     }
 
     @Override
     public void prepare(View view, FrameLayout.LayoutParams layoutParams) {
         if (mMyOfferNativeAd != null) {
-            mMyOfferNativeAd.registerAdView(getDetail().getmRequestId(), view);
+            mMyOfferNativeAd.registerAdView(view);
         }
     }
 

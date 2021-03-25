@@ -20,9 +20,6 @@ import com.mintegral.msdk.out.RewardVideoListener;
 
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/6/27.
- */
 public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private final String TAG = MintegralATRewardedVideoAdapter.class.getSimpleName();
 
@@ -264,7 +261,7 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

@@ -27,6 +27,7 @@ public class KSATInterstitialAdapter extends CustomInterstitialAdapter {
     long posId;
     KsFullScreenVideoAd mKsFullScreenVideoAd;
     int orientation;
+    boolean isVideoSoundEnable;
 
     @Override
     public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
@@ -41,12 +42,24 @@ public class KSATInterstitialAdapter extends CustomInterstitialAdapter {
         }
         posId = Long.parseLong(position_id);
 
+        isVideoSoundEnable = true;
+        if (serverExtra.containsKey("video_muted")) {
+            isVideoSoundEnable = TextUtils.equals("0", serverExtra.get("video_muted").toString());
+        }
+
         if (serverExtra.containsKey("orientation")) {
             orientation = Integer.parseInt(serverExtra.get("orientation").toString());
         }
 
-        KSATInitManager.getInstance().initSDK(context, serverExtra);
+        KSATInitManager.getInstance().initSDK(context, serverExtra, new KSATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                startLoadAd();
+            }
+        });
+    }
 
+    private void startLoadAd() {
         KsScene adScene = new KsScene.Builder(posId)
                 .adNum(1)
                 .build();
@@ -55,6 +68,13 @@ public class KSATInterstitialAdapter extends CustomInterstitialAdapter {
             public void onError(int code, String msg) {
                 if (mLoadListener != null) {
                     mLoadListener.onAdLoadError(code + "", msg);
+                }
+            }
+
+            @Override
+            public void onRequestResult(int i) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
                 }
             }
 
@@ -130,6 +150,7 @@ public class KSATInterstitialAdapter extends CustomInterstitialAdapter {
             KsVideoPlayConfig videoPlayConfig = new KsVideoPlayConfig.Builder()
                     .showLandscape(orientation == 2)//1:Portrait screen，2:Landscape, default portrait
                     .skipThirtySecond(false)//Optional. After 30s, it can be turned off (interstitial video is effective) After playing for 30s, the close button is displayed
+                    .videoSoundEnable(isVideoSoundEnable)
                     .build();
 
             mKsFullScreenVideoAd.showFullScreenVideoAd(activity, videoPlayConfig);
@@ -167,6 +188,6 @@ public class KSATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return KSATConst.getSDKVersion();
+        return KSATInitManager.getInstance().getNetworkVersion();
     }
 }

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.vungle;
 
 import android.content.Context;
@@ -62,21 +69,17 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
         public void onError(String placementReferenceId, VungleException e) {
             // Play ad error occurred - e.getLocalizedMessage() contains error message
         }
+
+        @Override
+        public void onAdViewed(String s) {
+            if (mImpressionEventListener != null) {
+                mImpressionEventListener.onBannerAdShow();
+            }
+        }
     };
 
     @Override
     public void loadCustomNetworkAd(final Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-
-//        serverExtras.put("app_id","5ad59a853d927044ac75263a");
-
-//        serverExtras.put("placement_id", "ANDROID_MREC_300X250-7831245");
-//        serverExtras.put("unit_type", "1");
-//        serverExtras.put("size_type", "0");
-
-//        serverExtras.put("placement_id", "ANDROID_BANNER_320X50-5191270");
-//        serverExtras.put("unit_type", "0");
-//        serverExtras.put("size_type", "2");
-
 
         String mAppId = (String) serverExtras.get("app_id");
         mPlacementId = (String) serverExtras.get("placement_id");
@@ -209,7 +212,7 @@ public class VungleATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return VungleATConst.getNetworkVersion();
+        return VungleATInitManager.getInstance().getNetworkVersion();
     }
 
 

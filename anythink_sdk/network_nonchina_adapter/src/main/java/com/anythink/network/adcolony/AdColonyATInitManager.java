@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.adcolony;
 
 import android.app.Application;
@@ -6,8 +13,10 @@ import android.text.TextUtils;
 
 import com.adcolony.sdk.AdColony;
 import com.adcolony.sdk.AdColonyAppOptions;
+import com.adcolony.sdk.AdColonyReward;
+import com.adcolony.sdk.AdColonyRewardListener;
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
+import com.anythink.core.common.base.Const;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GoogleSignatureVerifier;
 
@@ -17,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AdColonyATInitManager extends ATInitMediation {
 
@@ -25,11 +35,14 @@ public class AdColonyATInitManager extends ATInitMediation {
     String mZoneId;
     String[] mZoneIds;
 
-    public static AdColonyATInitManager getInstance() {
+    ConcurrentHashMap<String, AdColonyRewardListener> mRewardListeners;
+
+    public synchronized static AdColonyATInitManager getInstance() {
         return Holder.sInstance;
     }
 
     private AdColonyATInitManager() {
+        mRewardListeners = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -37,6 +50,9 @@ public class AdColonyATInitManager extends ATInitMediation {
         String app_id = serviceExtras.get("app_id").toString();
         String zone_id = serviceExtras.get("zone_id").toString();
         String zoneIds = serviceExtras.get("zone_ids").toString();
+
+        boolean ccpaSwitch = false;
+        boolean coppaSwitch = false;
 
 
         String[] zoneIdsArray = null;
@@ -50,6 +66,30 @@ public class AdColonyATInitManager extends ATInitMediation {
 
         }
 
+        AdColonyAppOptions appOptions = AdColony.getAppOptions();
+        if (appOptions == null) {
+            appOptions = new AdColonyAppOptions();
+        }
+        try {
+            ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+            if (ccpaSwitch) {
+                appOptions.setPrivacyFrameworkRequired(AdColonyAppOptions.CCPA, true);
+            }
+            AdColony.setAppOptions(appOptions);
+        } catch (Throwable e) {
+
+        }
+
+        try {
+            coppaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY);
+            if (coppaSwitch) {
+                appOptions.setPrivacyFrameworkRequired(AdColonyAppOptions.COPPA, true);
+            }
+            AdColony.setAppOptions(appOptions);
+        } catch (Throwable e) {
+
+        }
+
 
         if (!TextUtils.isEmpty(app_id)) {
             if (zoneIdsArray != null && zoneIdsArray.length > 0) {
@@ -57,6 +97,14 @@ public class AdColonyATInitManager extends ATInitMediation {
             } else if (!TextUtils.isEmpty(zoneIds)) {
                 initSDK(context, app_id, zone_id, serviceExtras);
             }
+        }
+    }
+
+    protected void addRewardListener(String zoneId, AdColonyRewardListener rewardListener) {
+        try {
+            mRewardListeners.put(zoneId, rewardListener);
+        } catch (Throwable e) {
+
         }
     }
 
@@ -75,6 +123,19 @@ public class AdColonyATInitManager extends ATInitMediation {
             mAppId = app_id;
             mZoneIds = zone_ids;
         }
+
+        AdColony.setRewardListener(new AdColonyRewardListener() {
+            @Override
+            public void onReward(AdColonyReward adColonyReward) {
+                if (adColonyReward != null && adColonyReward.getZoneID() != null) {
+                    AdColonyRewardListener rewardListener = mRewardListeners.get(adColonyReward.getZoneID());
+                    if (rewardListener != null) {
+                        rewardListener.onReward(adColonyReward);
+                    }
+                    mRewardListeners.remove(adColonyReward.getZoneID());
+                }
+            }
+        });
     }
 
     private void initSDK(Context context, String app_id, String zone_id, Map<String, Object> serviceExtras) {
@@ -122,7 +183,10 @@ public class AdColonyATInitManager extends ATInitMediation {
     @Override
     public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
 
-        AdColonyAppOptions adColonyAppOptions = new AdColonyAppOptions();
+        AdColonyAppOptions adColonyAppOptions = AdColony.getAppOptions();
+        if (adColonyAppOptions == null) {
+            adColonyAppOptions = new AdColonyAppOptions();
+        }
         if (isConsent) {
             adColonyAppOptions.setPrivacyConsentString(AdColonyAppOptions.GDPR, "1");
         } else {
@@ -137,6 +201,11 @@ public class AdColonyATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "AdColony";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return AdColonyATConst.getNetworkVersion();
     }
 
     @Override

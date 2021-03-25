@@ -85,12 +85,7 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/anythink_bk_sigmob_file_path" />
-        </provider> <!-- 广告展示Activity -->
-        <activity
-            android:name="com.sigmob.sdk.base.common.AdActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:theme="@android:style/Theme.DeviceDefault" />
-
+        </provider>
         <provider
             android:name="com.bytedance.sdk.openadsdk.multipro.TTMultiProvider"
             android:authorities="${applicationId}.TTMultiProvider"

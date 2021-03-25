@@ -17,8 +17,10 @@ public interface InnerBannerListener {
 
     public void onBannerClicked(boolean isRefresh, CustomBannerAdapter customBannerAdapter);
 
-    public void onBannerShow(boolean isRefresh);
+    public void onBannerShow(boolean isRefresh, CustomBannerAdapter customBannerAdapter);
 
     public void onBannerClose(boolean isRefresh, CustomBannerAdapter customBannerAdapter);
+
+    public void onDeeplinkCallback(boolean isRefresh, CustomBannerAdapter customBannerAdapter, boolean isSuccess);
 
 }

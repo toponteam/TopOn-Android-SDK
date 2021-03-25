@@ -66,12 +66,9 @@
 
     <com.anythink.basead.ui.component.RoundImageView
         android:id="@+id/anythink_myoffer_iv_logo"
-        android:layout_width="36dp"
-        android:layout_height="9.5dp"
-        android:layout_below="@id/anythink_myoffer_btn_banner_cta"
-        android:layout_alignRight="@id/anythink_myoffer_btn_banner_cta"
-        android:layout_marginTop="1dp"
-        android:layout_marginRight="2.5dp"
-        />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

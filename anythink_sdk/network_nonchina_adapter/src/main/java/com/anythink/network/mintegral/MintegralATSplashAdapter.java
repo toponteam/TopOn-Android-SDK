@@ -1,20 +1,25 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.text.TextUtils;
+import android.view.ViewGroup;
 
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
-import com.mintegral.msdk.out.MTGSplashHandler;
-import com.mintegral.msdk.out.MTGSplashLoadListener;
-import com.mintegral.msdk.out.MTGSplashShowListener;
+import com.mbridge.msdk.out.MBSplashHandler;
+import com.mbridge.msdk.out.MBSplashLoadListener;
+import com.mbridge.msdk.out.MBSplashShowListener;
 
 import java.util.Map;
 
-
-/**
- * @author Z
- */
 
 public class MintegralATSplashAdapter extends CustomSplashAdapter {
 
@@ -32,7 +37,7 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -99,12 +104,12 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
         });
     }
 
-    MTGSplashHandler splashHandler = null;
+    MBSplashHandler splashHandler = null;
 
     private void startLoad() {
-        splashHandler = new MTGSplashHandler(placementId, unitId, allowSkip, countdown, orientation, 0, 0);
-        splashHandler.setLoadTimeOut(5);//unit: second
-        splashHandler.setSplashLoadListener(new MTGSplashLoadListener() {
+        splashHandler = new MBSplashHandler(placementId, unitId, allowSkip, countdown, orientation, 0, 0);
+        splashHandler.setLoadTimeOut(mFetchAdTimeout / 1000);//unit: second
+        splashHandler.setSplashLoadListener(new MBSplashLoadListener() {
             @Override
             public void onLoadSuccessed(int i) {
 
@@ -112,10 +117,6 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
                     if (mLoadListener != null) {
                         mLoadListener.onAdCacheLoaded();
                     }
-                    if (mContainer != null) {
-                        splashHandler.show(mContainer);
-                    }
-
 
                 } else {
                     if (mLoadListener != null) {
@@ -133,7 +134,7 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
             }
         });
 
-        splashHandler.setSplashShowListener(new MTGSplashShowListener() {
+        splashHandler.setSplashShowListener(new MBSplashShowListener() {
             @Override
             public void onShowSuccessed() {
                 if (mImpressionListener != null) {
@@ -170,6 +171,19 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
         splashHandler.preLoad();
         splashHandler.onResume();
     }
+
+    @Override
+    public boolean isAdReady() {
+        return splashHandler != null && splashHandler.isReady();
+    }
+
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+        if (splashHandler != null) {
+            splashHandler.show(container);
+        }
+    }
+
 
     @Override
     public void destory() {

@@ -24,6 +24,8 @@ import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
 
+import org.json.JSONArray;
+
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +64,26 @@ public class AdTrackingManager extends InstantUpLoadManager<AdTrackingLogBean> {
                 logBean.time = timeStamp > 0 ? timeStamp : System.currentTimeMillis();
 
                 MsgManager.getInstance(SDKContext.getInstance().getContext()).handleTK(businessType, logBean, appStrategy);
+
+                //check network firm id
+                String tkNoTrackingNetworkFirmId = appStrategy.getTkNoTrackingNetworkFirmId();
+                if (!TextUtils.isEmpty(tkNoTrackingNetworkFirmId)) {
+                    if (adTrackingInfo instanceof AdTrackingInfo) {
+                        try {
+                            JSONArray jsonArray = new JSONArray(tkNoTrackingNetworkFirmId);
+                            int length = jsonArray.length();
+                            String networkFirmId = String.valueOf(((AdTrackingInfo) adTrackingInfo).getmNetworkType());
+                            for (int i = 0; i < length; i++) {
+                                if (TextUtils.equals(networkFirmId, jsonArray.optString(i))) {
+                                    //do not upload tracking
+                                    return;
+                                }
+                            }
+                        } catch (Throwable e) {
+
+                        }
+                    }
+                }
 
                 //check format
                 Map<String, String> tkNoTFtMap = appStrategy.getTkNoTFtMap();

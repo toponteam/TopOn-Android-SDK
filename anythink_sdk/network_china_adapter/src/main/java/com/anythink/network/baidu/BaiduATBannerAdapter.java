@@ -147,6 +147,6 @@ public class BaiduATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return BaiduATConst.getNetworkVersion();
+        return BaiduATInitManager.getInstance().getNetworkVersion();
     }
 }

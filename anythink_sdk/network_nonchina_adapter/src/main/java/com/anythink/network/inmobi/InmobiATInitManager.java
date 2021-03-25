@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.inmobi;
 
 import android.content.Context;
@@ -5,11 +12,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import androidx.browser.customtabs.CustomTabsService;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GoogleSignatureVerifier;
-import com.inmobi.ads.listeners.InterstitialAdEventListener;
 import com.inmobi.sdk.InMobiSdk;
 import com.inmobi.sdk.SdkInitializationListener;
 import com.squareup.picasso.Picasso;
@@ -21,13 +29,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import okhttp3.OkHttpClient;
 import okio.Okio;
 
-/**
- * Created by Z on 2018/1/30.
- */
 
 public class InmobiATInitManager extends ATInitMediation {
 
@@ -37,6 +43,8 @@ public class InmobiATInitManager extends ATInitMediation {
 
     private Handler mHandler;
     List<Object> inmobiAdObjects;
+
+    ConcurrentHashMap<String, Object> mBidAdObject = new ConcurrentHashMap<>();
 
     private InmobiATInitManager() {
         mHandler = new Handler(Looper.getMainLooper());
@@ -61,6 +69,18 @@ public class InmobiATInitManager extends ATInitMediation {
         if (inmobiAd != null) {
             inmobiAdObjects.remove(inmobiAd);
         }
+    }
+
+    protected void putBidAdObject(String bidId, Object adObject) {
+        mBidAdObject.put(bidId, adObject);
+    }
+
+    protected void removeBidAdObject(String bidId) {
+        mBidAdObject.remove(bidId);
+    }
+
+    protected Object getBidAdObject(String bidId) {
+        return mBidAdObject.get(bidId);
     }
 
 
@@ -154,6 +174,11 @@ public class InmobiATInitManager extends ATInitMediation {
     }
 
     @Override
+    public String getNetworkVersion() {
+        return InmobiATConst.getNetworkVersion();
+    }
+
+    @Override
     public String getNetworkSDKClass() {
         return "com.inmobi.sdk.InMobiSdk";
     }
@@ -207,14 +232,14 @@ public class InmobiATInitManager extends ATInitMediation {
         }
 
         try {
-            clazz = Class.forName("android.support.v7.widget.RecyclerView");
+            clazz = RecyclerView.class;
             pluginMap.put("recyclerview-*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = Class.forName("android.support.customtabs.CustomTabsService");
+            clazz = CustomTabsService.class;
             pluginMap.put("support-customtabs-*.aar or androidx.browser.*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();

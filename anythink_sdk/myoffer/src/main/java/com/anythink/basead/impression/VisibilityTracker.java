@@ -10,10 +10,10 @@ package com.anythink.basead.impression;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewTreeObserver;
-
 
 import com.anythink.core.common.utils.CommonLogUtil;
 
@@ -31,7 +31,7 @@ import static android.view.ViewTreeObserver.OnPreDrawListener;
  */
 class VisibilityTracker {
     // Time interval to use for throttling visibility checks.
-    private static final int VISIBILITY_THROTTLE_MILLIS = 100;
+    private static int VISIBILITY_THROTTLE_MILLIS = 1000;
 
     // Trim the tracked views after this many accesses. This protects us against tracking
     // too many views if the developer uses the adapter for multiple ListViews. It also
@@ -97,7 +97,15 @@ class VisibilityTracker {
         this(context,
                 new WeakHashMap<View, TrackingInfo>(10),
                 new VisibilityChecker(),
-                new Handler());
+                new Handler(Looper.getMainLooper()));
+    }
+
+    public VisibilityTracker( final Context context, int delayTime) {
+        this(context,
+                new WeakHashMap<View, TrackingInfo>(10),
+                new VisibilityChecker(),
+                new Handler(Looper.getMainLooper()));
+        VISIBILITY_THROTTLE_MILLIS = delayTime;
     }
 
     VisibilityTracker( final Context context,

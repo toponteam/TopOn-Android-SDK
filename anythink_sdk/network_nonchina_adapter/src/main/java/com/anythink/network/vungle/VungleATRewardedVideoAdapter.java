@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.vungle;
 
 import android.app.Activity;
@@ -100,6 +107,11 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             if (mImpressionListener != null) {
                 mImpressionListener.onRewardedVideoAdPlayFailed("", reason.toString());
             }
+        }
+
+        @Override
+        public void onAdViewed(String s) {
+
         }
     };
 
@@ -207,7 +219,7 @@ public class VungleATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return VungleATConst.getNetworkVersion();
+        return VungleATInitManager.getInstance().getNetworkVersion();
     }
 
 }

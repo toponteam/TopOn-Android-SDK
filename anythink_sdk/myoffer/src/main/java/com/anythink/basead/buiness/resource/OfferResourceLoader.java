@@ -59,12 +59,12 @@ public class OfferResourceLoader implements OfferUrlLoadManager.ResourceLoadResu
     /**
      * load MyOffer
      */
-    public void load(BaseAdContent myOfferAd, BaseAdSetting settings, ResourceLoaderListener listener) {
-        this.mOfferId = myOfferAd.getOfferId();
+    public void load(BaseAdContent baseAdContent, BaseAdSetting settings, ResourceLoaderListener listener) {
+        this.mOfferId = baseAdContent.getOfferId();
 
         mListener = listener;
 
-        List<String> urlList = myOfferAd.getUrlList(settings);
+        List<String> urlList = baseAdContent.getUrlList(settings);
         if (urlList == null) {
             notifyFailed(OfferErrorCode.get(OfferErrorCode.incompleteResourceError, OfferErrorCode.fail_incomplete_resource));
             return;
@@ -114,7 +114,7 @@ public class OfferResourceLoader implements OfferUrlLoadManager.ResourceLoadResu
                 }
                 OfferResourceState.setState(url, OfferResourceState.LOADING);
                 CommonLogUtil.d(TAG, "file not exist -> " + url);
-                OfferUrlLoader myOfferUrlLoader = new OfferUrlLoader(mPlacementId, mIsPreLoad, myOfferAd.getOfferId(), url, TextUtils.equals(url, myOfferAd.getVideoUrl()), myOfferAd.getOfferSourceType());
+                OfferUrlLoader myOfferUrlLoader = new OfferUrlLoader(mPlacementId, mIsPreLoad, baseAdContent, url);
                 myOfferUrlLoader.start();
             }
         }

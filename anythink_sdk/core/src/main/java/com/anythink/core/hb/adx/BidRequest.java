@@ -47,6 +47,7 @@ public class BidRequest extends AbsHttpLoader {
      * Adx
      */
     public static final String EXCLUDE_OFFER = "ecpoffer";
+    public static final String GET_OFFER = "get_offer";
 
     String requestId;
     String hbListBase64;

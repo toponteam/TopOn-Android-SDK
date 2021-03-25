@@ -17,9 +17,6 @@ import com.mintegral.msdk.out.NativeAdvancedAdListener;
 
 import java.util.List;
 
-/**
- * Created by zhou on 2018/1/17.
- */
 
 public class MintegralATExpressNativeAd extends CustomNativeAd {
     private final String TAG = MintegralATExpressNativeAd.class.getSimpleName();
@@ -39,7 +36,7 @@ public class MintegralATExpressNativeAd extends CustomNativeAd {
 
         @Override
         public void onLogImpression() {
-
+            notifyAdImpression();
         }
 
         @Override

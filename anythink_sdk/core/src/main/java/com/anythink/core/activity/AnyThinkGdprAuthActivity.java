@@ -23,10 +23,6 @@ import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
 
-/**
- * Created by Z on 2018/5/18.
- * GDPR Activity
- */
 
 public class AnyThinkGdprAuthActivity extends Activity {
 

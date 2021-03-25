@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mopub;
 
 import android.content.Context;
@@ -38,14 +45,6 @@ public class MopubATAdapter extends CustomNativeAdapter {
             return;
         }
 
-        requestNum = 1;
-        try {
-            if (serverExtras != null) {
-                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         isAutoPlay = false;
         try {
@@ -121,7 +120,7 @@ public class MopubATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MopubATConst.getNetworkVersion();
+        return MopubATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

@@ -7,6 +7,7 @@
 
 package com.anythink.basead.ui;
 
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -17,12 +18,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.anythink.basead.buiness.OfferResourceManager;
 import com.anythink.basead.buiness.resource.OfferVideoUtil;
@@ -75,6 +78,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     private int mViewMarginDp = 19;//dp
     private int mLeftMarginDp = 19;//dp
     private int mTopMarginDp = 30;//dp
+    private int mRightMarginDp = 70;//dp, for feedback button
     private int mViewSize;
     private int mViewMargin;
     private int mLeftMargin;
@@ -94,6 +98,8 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     private boolean mIsMute;
     private long mShowCloseTime;
     private Thread mProgressThread;
+    private TextView mFeedbackButton;
+    private boolean mNeedHideFeedbackButton;
 
 
     public PlayerView(ViewGroup container, OnPlayerListener listener) {
@@ -294,6 +300,10 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         initMediaPlayer();
         initCountDownView();
         initMutebutton();
+
+        if (!mNeedHideFeedbackButton) {
+            initFeedbackButton();
+        }
     }
 
     private void initParams() {
@@ -393,10 +403,6 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     }
 
     private void initCloseButton() {
-        if (getChildAt(mCloseButtonIndex) != null) {
-            removeViewAt(mCloseButtonIndex);
-        }
-
         mCloseBtn = new ImageView(getContext());
         mCloseBtn.setId(CommonUtil.getResId(getContext(), "myoffer_btn_close_id", "id"));
         RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(mViewSize, mViewSize);
@@ -404,7 +410,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         rl.rightMargin = mViewMargin;
         rl.addRule(RelativeLayout.ALIGN_TOP, mCountDownView.getId());
         rl.addRule(RelativeLayout.ALIGN_BOTTOM, mCountDownView.getId());
-        addView(mCloseBtn, mCloseButtonIndex, rl);
+        addView(mCloseBtn, rl);
 
         mCloseBtn.setImageResource(mCloseResId);
 
@@ -423,6 +429,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     private void showView() {
         showCountDownView();
         showMuteButton();
+        showFeedbackButton();
     }
 
     private void showCountDownView() {
@@ -437,6 +444,47 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         }
     }
 
+    private void showFeedbackButton() {
+        if (mFeedbackButton != null && !mFeedbackButton.isShown()) {
+            mFeedbackButton.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void initFeedbackButton() {
+        mFeedbackButton = new TextView(getContext());
+        mFeedbackButton.setText(CommonUtil.getResId(getContext(), "myoffer_feedback_text", "string"));
+        mFeedbackButton.setTextColor(Color.WHITE);
+        mFeedbackButton.setTextSize(14);
+        mFeedbackButton.setBackgroundResource(CommonUtil.getResId(getContext(), "myoffer_bg_feedback_button", "drawable"));
+        mFeedbackButton.setGravity(Gravity.CENTER);
+
+        int paddingHorizontal = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, getContext().getResources().getDisplayMetrics());
+//        int paddingVertical = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getContext().getResources().getDisplayMetrics());
+        int paddingVertical = 0;
+        mFeedbackButton.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
+
+        RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, mViewSize);
+        rl.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        rl.topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, getContext().getResources().getDisplayMetrics());
+
+        if (mCloseBtn == null) {
+            rl.rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mViewMarginDp, getContext().getResources().getDisplayMetrics());
+        } else {
+            rl.rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mRightMarginDp, getContext().getResources().getDisplayMetrics());
+        }
+
+        mFeedbackButton.setVisibility(View.INVISIBLE);
+        addView(mFeedbackButton, rl);
+
+        mFeedbackButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mListener != null) {
+                    mListener.onVideoFeedbackClick();
+                }
+            }
+        });
+    }
 
     private void startProgressThread() {
         if (mProgressThread != null) {
@@ -467,10 +515,22 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         mProgressThread = null;
     }
 
+    public void setHideFeedbackButton(boolean hideFeedbackButton) {
+        mNeedHideFeedbackButton = hideFeedbackButton;
+    }
+
     public void load(String url) {
         this.mSourcePath = url;
 
         init();
+    }
+
+    public void removeFeedbackButton() {
+        if (mFeedbackButton != null) {
+            if (mFeedbackButton.getParent() != null) {
+                ((ViewGroup) mFeedbackButton.getParent()).removeView(mFeedbackButton);
+            }
+        }
     }
 
     private boolean checkValid() {
@@ -626,6 +686,12 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
     }
 
     public void showCloseButton() {
+        if (mFeedbackButton != null && mFeedbackButton.isShown()) {
+            LayoutParams layoutParams = (LayoutParams) mFeedbackButton.getLayoutParams();
+            layoutParams.rightMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mRightMarginDp, getContext().getResources().getDisplayMetrics());
+            mFeedbackButton.setLayoutParams(layoutParams);
+        }
+
         initCloseButton();
     }
 
@@ -686,6 +752,13 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         return false;
     }
 
+    public int getCurrentPosition() {
+        return mCurrentPosition < 0 ? 0 : mCurrentPosition;
+    }
+
+    public int getVideoLength() {
+        return mDuration;
+    }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
@@ -738,5 +811,7 @@ public class PlayerView extends RelativeLayout implements TextureView.SurfaceTex
         void onVideoMute();
 
         void onVideoNoMute();
+
+        void onVideoFeedbackClick();
     }
 }

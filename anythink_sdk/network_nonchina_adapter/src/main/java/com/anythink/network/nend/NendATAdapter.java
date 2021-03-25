@@ -1,7 +1,15 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.nend;
 
 import android.content.Context;
 
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 
@@ -34,19 +42,6 @@ public class NendATAdapter extends CustomNativeAdapter {
             mNativeType = Integer.parseInt(serverExtras.get("is_video").toString());
         }
 
-        int requestNum = 1;
-        try {
-            if (serverExtras != null) {
-                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        final List<CustomNativeAd> adList = new ArrayList<>();
-
-
-        final int finalRequestNum = requestNum;
         NendATNativeAd.LoadCallbackListener selfListener = new NendATNativeAd.LoadCallbackListener() {
             @Override
             public void onSuccess(CustomNativeAd nativeAd) {

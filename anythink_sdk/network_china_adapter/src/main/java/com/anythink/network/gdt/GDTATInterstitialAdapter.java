@@ -217,7 +217,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
 
     @Override
     public String getNetworkSDKVersion() {
-        return GDTATConst.getNetworkVersion();
+        return GDTATInitManager.getInstance().getNetworkVersion();
     }
 
     /**
@@ -228,7 +228,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
             return;
         }
 
-        int isVideoMuted = 1;
+        int isVideoMuted = 0;
         int isVideoAutoPlay = 1;
         int videoDuration = -1;
         if (serverExtra.containsKey("video_muted")) {
@@ -243,6 +243,7 @@ public class GDTATInterstitialAdapter extends CustomInterstitialAdapter implemen
 
         VideoOption option = new VideoOption.Builder()
                 .setAutoPlayMuted(isVideoMuted == 1)
+                .setDetailPageMuted(isVideoMuted == 1)
                 .setAutoPlayPolicy(isVideoAutoPlay)
                 .build();
         mUnifiedInterstitialAd.setVideoOption(option);

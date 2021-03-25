@@ -10,9 +10,6 @@ package com.anythink.core.api;
 import android.text.TextUtils;
 
 
-/**
- * Created by zhou on 2018/1/13.
- */
 
 public class AdError {
     /***
@@ -64,13 +61,13 @@ public class AdError {
     }
 
 
-    public void putNetworkErrorMsg(int networkFirmId, String networkName, AdError adError) {
+    public void putNetworkErrorMsg(String adsourceId, int networkFirmId, String networkName, AdError adError) {
         //Only for old version
         platformCode = adError.platformCode;
         platformMSG = adError.platformMSG;
 
         itemsErrorInfo = itemsErrorInfo +
-                "\n{ network_firm_id[ " + networkFirmId + " ];network_name=[ " + networkName + " ];network_error:[ " + adError.printStackTrace() + " ] }";
+                "\n  { ad_source_id[ " + adsourceId + " ];network_firm_id[ " + networkFirmId + " ];network_name=[ " + networkName + " ];network_error:[ " + adError.printStackTrace() + " ] }";
     }
 
     public String getFullErrorInfo() {

@@ -1,8 +1,16 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.vungle;
 
 import android.content.Context;
 
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.core.common.base.Const;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GoogleSignatureVerifier;
 import com.google.gson.Gson;
@@ -57,6 +65,15 @@ public class VungleATInitManager extends ATInitMediation {
                 }
 
                 mIsIniting = true;
+
+                try {
+                    boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                    if (ccpaSwitch) {
+                        Vungle.updateCCPAStatus(Vungle.Consent.OPTED_IN);
+                    }
+                } catch (Throwable e) {
+
+                }
 
                 Vungle.init(appId, context.getApplicationContext(), new InitCallback() {
                     @Override
@@ -120,6 +137,11 @@ public class VungleATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Vungle";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return VungleATConst.getNetworkVersion();
     }
 
     @Override

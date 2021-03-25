@@ -16,10 +16,6 @@ import com.anythink.core.strategy.PlaceStrategy;
 
 import java.lang.reflect.Constructor;
 
-/**
- * Created by Z on 2018/1/9.
- * Adapter Factory
- */
 
 public class CustomAdapterFactory {
 

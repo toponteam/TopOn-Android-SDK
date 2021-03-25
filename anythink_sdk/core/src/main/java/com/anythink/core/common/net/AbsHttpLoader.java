@@ -8,23 +8,17 @@
 package com.anythink.core.common.net;
 
 import android.content.Context;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
-import com.anythink.core.api.IATChinaSDKHandler;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
-import com.anythink.core.common.base.UploadDataLevelManager;
 import com.anythink.core.common.utils.CommonBase64Util;
-import com.anythink.core.common.utils.CommonDeviceUtil;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.CommonMD5;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.common.utils.task.Worker;
-import com.anythink.core.strategy.AppStrategy;
-import com.anythink.core.strategy.AppStrategyManager;
 
 import org.apache.http.conn.ConnectTimeoutException;
 import org.json.JSONObject;

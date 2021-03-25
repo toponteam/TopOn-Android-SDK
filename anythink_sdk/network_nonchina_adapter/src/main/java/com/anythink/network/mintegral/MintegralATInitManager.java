@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.content.Context;
@@ -6,25 +13,25 @@ import android.os.Looper;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
-import com.mintegral.msdk.MIntegralConstans;
-import com.mintegral.msdk.MIntegralSDK;
-import com.mintegral.msdk.advanced.view.MTGNativeAdvancedView;
-import com.mintegral.msdk.interstitial.view.MTGInterstitialActivity;
-import com.mintegral.msdk.interstitialvideo.out.MTGInterstitialVideoHandler;
-import com.mintegral.msdk.mtgbanner.view.MTGBannerWebView;
-import com.mintegral.msdk.mtgbid.out.BidManager;
-import com.mintegral.msdk.mtgnative.a.b;
-import com.mintegral.msdk.mtgsignalcommon.base.BaseWebView;
-import com.mintegral.msdk.nativex.view.MTGMediaView;
-import com.mintegral.msdk.out.ChannelManager;
-import com.mintegral.msdk.out.MIntegralSDKFactory;
-import com.mintegral.msdk.playercommon.PlayerView;
-import com.mintegral.msdk.reward.player.MTGRewardVideoActivity;
-import com.mintegral.msdk.splash.view.MTGSplashView;
-import com.mintegral.msdk.video.signal.communication.BaseRewardSignalH5;
-import com.mintegral.msdk.video.signal.communication.RewardSignal;
+import com.mbridge.msdk.MBridgeConstans;
+import com.mbridge.msdk.MBridgeSDK;
+import com.mbridge.msdk.advanced.view.MBNativeAdvancedView;
+import com.mbridge.msdk.interactiveads.activity.InteractiveShowActivity;
+import com.mbridge.msdk.interstitial.view.MBInterstitialActivity;
+import com.mbridge.msdk.interstitialvideo.out.MBInterstitialVideoHandler;
+import com.mbridge.msdk.mbbanner.view.MBBannerWebView;
+import com.mbridge.msdk.mbbid.out.BidManager;
+import com.mbridge.msdk.mbnative.c.b;
+import com.mbridge.msdk.mbsignalcommon.base.BaseWebView;
+import com.mbridge.msdk.nativex.view.MBMediaView;
+import com.mbridge.msdk.out.ChannelManager;
+import com.mbridge.msdk.out.MBridgeSDKFactory;
+import com.mbridge.msdk.playercommon.PlayerView;
+import com.mbridge.msdk.reward.player.MBRewardVideoActivity;
+import com.mbridge.msdk.splash.view.MBSplashView;
+import com.mbridge.msdk.video.signal.communication.BaseRewardSignalH5;
+import com.mbridge.msdk.video.signal.communication.RewardSignal;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,8 +82,8 @@ public class MintegralATInitManager extends ATInitMediation {
                     try {
                         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mAppKey) || !TextUtils.equals(mAppId, appid) || !TextUtils.equals(mAppKey, appkey)) {
                             ChannelManager.setChannel("Y+H6DFttYrPQYcIeicKwJQKQYrN=");
-                            MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
-                            Map<String, String> map = sdk.getMTGConfigurationMap(appid, appkey);
+                            MBridgeSDK sdk = MBridgeSDKFactory.getMBridgeSDK();
+                            Map<String, String> map = sdk.getMBConfigurationMap(appid, appkey);
 //                            MIntegralConstans.DEBUG = ATSDK.isNetworkLogDebug();
 
                             sdk.init(map, context.getApplicationContext());
@@ -108,10 +115,10 @@ public class MintegralATInitManager extends ATInitMediation {
 
     @Override
     public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
-        MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
+        MBridgeSDK sdk = MBridgeSDKFactory.getMBridgeSDK();
 
-        int open = isConsent ? MIntegralConstans.IS_SWITCH_ON : MIntegralConstans.IS_SWITCH_OFF;
-        String level = MIntegralConstans.AUTHORITY_ALL_INFO;
+        int open = isConsent ? MBridgeConstans.IS_SWITCH_ON : MBridgeConstans.IS_SWITCH_OFF;
+        String level = MBridgeConstans.AUTHORITY_ALL_INFO;
         sdk.setUserPrivateInfoType(context, level, open);
 
         return true;
@@ -129,123 +136,141 @@ public class MintegralATInitManager extends ATInitMediation {
     }
 
     @Override
+    public String getNetworkVersion() {
+        return MintegralATConst.getNetworkVersion();
+    }
+
+    @Override
     public String getNetworkSDKClass() {
-        return "com.mintegral.msdk.MIntegralSDK";
+        return "com.mbridge.msdk.MBridgeSDK";
     }
 
     @Override
     public Map<String, Boolean> getPluginClassStatus() {
         HashMap<String, Boolean> pluginMap = new HashMap<>();
-        pluginMap.put("mintegral_interstitial.aar", false);
-        pluginMap.put("mintegral_interstitialvideo.aar", false);
-        pluginMap.put("mintegral_mtgbanner.aar", false);
-        pluginMap.put("mintegral_mtgbid.aar", false);
-        pluginMap.put("mintegral_mtgjscommon.aar", false);
-        pluginMap.put("mintegral_mtgnative.aar", false);
-        pluginMap.put("mintegral_nativeex.aar", false);
-        pluginMap.put("mintegral_playercommon.aar", false);
-        pluginMap.put("mintegral_reward.aar", false);
-        pluginMap.put("mintegral_videocommon.aar", false);
-        pluginMap.put("mintegral_videojs.aar", false);
-        pluginMap.put("mintegral_mtgnativeadvanced.aar", false);
-        pluginMap.put("mintegral_mtgsplash.aar", false);
+        pluginMap.put("mbridge_interactiveads.aar", false);
+        pluginMap.put("mbridge_interstitial.aar", false);
+        pluginMap.put("mbridge_interstitialvideo.aar", false);
+        pluginMap.put("mbridge_mbbanner.aar", false);
+        pluginMap.put("mbridge_mbbid.aar", false);
+        pluginMap.put("mbridge_mbjscommon.aar", false);
+        pluginMap.put("mbridge_mbnative.aar", false);
+        pluginMap.put("mbridge_nativeex.aar", false);
+        pluginMap.put("mbridge_playercommon.aar", false);
+        pluginMap.put("mbridge_reward.aar", false);
+        pluginMap.put("mbridge_videocommon.aar", false);
+        pluginMap.put("mbridge_videojs.aar", false);
+        pluginMap.put("mbridge_mbnativeadvanced.aar", false);
+        pluginMap.put("mbridge_mbsplash.aar", false);
+
+        //exoplayer
+        pluginMap.put("exoplayer_common.aar", false);
+        pluginMap.put("exoplayer_core.aar", false);
+        pluginMap.put("exoplayer_extractor.aar", false);
 
 
         Class clazz;
 
         try {
-            clazz = MTGInterstitialActivity.class;
-            pluginMap.put("mintegral_interstitial.aar", true);
+            clazz = InteractiveShowActivity.class;
+            pluginMap.put("mbridge_interactiveads.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = MTGInterstitialVideoHandler.class;
-            pluginMap.put("mintegral_interstitialvideo.aar", true);
+            clazz = MBInterstitialActivity.class;
+            pluginMap.put("mbridge_interstitial.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = MTGBannerWebView.class;
-            pluginMap.put("mintegral_mtgbanner.aar", true);
+            clazz = MBInterstitialVideoHandler.class;
+            pluginMap.put("mbridge_interstitialvideo.aar", true);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            clazz = MBBannerWebView.class;
+            pluginMap.put("mbridge_mbbanner.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
             clazz = BidManager.class;
-            pluginMap.put("mintegral_mtgbid.aar", true);
+            pluginMap.put("mbridge_mbbid.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
             clazz = BaseWebView.class;
-            pluginMap.put("mintegral_mtgjscommon.aar", true);
+            pluginMap.put("mbridge_mbjscommon.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
             clazz = b.class;
-            pluginMap.put("mintegral_mtgnative.aar", true);
+            pluginMap.put("mbridge_mbnative.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = MTGMediaView.class;
-            pluginMap.put("mintegral_nativeex.aar", true);
+            clazz = MBMediaView.class;
+            pluginMap.put("mbridge_nativeex.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
             clazz = PlayerView.class;
-            pluginMap.put("mintegral_playercommon.aar", true);
+            pluginMap.put("mbridge_playercommon.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = MTGRewardVideoActivity.class;
-            pluginMap.put("mintegral_reward.aar", true);
+            clazz = MBRewardVideoActivity.class;
+            pluginMap.put("mbridge_reward.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
             clazz = RewardSignal.class;
-            pluginMap.put("mintegral_videocommon.aar", true);
+            pluginMap.put("mbridge_videocommon.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
             clazz = BaseRewardSignalH5.class;
-            pluginMap.put("mintegral_videojs.aar", true);
+            pluginMap.put("mbridge_videojs.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = MTGNativeAdvancedView.class;
-            pluginMap.put("mintegral_mtgnativeadvanced.aar", true);
+            clazz = MBNativeAdvancedView.class;
+            pluginMap.put("mbridge_mbnativeadvanced.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
         try {
-            clazz = MTGSplashView.class;
-            pluginMap.put("mintegral_mtgsplash.aar", true);
+            clazz = MBSplashView.class;
+            pluginMap.put("mbridge_mbsplash.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();
         }
 
 //        try {
-//            if(MintegralATConst.isChinaSdk()) {
+//            if(MintegralATConst.isCnSdk()) {
 //                //国内版
 //                Class.forName("com.mintegral.msdk.pluginFramework.PluginService");
 //                pluginMap.put("mintegral_mtgdownloads.aar", true);
@@ -254,26 +279,29 @@ public class MintegralATInitManager extends ATInitMediation {
 //            e.printStackTrace();
 //        }
 
+
+        try {
+            Class.forName("com.google.android.exoplayer2.ExoPlayerLibraryInfo");
+            pluginMap.put("exoplayer_common.aar", true);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            Class.forName("com.google.android.exoplayer2.ExoPlayer");
+            pluginMap.put("exoplayer_core.aar", true);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            Class.forName("com.google.android.exoplayer2.extractor.SeekMap");
+            pluginMap.put("exoplayer_extractor.aar", true);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
         return pluginMap;
     }
 
-    @Override
-    public List getActivityStatus() {
-        ArrayList<String> list = new ArrayList<>();
-        list.add("com.mintegral.msdk.activity.MTGCommonActivity");
-        list.add("com.mintegral.msdk.reward.player.MTGRewardVideoActivity");
-        list.add("com.mintegral.msdk.interstitial.view.MTGInterstitialActivity");
-        return list;
-    }
-
-    @Override
-    public List getServiceStatus() {
-        return null;
-    }
-
-    @Override
-    public List getProviderStatus() {
-        return null;
-
-    }
 }

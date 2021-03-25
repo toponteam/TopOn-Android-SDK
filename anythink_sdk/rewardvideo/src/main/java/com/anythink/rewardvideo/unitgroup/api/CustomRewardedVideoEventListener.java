@@ -20,4 +20,6 @@ public interface CustomRewardedVideoEventListener {
     void onRewardedVideoAdPlayClicked();
 
     void onReward();
+
+    void onDeeplinkCallback(boolean isSuccess);
 }

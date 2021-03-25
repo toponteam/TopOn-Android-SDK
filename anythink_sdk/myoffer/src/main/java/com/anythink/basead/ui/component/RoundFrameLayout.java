@@ -8,10 +8,19 @@
 package com.anythink.basead.ui.component;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.FrameLayout;
+
+import com.anythink.basead.ui.util.ViewUtil;
+import com.anythink.core.common.utils.CommonUtil;
 
 public class RoundFrameLayout extends FrameLayout {
 
@@ -35,29 +44,10 @@ public class RoundFrameLayout extends FrameLayout {
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
-        try {
-            int width = getWidth();
-            int height = getHeight();
-
-            Path path = new Path();
-            path.moveTo(mRadiu, 0);
-
-            path.lineTo(width - mRadiu, 0);
-            path.quadTo(width, 0, width, mRadiu);
-
-            path.lineTo(width, height - mRadiu);
-            path.quadTo(width, height, width - mRadiu, height);
-
-            path.lineTo(mRadiu, height);
-            path.quadTo(0, height, 0, height - mRadiu);
-
-            path.lineTo(0, mRadiu);
-            path.quadTo(0, 0, mRadiu, 0);
-            canvas.clipPath(path);
-            super.dispatchDraw(canvas);
-        } catch (Exception e) {
-
-        }
+        int saveCount = canvas.saveLayer(0, 0, getWidth(), getHeight(), null, Canvas.ALL_SAVE_FLAG);
+        super.dispatchDraw(canvas);
+        ViewUtil.drawRadiusMask(canvas, getWidth(), getHeight(), mRadiu);
+        canvas.restoreToCount(saveCount);
     }
 
     public static int dip2px(Context context, float dipValue) {

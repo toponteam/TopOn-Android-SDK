@@ -95,12 +95,19 @@ public class OfferUrlHandler {
     /**
      * Open Market
      *
-     * @param googleMarketUrl
+     * @param appUri
      */
-    private static boolean openAppInPhone(final Context context, String googleMarketUrl, boolean hasToast) {
+    private static boolean openAppInPhone(final Context context, String appUri, boolean hasToast) {
         try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(googleMarketUrl));
-            intent.setData(Uri.parse(googleMarketUrl));
+            Intent intent = null;
+            Uri uri = Uri.parse(appUri);
+            if (uri.getScheme().equals("intent")) {
+                intent = Intent.parseUri(appUri, Intent.URI_INTENT_SCHEME);
+            } else {
+                intent = new Intent(Intent.ACTION_VIEW, uri);
+                intent.setData(uri);
+            }
+
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } catch (Throwable e) {

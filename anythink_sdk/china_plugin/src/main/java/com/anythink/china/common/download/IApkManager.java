@@ -7,13 +7,24 @@
 
 package com.anythink.china.common.download;
 
+import android.content.Context;
+
+import com.anythink.core.common.entity.BaseAdContent;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
+
 public interface IApkManager {
+
+    /**
+     * Entry, call handleClick() to start download apk
+     */
+    void realStartDownloadApp(final Context context, final BaseAdRequestInfo baseAdRequestInfo
+            , final BaseAdContent baseAdContent, final String url, final String clickId, Runnable runnableBeforeStartDownload);
 
     void addQueue(ApkRequest apkRequest);
 
     int getDownloadCount();
 
-    boolean isApkExist(String url);
+    boolean isApkExist(String uniqueID);
 
     void download();
 
@@ -29,7 +40,7 @@ public interface IApkManager {
 
     void handleClick(ApkRequest apkRequest);
 
-    void onClickNotification(String url);
+    void onClickNotification(String uniqueID, String url);
 
-    void onCleanNotification(String url);
+    void onCleanNotification(String uniqueID, String url);
 }

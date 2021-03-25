@@ -1,14 +1,24 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.os.Handler;
+import android.os.Looper;
 
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.core.common.base.Const;
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
 import com.google.android.gms.ads.AdActivity;
 import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.internal.ClientApi;
 import com.google.android.gms.common.util.PlatformVersion;
@@ -18,23 +28,33 @@ import com.google.android.gms.internal.measurement.zzfd;
 import com.google.android.gms.measurement.api.AppMeasurementSdk;
 import com.google.android.gms.tasks.Task;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-/**
- * Created by Z on 2018/1/30.
- */
 
 public class AdMobATInitManager extends ATInitMediation {
 
     private static final String TAG = AdMobATInitManager.class.getSimpleName();
     private String mAppId;
+
+    private boolean mIsInit;
+    private boolean mIsIniting;
     private static AdMobATInitManager sInstance;
 
     private Map<String, Object> mOfferMap;
+    private final Object mLockObject = new Object();
+    private List<InitListener> mInitListeners;
+
+    private Handler mHandler;
+
+    private boolean ccpaSwitch;
+    private boolean coppaSwitch;
 
     private AdMobATInitManager() {
-
+        mHandler = new Handler(Looper.getMainLooper());
+        mIsInit = false;
     }
 
     public synchronized static AdMobATInitManager getInstance() {
@@ -45,15 +65,74 @@ public class AdMobATInitManager extends ATInitMediation {
     }
 
     @Override
-    public synchronized void initSDK(Context context, Map<String, Object> serviceExtras) {
-        String app_id = (String) serviceExtras.get("app_id");
+    public void initSDK(Context context, Map<String, Object> serviceExtras) {
+        initSDK(context, serviceExtras, null);
+    }
 
-        if (!TextUtils.isEmpty(app_id)) {
-            if (TextUtils.isEmpty(mAppId) || !mAppId.equals(app_id)) {
-                MobileAds.initialize(context, app_id);
-                mAppId = app_id;
+    public void initSDK(final Context context, final Map<String, Object> serviceExtras, InitListener initListener) {
+        synchronized (mLockObject) {
+            if (mIsInit) {
+                if (initListener != null) {
+                    initListener.initSuccess();
+                }
+                return;
             }
+
+            if (mInitListeners == null) {
+                mInitListeners = new ArrayList<>();
+            }
+            mInitListeners.add(initListener);
+
+            if (mIsIniting) {
+                return;
+            }
+            mIsIniting = true;
         }
+
+        try {
+            ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+        } catch (Throwable e) {
+
+        }
+
+        try {
+            coppaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY);
+            RequestConfiguration requestConfiguration = MobileAds.getRequestConfiguration();
+            if (requestConfiguration == null) {
+                requestConfiguration = new RequestConfiguration.Builder().build();
+            }
+            if (coppaSwitch) {
+                requestConfiguration = requestConfiguration
+                        .toBuilder()
+                        .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
+                        .build();
+                MobileAds.setRequestConfiguration(requestConfiguration);
+            }
+        } catch (Throwable e) {
+
+        }
+
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                String app_id = (String) serviceExtras.get("app_id");
+                mAppId = app_id;
+                MobileAds.initialize(context);
+                mIsInit = true;
+                mIsIniting = false;
+
+                int size = mInitListeners.size();
+                InitListener listener;
+                for (int i = 0; i < size; i++) {
+                    listener = mInitListeners.get(i);
+
+                    if (listener != null) {
+                        listener.initSuccess();
+                    }
+                }
+                mInitListeners.clear();
+            }
+        });
     }
 
     /***
@@ -84,6 +163,10 @@ public class AdMobATInitManager extends ATInitMediation {
                 bundle.putString("npa", "1");
                 break;
         }
+
+        if (ccpaSwitch) {
+            bundle.putString("rdp", "1");
+        }
         return bundle;
     }
 
@@ -104,6 +187,11 @@ public class AdMobATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Admob";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return AdmobATConst.getNetworkVersion();
     }
 
     public String getGoogleAdManagerName() {
@@ -203,4 +291,16 @@ public class AdMobATInitManager extends ATInitMediation {
 
         return pluginMap;
     }
+
+    @Override
+    public List getMetaValutStatus() {
+        List<String> list = new ArrayList<>();
+        list.add("com.google.android.gms.ads.APPLICATION_ID");
+        return list;
+    }
+
+    interface InitListener {
+        void initSuccess();
+    }
+
 }

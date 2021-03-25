@@ -19,6 +19,8 @@ public class Const {
 
     public static final int SDK_VERSION_DB = 4;
 
+    public static final int CUSTOM_SDK_CODE = 0;
+
     public static final boolean DEBUG = false;
 
     public static final String SPU_LOCAL_USERAGENT = "local_ua";
@@ -42,7 +44,18 @@ public class Const {
     public static final String SPU_PLACEMENT_LOAD_RECORD_NAME = RESOURCE_HEAD + "_placement_load";
     public static final String SPU_CRASH_NAME = RESOURCE_HEAD + "_crash";
 
+    public static final String HB_CACHE_FILE =  RESOURCE_HEAD + "_hb_cache_file";
+
+    public static final String ONLINEAPI_SPU_FILE_NAME = RESOURCE_HEAD + "_onlineapi_file";
+
     public static final String SPU_EXC_LOG_NAME = "exc_log";
+
+    /**
+     * Own Offer Sharepreference File Name
+     */
+    public static final String SPU_ADX_FILE_NAME = RESOURCE_HEAD + "adx_file";
+    public static final String SPU_OWN_OFFER_IMPRESSION_RECORD_FILE_NAME = RESOURCE_HEAD + "own_offerid_impression";
+
     /**
      * Placement update check
      */
@@ -50,12 +63,16 @@ public class Const {
 
     public static class NETWORK_FIRM {
         public static final int ADX_NETWORK_FIRM_ID = 66;
+        public static final int MINTEGRAL_ONLINE = 41;
+        public static final int GDT_ONLINE = 42;
     }
 
     public static class NETWORK_REQUEST_PARAMS_KEY {
-        public static final String MYOFFER_PARAMS_KEY = "myoffer_params";
-        public static final String ADX_PARAMS_KEY = "adx_params";
+        public static final String BASE_AD_PARAMS_KEY = "basead_params";
         public static final String BID_PAYLOAD_KEY = "payload";
+        public static final String REQUEST_AD_NUM = "request_ad_num";
+        public static final String APP_CCPA_SWITCH_KEY = "app_ccpa_switch";
+        public static final String APP_COPPA_SWITCH_KEY = "app_coppa_switch";
     }
 
     public static class FORMAT {
@@ -97,11 +114,18 @@ public class Const {
 
         public static final String SPU_FIRST_INIT_TIME = "AT_INIT_TIME";
 
+
         /**
          * Only for exc_log
          **/
         public static final String SPU_EXC_SYS = "exc_sys";
         public static final String SPU_EXC_BK = "exc_bk";
+
+        /**
+         * For Own Ad
+         */
+        public static final String SPU_OWN_AD_SUFFIX_WIN_NOTICE = "_win_notice";
+
     }
 
 
@@ -122,6 +146,8 @@ public class Const {
         public static final String URL_HEADBIDDING = "https://adx.anythinktech.com/bid";
         public static final String URL_ADX_REQUEST = "https://adx.anythinktech.com/request";
         public static final String URL_ADX_TK = "https://adxtk.anythinktech.com/v1";
+        public static final String URL_ONLINE_API_REQUEST = "https://adx.anythinktech.com/openapi/req";
+        public static final String URL_FACEBOOK_INHOUSE_DOMAIN = "https://bidding.anythinktech.com";
         /**
          * Test API
          **/
@@ -134,6 +160,8 @@ public class Const {
 //        public static final String URL_HEADBIDDING = "http://test.adx.anythinktech.com/bid";
 //        public static final String URL_ADX_REQUEST = "http://test.adx.anythinktech.com/request";
 //        public static final String URL_ADX_TK = "http://test.adxtk.anythinktech.com/v1";
+//        public static final String URL_ONLINE_API_REQUEST = "http://test.adx.anythinktech.com/openapi/req";
+//        public static final String URL_FACEBOOK_INHOUSE_DOMAIN = "http://47.241.25.167:8080";
 
 
     }
@@ -162,6 +190,7 @@ public class Const {
         public static String API_SPLASH = "splash";
 
         public static String API_LOAD = "load";
+        public static String API_LOAD_RESULT = "load_result";
         public static String API_SHOW = "show";
         public static String API_ISREADY = "isready";
         public static String API_AD_STATUS = "status";

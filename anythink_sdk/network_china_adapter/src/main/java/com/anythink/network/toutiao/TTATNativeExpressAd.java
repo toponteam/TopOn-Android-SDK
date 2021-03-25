@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.anythink.nativead.api.NativeAdInteractionType;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.bytedance.sdk.openadsdk.TTAdDislike;
 import com.bytedance.sdk.openadsdk.TTNativeExpressAd;
@@ -47,6 +48,7 @@ public class TTATNativeExpressAd extends CustomNativeAd {
     public void setAdData(boolean canInterrupt, boolean isDrawFeed) {
 
         mTTNativeExpressAd.setCanInterruptVideoPlay(canInterrupt);
+        setNativeInteractionType(mTTNativeExpressAd.getInteractionType() == 4 ? NativeAdInteractionType.APP_TYPE : NativeAdInteractionType.UNKNOW);
 
         if (isDrawFeed) {
             // Draw Video
@@ -127,8 +129,12 @@ public class TTATNativeExpressAd extends CustomNativeAd {
         //Use the default dislike popup style in the default personalization template
         mTTNativeExpressAd.setDislikeCallback(activity, new TTAdDislike.DislikeInteractionCallback() {
             @Override
+            public void onShow() {
+
+            }
+
+            @Override
             public void onSelected(int position, String value) {
-                //用户选择不喜欢原因后，移除广告展示
                 notifyAdDislikeClick();
             }
 
@@ -157,6 +163,7 @@ public class TTATNativeExpressAd extends CustomNativeAd {
             @Override
             public void onAdShow(View view, int i) {
                 Log.i(TAG, "onAdShow()");
+                notifyAdImpression();
             }
 
             @Override

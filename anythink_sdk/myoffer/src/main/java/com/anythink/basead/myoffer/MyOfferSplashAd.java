@@ -8,80 +8,26 @@
 package com.anythink.basead.myoffer;
 
 import android.content.Context;
-import android.text.TextUtils;
 import android.view.ViewGroup;
 
+import com.anythink.basead.listeners.AdEventListener;
 import com.anythink.basead.myoffer.manager.MyOfferAdManager;
-import com.anythink.basead.listeners.AdListener;
 import com.anythink.core.common.base.SDKContext;
-import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
+import com.anythink.core.common.entity.BaseAdSetting;
 import com.anythink.core.common.entity.MyOfferSetting;
-import com.anythink.basead.buiness.resource.OfferResourceLoader;
 import com.anythink.basead.ui.SplashAdView;
-import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.entity.OfferErrorCode;
 
 import java.util.Map;
 
 public class MyOfferSplashAd extends MyOfferBaseAd {
 
-    AdListener mListener;
-    MyOfferAd mMyOfferAd;
+    AdEventListener mListener;
 
-    String mRequestId;
-
-    public MyOfferSplashAd(Context context, String placementId, String offerId, MyOfferSetting myoffer_setting, String requestId, boolean isDefault) {
-        super(context, placementId, offerId, myoffer_setting, isDefault);
-        mRequestId = requestId;
+    public MyOfferSplashAd(Context context, BaseAdRequestInfo baseAdRequestInfo, String offerId, boolean isDefault) {
+        super(context, baseAdRequestInfo, offerId, isDefault);
     }
 
-
-    @Override
-    public void load() {
-        try {
-            if (TextUtils.isEmpty(mOfferId) || TextUtils.isEmpty(mPlacementId)) {
-                if (mListener != null) {
-                    mListener.onAdLoadFailed(OfferErrorCode.get(OfferErrorCode.noADError, OfferErrorCode.fail_params));
-                }
-                return;
-            }
-            mMyOfferAd = MyOfferAdManager.getInstance(mContext).getAdCache(mPlacementId, mOfferId);
-            if (mMyOfferAd == null) {
-                if (mListener != null) {
-                    mListener.onAdLoadFailed(OfferErrorCode.get(OfferErrorCode.noADError, OfferErrorCode.fail_no_offer));
-                }
-                return;
-            }
-            if (mMyOfferSetting == null) {
-                if (mListener != null) {
-                    mListener.onAdLoadFailed(OfferErrorCode.get(OfferErrorCode.noSettingError, OfferErrorCode.fail_no_setting));
-                }
-                return;
-            }
-
-            MyOfferAdManager.getInstance(mContext).load(mPlacementId, mMyOfferAd, mMyOfferSetting, new OfferResourceLoader.ResourceLoaderListener() {
-                @Override
-                public void onSuccess() {
-                    if (mListener != null) {
-                        mListener.onAdCacheLoaded();
-                    }
-                }
-
-                @Override
-                public void onFailed(OfferError error) {
-                    if (mListener != null) {
-                        mListener.onAdLoadFailed(error);
-                    }
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (mListener != null) {
-                mListener.onAdLoadFailed(OfferErrorCode.get(OfferErrorCode.unknow, e.getMessage()));
-            }
-        }
-
-    }
 
     /**
      * Only for Splash
@@ -92,13 +38,13 @@ public class MyOfferSplashAd extends MyOfferBaseAd {
         SDKContext.getInstance().runOnMainThread(new Runnable() {
             @Override
             public void run() {
-                container.addView(new SplashAdView(container.getContext(), mPlacementId, mRequestId, mMyOfferAd, mMyOfferSetting, mListener));
+                container.addView(new SplashAdView(container.getContext(), mRequestInfo, mMyOfferAd, mListener));
             }
         });
 
     }
 
-    public void setListener(AdListener listener) {
+    public void setListener(AdEventListener listener) {
         this.mListener = listener;
     }
 
@@ -109,6 +55,13 @@ public class MyOfferSplashAd extends MyOfferBaseAd {
 
     @Override
     public boolean isReady() {
+        try {
+            if (checkIsReadyParams()) {
+                return MyOfferAdManager.getInstance(mContext).isReady(mMyOfferAd, mRequestInfo.baseAdSetting, mIsDefault);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return false;
     }
 

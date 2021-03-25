@@ -103,7 +103,7 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtra, Map<String, Object> localExtra) {
         String appid = "";
         String unitId = "";
 
@@ -144,17 +144,22 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
         mAppId = appid;
         mUnitId = unitId;
 
-        GDTATInitManager.getInstance().initSDK(context, serverExtra, new GDTATInitManager.OnInitCallback() {
+        runOnNetworkRequestThread(new Runnable() {
             @Override
-            public void onSuccess() {
-                startLoadAd((Activity) context);
-            }
+            public void run() {
+                GDTATInitManager.getInstance().initSDK(context, serverExtra, new GDTATInitManager.OnInitCallback() {
+                    @Override
+                    public void onSuccess() {
+                        startLoadAd((Activity) context);
+                    }
 
-            @Override
-            public void onError() {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdLoadError("", "GDT initSDK failed.");
-                }
+                    @Override
+                    public void onError() {
+                        if (mLoadListener != null) {
+                            mLoadListener.onAdLoadError("", "GDT initSDK failed.");
+                        }
+                    }
+                });
             }
         });
     }
@@ -176,6 +181,6 @@ public class GDTATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return GDTATConst.getNetworkVersion();
+        return GDTATInitManager.getInstance().getNetworkVersion();
     }
 }

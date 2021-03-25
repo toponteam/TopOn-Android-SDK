@@ -220,61 +220,66 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         }
     };
 
-    private void startLoad(Context context, Map<String, Object> localExtra, int layoutType, String personalized_template, String size) {
-        TTAdManager ttAdManager = TTAdSdk.getAdManager();
+    private void startLoad(final Context context, final Map<String, Object> localExtra, final int layoutType, final String personalized_template, final String size) {
+        runOnNetworkRequestThread(new Runnable() {
+            @Override
+            public void run() {
+                TTAdManager ttAdManager = TTAdSdk.getAdManager();
 
-        /**Get the width set by the developer**/
-        int developerSetExpressWidth = 0;
-        try {
-            if (localExtra != null) {
-                developerSetExpressWidth = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_WIDTH).toString());
-            }
-        } catch (Exception e) {
-        }
-
-        TTAdNative mTTAdNative = ttAdManager.createAdNative(context);//baseContext is recommended for Activity
-        AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
-        int width = context.getResources().getDisplayMetrics().widthPixels;
-        int height = context.getResources().getDisplayMetrics().heightPixels;
-        adSlotBuilder.setImageAcceptedSize(width, height); //must be set
-        adSlotBuilder.setAdCount(1);
-
-        if (isVideo) {
-
-            try {
-                if (!TextUtils.isEmpty(personalized_template) && TextUtils.equals("1", personalized_template)) {
-                    adSlotBuilder.setExpressViewAcceptedSize(px2dip(context, width), px2dip(context, height));
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-
-            AdSlot adSlot = adSlotBuilder.build();
-            mTTAdNative.loadFullScreenVideoAd(adSlot, ttFullScrenAdListener);
-        } else {
-            if (layoutType == 1) { //Native Express Interstitial
-                float density = context.getResources().getDisplayMetrics().density;
-                /**If developer width is set to 0, the default width is used**/
-                int expressWidth = developerSetExpressWidth <= 0 ? (int) ((Math.min(width, height) - 30 * density) / density) : (int) (developerSetExpressWidth / density);
-                int expressHeight = 0;
+                /**Get the width set by the developer**/
+                int developerSetExpressWidth = 0;
                 try {
-                    if (!TextUtils.isEmpty(size)) {
-                        String[] sizeArray = size.split(":");
-                        expressHeight = expressWidth / Integer.parseInt(sizeArray[0]) * Integer.parseInt(sizeArray[1]);
+                    if (localExtra != null) {
+                        developerSetExpressWidth = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_WIDTH).toString());
                     }
-                } catch (Throwable e) {
-                    e.printStackTrace();
+                } catch (Exception e) {
                 }
 
-                adSlotBuilder.setExpressViewAcceptedSize(expressWidth, expressHeight);
-                AdSlot adSlot = adSlotBuilder.build();
-                mTTAdNative.loadInteractionExpressAd(adSlot, expressAdListener);
-            } else {
-                AdSlot adSlot = adSlotBuilder.build();
-                mTTAdNative.loadInteractionAd(adSlot, ttInterstitialAdListener);
-            }
+                TTAdNative mTTAdNative = ttAdManager.createAdNative(context);//baseContext is recommended for Activity
+                AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
+                int width = context.getResources().getDisplayMetrics().widthPixels;
+                int height = context.getResources().getDisplayMetrics().heightPixels;
+                adSlotBuilder.setImageAcceptedSize(width, height); //must be set
+                adSlotBuilder.setAdCount(1);
 
-        }
+                if (isVideo) {
+
+                    try {
+                        if (!TextUtils.isEmpty(personalized_template) && TextUtils.equals("1", personalized_template)) {
+                            adSlotBuilder.setExpressViewAcceptedSize(px2dip(context, width), px2dip(context, height));
+                        }
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+
+                    AdSlot adSlot = adSlotBuilder.build();
+                    mTTAdNative.loadFullScreenVideoAd(adSlot, ttFullScrenAdListener);
+                } else {
+                    if (layoutType == 1) { //Native Express Interstitial
+                        float density = context.getResources().getDisplayMetrics().density;
+                        /**If developer width is set to 0, the default width is used**/
+                        int expressWidth = developerSetExpressWidth <= 0 ? (int) ((Math.min(width, height) - 30 * density) / density) : (int) (developerSetExpressWidth / density);
+                        int expressHeight = 0;
+                        try {
+                            if (!TextUtils.isEmpty(size)) {
+                                String[] sizeArray = size.split(":");
+                                expressHeight = expressWidth / Integer.parseInt(sizeArray[0]) * Integer.parseInt(sizeArray[1]);
+                            }
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+
+                        adSlotBuilder.setExpressViewAcceptedSize(expressWidth, expressHeight);
+                        AdSlot adSlot = adSlotBuilder.build();
+                        mTTAdNative.loadInteractionExpressAd(adSlot, expressAdListener);
+                    } else {
+                        AdSlot adSlot = adSlotBuilder.build();
+                        mTTAdNative.loadInteractionAd(adSlot, ttInterstitialAdListener);
+                    }
+
+                }
+            }
+        });
     }
 
     @Override
@@ -345,13 +350,20 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
         final String finalSize = size;
         TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
             @Override
-            public void onFinish() {
+            public void onSuccess() {
                 try {
                     startLoad(context, localExtra, finalLayoutType, personalized_template, finalSize);
                 } catch (Throwable e) {
                     if (mLoadListener != null) {
                         mLoadListener.onAdLoadError("", e.getMessage());
                     }
+                }
+            }
+
+            @Override
+            public void onError(String errorCode, String errorMsg) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
                 }
             }
         });
@@ -391,7 +403,7 @@ public class TTATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return TTATConst.getNetworkVersion();
+        return TTATInitManager.getInstance().getNetworkVersion();
     }
 
     private static int px2dip(Context context, float pxValue) {

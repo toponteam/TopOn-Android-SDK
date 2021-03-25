@@ -51,7 +51,7 @@ public class FacebookInitManager extends ATInitMediation {
     }
 
 
-    public static String getNetworkVersion() {
+    public String getNetworkVersion() {
         try {
             return BuildConfig.VERSION_NAME;
         } catch (Throwable e) {

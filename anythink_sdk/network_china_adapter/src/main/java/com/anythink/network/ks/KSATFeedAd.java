@@ -61,7 +61,7 @@ public class KSATFeedAd extends CustomNativeAd {
 
             @Override
             public void onAdShow() {
-
+                notifyAdImpression();
             }
 
             @Override

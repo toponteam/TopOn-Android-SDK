@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.adcolony;
 
 import android.app.Activity;
@@ -140,7 +147,7 @@ public class AdColonyATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdColonyATConst.getNetworkVersion();
+        return AdColonyATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

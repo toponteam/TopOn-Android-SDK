@@ -10,6 +10,7 @@ package com.anythink.core.strategy;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.api.ATCustomRuleKeys;
 import com.anythink.core.api.ATInitMediation;
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.MsgManager;
@@ -28,12 +29,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by Z on 2017/12/28.
- */
 
 public class AppStrategyManager {
     public static final String TAG = AppStrategyManager.class.getSimpleName();
@@ -42,9 +42,14 @@ public class AppStrategyManager {
     private Context mContext;
     private boolean isLoading;
 
+    List<AppStragtegyRequestListener> mRegisterListeners;
+
+    private Object listenerSynchronizedObject = new Object();
+
     private AppStrategyManager(Context context) {
         mContext = context;
         isLoading = false;
+        mRegisterListeners = Collections.synchronizedList(new ArrayList<AppStragtegyRequestListener>(3));
     }
 
     public synchronized static AppStrategyManager getInstance(Context context) {
@@ -66,6 +71,37 @@ public class AppStrategyManager {
         mContext = context;
     }
 
+    public void registerAppStrategyListener(AppStragtegyRequestListener listener) {
+        synchronized (listenerSynchronizedObject) {
+            if (listenerSynchronizedObject != null) {
+                mRegisterListeners.add(listener);
+            }
+        }
+    }
+
+    private void notifyAppStrategyListener(String errorMsg) {
+        synchronized (listenerSynchronizedObject) {
+            for (AppStragtegyRequestListener listener : mRegisterListeners) {
+                if (listener != null) {
+                    if (errorMsg == null) {
+                        listener.onSuccess();
+                    } else {
+                        listener.onFail(errorMsg);
+                    }
+
+                }
+            }
+            mRegisterListeners.clear();
+        }
+    }
+
+    public void unRegisterAppStrategyListener(AppStragtegyRequestListener listener) {
+        synchronized (listenerSynchronizedObject) {
+            if (listener != null) {
+                mRegisterListeners.remove(listener);
+            }
+        }
+    }
 
     /**
      * @param appId
@@ -74,10 +110,28 @@ public class AppStrategyManager {
     public boolean isTimeToGetAppStrategy(String appId) {
         AppStrategy strategy = getAppStrategyByAppId(appId);
         if (strategy != null) {
+            OfmStrategy ofmStrategy = strategy.getOfmStrategy();
             long interval = strategy.getStrategyOutTime();
             long currentTime = System.currentTimeMillis();
             long settingNextRequestTime = strategy.getUpdateTime() + interval;
-            if (settingNextRequestTime > currentTime) {
+
+            boolean isStrategyOutdate = settingNextRequestTime <= currentTime;
+
+            boolean isOfmStrategyOutdate = false;
+            if (ofmStrategy != null) {
+                isOfmStrategyOutdate = (strategy.getUpdateTime() + ofmStrategy.getAvailTime()) <= currentTime;
+            }
+
+            boolean isCustomChange = false;
+            Map<String, Object> strategyCustomMap = strategy.getAppCustomMap();
+            Map<String, Object> newestCustomMap = SDKContext.getInstance().getCustomMap();
+            if (strategyCustomMap != null) {
+                isCustomChange = !strategyCustomMap.equals(newestCustomMap);
+            } else if (newestCustomMap != null) {
+                isCustomChange = true;
+            }
+
+            if (!isStrategyOutdate && !isOfmStrategyOutdate && !isCustomChange) {
                 return false;
             }
         }
@@ -187,6 +241,9 @@ public class AppStrategyManager {
         return appStrategy;
     }
 
+    public boolean isAppStrategyRequesting() {
+        return isLoading;
+    }
 
     /***
      * Appsetting request
@@ -216,6 +273,7 @@ public class AppStrategyManager {
                         MsgManager.getInstance(mContext).handleInit(appStrategy);
                         preInit(mContext, appStrategy);
                     }
+                    notifyAppStrategyListener(null);
                 } else {
                     CommonLogUtil.e(TAG, "app strg f!");
                 }
@@ -225,11 +283,13 @@ public class AppStrategyManager {
             public void onLoadError(int reqCode, String msg, AdError errorBean) {
                 isLoading = false;
                 CommonLogUtil.e(TAG, "app strg f!" + msg);
+                notifyAppStrategyListener(msg != null ? msg : "Request Strategy error.");
             }
 
             @Override
             public void onLoadCanceled(int reqCode) {
                 isLoading = false;
+                notifyAppStrategyListener("Request cancel");
             }
         });
     }
@@ -264,6 +324,21 @@ public class AppStrategyManager {
                         }
 
                         serverExtrasMap = CommonUtil.jsonObjectToMap(content);
+                        boolean isAgeLess13 = false;
+                        try {
+                            Map<String, Object> customMap = SDKContext.getInstance().getCustomMap();
+                            if (customMap != null && customMap.containsKey(ATCustomRuleKeys.AGE)) {
+                                int age = Integer.parseInt(customMap.get(ATCustomRuleKeys.AGE).toString());
+                                if (age <= 13) {
+                                    isAgeLess13 = true;
+                                }
+                            }
+                        } catch (Throwable e) {
+
+                        }
+                        serverExtrasMap.put(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY, strategy.getCcpaSwitch() == 3 ? true : false);
+                        serverExtrasMap.put(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY, (strategy.getCoppaSwitch() == 2 && isAgeLess13) ? true : false);
+
                         adapters = jsonObject.optJSONArray("adapter");
 
                         adapterLength = adapters.length();
@@ -291,5 +366,10 @@ public class AppStrategyManager {
         });
     }
 
+    public interface AppStragtegyRequestListener {
+        void onSuccess();
+
+        void onFail(String errorMsg);
+    }
 
 }

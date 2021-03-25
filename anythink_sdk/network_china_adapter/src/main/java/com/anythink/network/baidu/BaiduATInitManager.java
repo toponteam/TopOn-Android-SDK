@@ -90,6 +90,11 @@ public class BaiduATInitManager extends ATInitMediation {
     }
 
     @Override
+    public String getNetworkVersion() {
+        return BaiduATConst.getNetworkVersion();
+    }
+
+    @Override
     public String getNetworkSDKClass() {
         return "com.baidu.mobads.utils.XAdSDKFoundationFacade";
     }

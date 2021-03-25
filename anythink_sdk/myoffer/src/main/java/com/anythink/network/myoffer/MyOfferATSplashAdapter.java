@@ -7,12 +7,15 @@
 
 package com.anythink.network.myoffer;
 
+import android.app.Activity;
 import android.content.Context;
+import android.view.ViewGroup;
 
 import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.listeners.AdListener;
+import com.anythink.basead.listeners.AdEventListener;
+import com.anythink.basead.listeners.AdLoadListener;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.MyOfferRequestInfo;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.basead.myoffer.MyOfferSplashAd;
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 
@@ -23,7 +26,7 @@ public class MyOfferATSplashAdapter extends CustomSplashAdapter {
 
     MyOfferSplashAd mMyOfferSplashAd;
 
-    MyOfferRequestInfo mMyOfferRequestInfo;
+    BaseAdRequestInfo mMyOfferRequestInfo;
 
     @Override
     public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
@@ -31,13 +34,44 @@ public class MyOfferATSplashAdapter extends CustomSplashAdapter {
             offer_id = serverExtras.get("my_oid").toString();
         }
 
-        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
-            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (BaseAdRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
         }
 
         initSplashObject(context);
 
-        mMyOfferSplashAd.load();
+        mMyOfferSplashAd.load(new AdLoadListener() {
+            @Override
+            public void onAdDataLoaded() {
+
+            }
+
+            @Override
+            public void onAdCacheLoaded() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
+                }
+            }
+
+            @Override
+            public void onAdLoadFailed(OfferError error) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
+                }
+            }
+        });
+    }
+
+    @Override
+    public boolean isAdReady() {
+        return mMyOfferSplashAd != null && mMyOfferSplashAd.isReady();
+    }
+
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+        if (mMyOfferSplashAd != null) {
+            mMyOfferSplashAd.show(container);
+        }
     }
 
     @Override
@@ -51,33 +85,8 @@ public class MyOfferATSplashAdapter extends CustomSplashAdapter {
     }
 
     private void initSplashObject(Context context) {
-        mMyOfferSplashAd = new MyOfferSplashAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, getTrackingInfo().getmRequestId(), false);
-        mMyOfferSplashAd.setListener(new AdListener() {
-            @Override
-            public void onAdDataLoaded() {
-
-            }
-
-            @Override
-            public void onAdCacheLoaded() {
-                if (mContainer != null) {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdCacheLoaded();
-                    }
-                    mMyOfferSplashAd.show(mContainer);
-                } else {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdLoadError("", "Splash Container has been released.");
-                    }
-                }
-            }
-
-            @Override
-            public void onAdLoadFailed(OfferError error) {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
-                }
-            }
+        mMyOfferSplashAd = new MyOfferSplashAd(context, mMyOfferRequestInfo, offer_id, false);
+        mMyOfferSplashAd.setListener(new AdEventListener() {
 
             @Override
             public void onAdShow() {
@@ -98,6 +107,11 @@ public class MyOfferATSplashAdapter extends CustomSplashAdapter {
                 if (mImpressionListener != null) {
                     mImpressionListener.onSplashAdClicked();
                 }
+            }
+
+            @Override
+            public void onDeeplinkCallback(boolean isSuccess) {
+
             }
         });
     }

@@ -30,9 +30,11 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
 
     private ATS2SHeadBiddingHandler mATS2SHeadBiddingHandler;
     private ATC2SHeadBiddingHandler mATC2SHeadBiddingHandler;
+    private FBInHouseBiddingHandler mFBInHouseBiddingHandler;
 
     private boolean isC2SFinish;
     private boolean isS2SFinish;
+    private boolean isFBInHouseFinish;
 
     private String mRequestId;
     private long mHBWaitingToReqeustTime;
@@ -51,6 +53,7 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
         int size = hbList.size();
         List<PlaceStrategy.UnitGroupInfo> s2sHbList = null;
         List<PlaceStrategy.UnitGroupInfo> c2sHbList = null;
+        List<PlaceStrategy.UnitGroupInfo> fbInHList = null;
 
         //split to s2sHbList、c2sHbList
         PlaceStrategy.UnitGroupInfo unitGroupInfo;
@@ -68,6 +71,11 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
                     c2sHbList = new ArrayList<>(size);
                 }
                 c2sHbList.add(unitGroupInfo);
+            } else if (unitGroupInfo.adsourceType == PlaceStrategy.UnitGroupInfo.TYPE_FACEBOOK_INHOUSE) { //Facebook In House
+                if (fbInHList == null) {
+                    fbInHList = new ArrayList<>(size);
+                }
+                fbInHList.add(unitGroupInfo);
             }
         }
 
@@ -82,6 +90,12 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
             mATC2SHeadBiddingHandler = new ATC2SHeadBiddingHandler(request.createC2SRequest(c2sHbList));
         } else {
             isC2SFinish = true;
+        }
+
+        if (fbInHList != null && fbInHList.size() > 0) {
+            mFBInHouseBiddingHandler = new FBInHouseBiddingHandler(request.createC2SRequest(fbInHList));
+        } else {
+            isFBInHouseFinish = true;
         }
     }
 
@@ -106,12 +120,12 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
             mATS2SHeadBiddingHandler.startBidRequest(new BiddingCallback() {
                 @Override
                 public void onBiddingSuccess(List<PlaceStrategy.UnitGroupInfo> successList) {
-                    handleResult(true, successList);
+                    handleResult(true, successList, false);
                 }
 
                 @Override
                 public void onBiddingFailed(List<PlaceStrategy.UnitGroupInfo> failedList) {
-                    handleResult(false, failedList);
+                    handleResult(false, failedList, false);
                 }
 
                 @Override
@@ -128,17 +142,38 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
             mATC2SHeadBiddingHandler.startBidRequest(new BiddingCallback() {
                 @Override
                 public void onBiddingSuccess(List<PlaceStrategy.UnitGroupInfo> successList) {
-                    handleResult(true, successList);
+                    handleResult(true, successList, false);
                 }
 
                 @Override
                 public void onBiddingFailed(List<PlaceStrategy.UnitGroupInfo> failedList) {
-                    handleResult(false, failedList);
+                    handleResult(false, failedList, false);
                 }
 
                 @Override
                 public void onBiddingFinished() {
                     isC2SFinish = true;
+                    checkToNotifyFinished();
+                }
+            });
+        }
+
+        if (mFBInHouseBiddingHandler != null) {
+            mFBInHouseBiddingHandler.setTestMode(this.isTestMode);
+            mFBInHouseBiddingHandler.startBidRequest(new BiddingCallback() {
+                @Override
+                public void onBiddingSuccess(List<PlaceStrategy.UnitGroupInfo> successList) {
+                    handleResult(true, successList, true);
+                }
+
+                @Override
+                public void onBiddingFailed(List<PlaceStrategy.UnitGroupInfo> failedList) {
+                    handleResult(false, failedList, false);
+                }
+
+                @Override
+                public void onBiddingFinished() {
+                    isFBInHouseFinish = true;
                     checkToNotifyFinished();
                 }
             });
@@ -201,7 +236,7 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
         return hbWaitingToReqeustTime;
     }
 
-    private void handleResult(boolean isSuccess, List<PlaceStrategy.UnitGroupInfo> list) {
+    private void handleResult(boolean isSuccess, List<PlaceStrategy.UnitGroupInfo> list, boolean isCallbackRightNow) {
 
         synchronized (ATHeadBiddingHandler.this) {
             //add to list according to isSuccess
@@ -213,7 +248,7 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
         }
 
         //after waiting timer up, callback when handle each bid result
-        if (!mIsWaitingTimerUp) {
+        if (mIsWaitingTimerUp || isCallbackRightNow) {
             callbackResult();
         }
     }
@@ -231,11 +266,17 @@ public class ATHeadBiddingHandler extends AbsTimerHandler implements HeadBidding
                 mATC2SHeadBiddingHandler.onTimeout();
             }
         }
+
+        if (!isFBInHouseFinish) {
+            if (mFBInHouseBiddingHandler != null) {
+                mFBInHouseBiddingHandler.onTimeout();
+            }
+        }
     }
 
     private void checkToNotifyFinished() {
         //after all bid request has finished, callback finish
-        if (isS2SFinish && isC2SFinish) {
+        if (isS2SFinish && isC2SFinish && isFBInHouseFinish) {
 
             if (waitingTimer != null) {
                 waitingTimer.cancel();

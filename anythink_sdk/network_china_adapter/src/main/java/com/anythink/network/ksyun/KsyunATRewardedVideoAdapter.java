@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.network.ks.KSATInitManager;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.ksc.ad.sdk.IKsyunAdInitResultListener;
 import com.ksc.ad.sdk.IKsyunAdListener;
@@ -185,7 +186,7 @@ public class KsyunATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return KsyunATConst.getNetworkVersion();
+        return KsyunATInitManager.getInstance().getNetworkVersion();
     }
 
 }

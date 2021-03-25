@@ -7,10 +7,6 @@
 
 package com.anythink.core.api;
 
-/**
- * 错误码
- * Created by zhou on 2018/1/13.
- */
 
 public class ErrorCode {
 
@@ -42,7 +38,7 @@ public class ErrorCode {
     public final static String contextDestoryError = "4002";
     public final static String placementAdClose = "4003";
     public final static String noAdsourceConfig = "4004";
-    public final static String noVailAdsource = "4005";
+    public final static String noAvailableAdsource = "4005";
     public final static String rewardedVideoPlayError = "4006";
 
     public final static String appKeyError = "10001";
@@ -103,8 +99,10 @@ public class ErrorCode {
                 return new AdError(appIdError, "Please check your appid.", platformCode, platformMsg);
             case placementIdError:
                 return new AdError(placementIdError, "Please check your placementid.", platformCode, platformMsg);
-            case noVailAdsource:
-                return new AdError(noVailAdsource, "Ad sources are filtered, no ad source is currently available", platformCode, platformMsg);
+            case noAvailableAdsource:
+                return new AdError(noAvailableAdsource, "Ad sources are filtered, no ad source is currently available", platformCode, platformMsg);
+            case rewardedVideoPlayError:
+                return new AdError(rewardedVideoPlayError, "Video playback failed", platformCode, platformMsg);
             case inRequestFailPacing:
                 return new AdError(inRequestFailPacing, "Not satisfy the Fail-request's Placing configuration.", platformCode, platformMsg);
             case loadFailInPacingError:

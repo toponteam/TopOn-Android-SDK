@@ -8,17 +8,13 @@
 package com.anythink.core.common.base;
 
 import android.app.Activity;
-import android.content.Context;
+import android.os.Looper;
 
-import com.anythink.core.api.ATMediationSetting;
-import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.entity.AdTrackingInfo;
+import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.strategy.PlaceStrategy;
 
-import org.json.JSONObject;
-
 import java.lang.ref.WeakReference;
-import java.util.Map;
 
 /**
  * All Mediation's BaseAdapter
@@ -60,6 +56,14 @@ public abstract class AnyThinkBaseAdapter {
 
     final public void postOnMainThread(Runnable runnable) {
         SDKContext.getInstance().runOnMainThread(runnable);
+    }
+
+    final public void runOnNetworkRequestThread(Runnable runnable) {
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            TaskManager.getInstance().runNetworkRequest(runnable);
+        } else {
+            runnable.run();
+        }
     }
 
 //    final public void log(String action, String status, String extraMsg) {

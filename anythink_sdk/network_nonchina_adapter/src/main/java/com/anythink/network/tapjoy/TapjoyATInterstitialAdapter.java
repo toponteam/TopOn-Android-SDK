@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.tapjoy;
 
 import android.app.Activity;
@@ -15,9 +22,6 @@ import com.tapjoy.Tapjoy;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
 
 
 public class TapjoyATInterstitialAdapter extends CustomInterstitialAdapter {
@@ -200,7 +204,7 @@ public class TapjoyATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return TapjoyATConst.getNetworkVersion();
+        return TapjoyATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.huawei;
 
 import android.content.Context;
@@ -24,7 +31,7 @@ public class HuaweiATBannerAdapter extends CustomBannerAdapter {
     }
 
     @Override
-    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras.containsKey("ad_id")) {
             mAdId = (String) serverExtras.get("ad_id");
 
@@ -39,6 +46,15 @@ public class HuaweiATBannerAdapter extends CustomBannerAdapter {
             mBannerSize = (String) serverExtras.get("size");
         }
 
+        HuaweiATInitManager.getInstance().initSDK(context, serverExtras, new HuaweiATInitManager.InitListener() {
+            @Override
+            public void onSuccess() {
+                startLoadAd(context);
+            }
+        });
+    }
+
+    private void startLoadAd(Context context) {
         final BannerView bannerView = new BannerView(context);
         bannerView.setAdId(mAdId);
 
@@ -96,9 +112,7 @@ public class HuaweiATBannerAdapter extends CustomBannerAdapter {
             }
 
             public void onAdImpression() {
-                if (mImpressionEventListener != null) {
-                    mImpressionEventListener.onBannerAdShow();
-                }
+                //Invalid
             }
         });
 
@@ -127,11 +141,16 @@ public class HuaweiATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return HuaweiATInitManager.getInstance().getNetworkSDKVersion();
+        return HuaweiATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return HuaweiATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 }

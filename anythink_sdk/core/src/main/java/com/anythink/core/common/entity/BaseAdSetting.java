@@ -29,11 +29,55 @@ public abstract class BaseAdSetting implements Serializable {
     private int offerTimeout;//Offer resource download timeout
     private long offerCacheTime;//Offer Cache time, Default: 604800ms (include Apk)
 
+    /**
+     * 1：Only Deeplink Click (Default）
+     * 2：Click url before Deeplink Click
+     * 3：Click url after Deeplink Click
+     */
+    private int deeplinkMode;
+
+    /**
+     * 1: Browser
+     * 2: Inner Browser
+     */
+    private int loadType;
+
     public static final String BANNER_SIZE_320x50 = "320x50";
     public static final String BANNER_SIZE_320x90 = "320x90";
     public static final String BANNER_SIZE_300x250 = "300x250";
     public static final String BANNER_SIZE_728x90 = "728x90";
 
+    /**
+     * Add by 5.7.9
+     */
+    protected int probabilityForDelayShowCloseButtonInEndCard;
+    protected int MinDelayTimeWhenShowCloseButton;
+    protected int MaxDelayTimeWhenShowCloseButton;
+
+
+    public int getLoadType() {
+        if (loadType == 0) {
+            // Default
+            return 1;
+        }
+        return loadType;
+    }
+
+    public void setLoadType(int loadType) {
+        this.loadType = loadType;
+    }
+
+    public int getDeeplinkMode() {
+        //Default
+        if (deeplinkMode == 0) {
+            return 1;
+        }
+        return deeplinkMode;
+    }
+
+    public void setDeeplinkMode(int deeplinkMode) {
+        this.deeplinkMode = deeplinkMode;
+    }
 
     public final int getOfferTimeout() {
         return offerTimeout;
@@ -59,6 +103,10 @@ public abstract class BaseAdSetting implements Serializable {
         this.apkDownloadConfirm = apkDownloadConfirm;
     }
 
+    /**
+     * 0: can skip <p>
+     * 1: can not skip
+     */
     public final int getCanSplashSkip() {
         return canSplashSkip;
     }
@@ -67,6 +115,10 @@ public abstract class BaseAdSetting implements Serializable {
         this.canSplashSkip = canSplashSkip;
     }
 
+    /**
+     * 1: portrait <p>
+     * 2: landscape
+     */
     public final int getSplashOrientation() {
         return splashOrientation;
     }
@@ -83,6 +135,10 @@ public abstract class BaseAdSetting implements Serializable {
         this.bannerSize = bannerSize;
     }
 
+    /**
+     * 0: show close button <p>
+     * 1: do't show close button
+     */
     public final int getIsShowCloseButton() {
         return isShowCloseButton;
     }
@@ -148,4 +204,27 @@ public abstract class BaseAdSetting implements Serializable {
         this.offerCacheTime = offerCacheTime;
     }
 
+    public int getProbabilityForDelayShowCloseButtonInEndCard() {
+        return probabilityForDelayShowCloseButtonInEndCard;
+    }
+
+    public void setProbabilityForDelayShowCloseButtonInEndCard(int probabilityForDelayShowCloseButtonInEndCard) {
+        this.probabilityForDelayShowCloseButtonInEndCard = probabilityForDelayShowCloseButtonInEndCard;
+    }
+
+    public int getMinDelayTimeWhenShowCloseButton() {
+        return MinDelayTimeWhenShowCloseButton;
+    }
+
+    public void setMinDelayTimeWhenShowCloseButton(int minDelayTimeWhenShowCloseButton) {
+        MinDelayTimeWhenShowCloseButton = minDelayTimeWhenShowCloseButton;
+    }
+
+    public int getMaxDelayTimeWhenShowCloseButton() {
+        return MaxDelayTimeWhenShowCloseButton;
+    }
+
+    public void setMaxDelayTimeWhenShowCloseButton(int maxDelayTimeWhenShowCloseButton) {
+        MaxDelayTimeWhenShowCloseButton = maxDelayTimeWhenShowCloseButton;
+    }
 }

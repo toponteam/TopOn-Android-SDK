@@ -10,20 +10,34 @@ package com.anythink.network.gdt;
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
+import android.view.ViewGroup;
 
+import com.anythink.core.api.ATAdConst;
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 import com.qq.e.ads.splash.SplashAD;
 import com.qq.e.ads.splash.SplashADListener;
+import com.qq.e.comm.compliance.DownloadConfirmCallBack;
+import com.qq.e.comm.compliance.DownloadConfirmListener;
 
 import java.util.Map;
 
 public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADListener {
 
     private String mUnitId;
+    private boolean isReady;
+
+    private SplashAD splashAD;
+
+    private boolean isUseDownloadDialogFrame;
 
     @Override
     public String getNetworkName() {
         return GDTATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean isAdReady() {
+        return isReady;
     }
 
     @Override
@@ -48,11 +62,22 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
 
         mUnitId = unitId;
 
+        isReady = false;
+
+        isUseDownloadDialogFrame = false;
+        try {
+            if (localExtra != null && localExtra.containsKey(ATAdConst.KEY.AD_CLICK_CONFIRM_STATUS)) {
+                isUseDownloadDialogFrame = Boolean.parseBoolean(localExtra.get(ATAdConst.KEY.AD_CLICK_CONFIRM_STATUS).toString());
+            }
+        } catch (Exception e) {
+
+        }
+
         GDTATInitManager.getInstance().initSDK(context, serverExtra, new GDTATInitManager.OnInitCallback() {
             @Override
             public void onSuccess() {
-                SplashAD splashAD = new SplashAD(((Activity) context), mUnitId, GDTATSplashAdapter.this, 5000);
-                splashAD.fetchAndShowIn(mContainer);
+                splashAD = new SplashAD(context, mUnitId, GDTATSplashAdapter.this, mFetchAdTimeout);
+                splashAD.fetchAdOnly();
             }
 
             @Override
@@ -64,9 +89,17 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
         });
     }
 
+
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+        if (isReady && splashAD != null) {
+            splashAD.showAd(container);
+        }
+    }
+
     @Override
     public void destory() {
-
+        splashAD = null;
     }
 
     @Override
@@ -76,7 +109,7 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
 
     @Override
     public String getNetworkSDKVersion() {
-        return GDTATConst.getNetworkVersion();
+        return GDTATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -95,9 +128,6 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
 
     @Override
     public void onADPresent() {
-        if (mImpressionListener != null) {
-            mImpressionListener.onSplashAdShow();
-        }
     }
 
     @Override
@@ -114,13 +144,32 @@ public class GDTATSplashAdapter extends CustomSplashAdapter implements SplashADL
 
     @Override
     public void onADExposure() {
+        if (mImpressionListener != null) {
+            mImpressionListener.onSplashAdShow();
+        }
     }
 
     @Override
     public void onADLoaded(long l) {
+        isReady = true;
+        if (splashAD != null && isUseDownloadDialogFrame) {
+            splashAD.setDownloadConfirmListener(new DownloadConfirmListener() {
+                @Override
+                public void onDownloadConfirm(Activity activity, int i, String s, DownloadConfirmCallBack downloadConfirmCallBack) {
+                    if (mImpressionListener != null) {
+                        GDTDownloadFirmInfo gdtDownloadFirmInfo = new GDTDownloadFirmInfo();
+                        gdtDownloadFirmInfo.appInfoUrl = s;
+                        gdtDownloadFirmInfo.scenes = i;
+                        gdtDownloadFirmInfo.confirmCallBack = downloadConfirmCallBack;
+                        mImpressionListener.onDownloadConfirm(activity, gdtDownloadFirmInfo);
+                    }
+                }
+            });
+        }
         if (mLoadListener != null) {
             mLoadListener.onAdCacheLoaded();
         }
     }
+
 
 }

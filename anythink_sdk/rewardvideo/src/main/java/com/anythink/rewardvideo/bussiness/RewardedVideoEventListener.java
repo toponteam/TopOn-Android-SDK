@@ -7,6 +7,8 @@
 
 package com.anythink.rewardvideo.bussiness;
 
+import android.os.SystemClock;
+
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
@@ -17,6 +19,7 @@ import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
+import com.anythink.rewardvideo.api.ATRewardVideoExListener;
 import com.anythink.rewardvideo.api.ATRewardVideoListener;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardedVideoEventListener;
@@ -25,6 +28,7 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
     private ATRewardVideoListener mCallbackListener;
     private CustomRewardVideoAdapter mRewardVideoAdapter;
     long impressionTime;
+    long impressionRealTime;
 
     boolean isReward;
 
@@ -38,6 +42,7 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
     public void onRewardedVideoAdPlayStart() {
 
         impressionTime = System.currentTimeMillis();
+        impressionRealTime = SystemClock.elapsedRealtime();
         if (mRewardVideoAdapter != null) {
             AdTrackingInfo adTrackingInfo = mRewardVideoAdapter.getTrackingInfo();
 
@@ -106,7 +111,7 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
             CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
 
             if (impressionTime != 0) {
-                AgentEventManager.onAdImpressionTimeAgent(adTrackingInfo, isReward, impressionTime, System.currentTimeMillis());
+                AgentEventManager.onAdImpressionTimeAgent(adTrackingInfo, isReward, impressionTime, System.currentTimeMillis(), SystemClock.elapsedRealtime() - impressionRealTime);
             }
 
             AgentEventManager.onAdCloseAgent(adTrackingInfo, isReward);
@@ -163,6 +168,13 @@ public class RewardedVideoEventListener implements CustomRewardedVideoEventListe
         isReward = true;
         if (mCallbackListener != null) {
             mCallbackListener.onReward(ATAdInfo.fromAdapter(mRewardVideoAdapter));
+        }
+    }
+
+    @Override
+    public void onDeeplinkCallback(boolean isSuccess) {
+        if (mCallbackListener != null && mCallbackListener instanceof ATRewardVideoExListener) {
+            ((ATRewardVideoExListener) mCallbackListener).onDeeplinkCallback(ATAdInfo.fromAdapter(mRewardVideoAdapter), isSuccess);
         }
     }
 }

@@ -7,19 +7,19 @@
 
 package com.anythink.network.sigmob;
 
+import android.app.Activity;
 import android.content.Context;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 
-import com.androidquery.AQuery;
 import com.anythink.core.api.ATInitMediation;
 import com.anythink.core.common.base.AnyThinkBaseAdapter;
 import com.sigmob.windad.WindAdError;
 import com.sigmob.windad.WindAdOptions;
 import com.sigmob.windad.WindAds;
-import com.sigmob.windad.fullscreenvideo.WindFullScreenAdRequest;
-import com.sigmob.windad.fullscreenvideo.WindFullScreenVideoAd;
-import com.sigmob.windad.fullscreenvideo.WindFullScreenVideoAdListener;
+import com.sigmob.windad.interstitial.WindInterstitialAd;
+import com.sigmob.windad.interstitial.WindInterstitialAdListener;
+import com.sigmob.windad.interstitial.WindInterstitialAdRequest;
 import com.sigmob.windad.rewardedVideo.WindRewardAdRequest;
 import com.sigmob.windad.rewardedVideo.WindRewardInfo;
 import com.sigmob.windad.rewardedVideo.WindRewardedVideoAd;
@@ -57,7 +57,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdLoadSuccess(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdLoadSuccess(placementId);
                 }
             } catch (Throwable e) {
             }
@@ -91,7 +91,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPreLoadFail(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPreLoadFail(placementId);
                 }
             } catch (Throwable e) {
 
@@ -112,7 +112,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPlayStart(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPlayStart(placementId);
                 }
             } catch (Throwable e) {
 
@@ -133,7 +133,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPlayEnd(s);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPlayEnd(s);
                 }
             } catch (Throwable e) {
 
@@ -154,7 +154,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdClicked(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdClicked(placementId);
                 }
             } catch (Throwable e) {
 
@@ -176,7 +176,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdClosed(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdClosed(placementId);
                 }
             } catch (Throwable e) {
 
@@ -202,7 +202,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdLoadError(windAdError, placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdLoadError(windAdError, placementId);
                 }
             } catch (Throwable e) {
 
@@ -229,7 +229,7 @@ public class SigmobATInitManager extends ATInitMediation {
 
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPlayError(windAdError, placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPlayError(windAdError, placementId);
                 }
             } catch (Throwable e) {
 
@@ -239,14 +239,13 @@ public class SigmobATInitManager extends ATInitMediation {
         }
     };
 
-    private WindFullScreenVideoAdListener windFullScreenVideoAdListener = new WindFullScreenVideoAdListener() {
-
+    private WindInterstitialAdListener windInterstitialAdListener = new WindInterstitialAdListener() {
         @Override
-        public void onFullScreenVideoAdLoadSuccess(String placementId) {
+        public void onInterstitialAdLoadSuccess(String placementId) {
             AnyThinkBaseAdapter baseAdapter = mLoadResultAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdLoadSuccess(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdLoadSuccess(placementId);
                 }
             } catch (Throwable e) {
 
@@ -254,11 +253,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdPreLoadSuccess(String placementId) {
+        public void onInterstitialAdPreLoadSuccess(String placementId) {
             AnyThinkBaseAdapter baseAdapter = mAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPreLoadSuccess(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPreLoadSuccess(placementId);
                 }
             } catch (Throwable e) {
 
@@ -266,11 +265,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdPreLoadFail(String placementId) {
+        public void onInterstitialAdPreLoadFail(String placementId) {
             AnyThinkBaseAdapter baseAdapter = mAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPreLoadFail(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPreLoadFail(placementId);
                 }
             } catch (Throwable e) {
 
@@ -278,11 +277,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdPlayStart(String placementId) {
+        public void onInterstitialAdPlayStart(String placementId) {
             AnyThinkBaseAdapter baseAdapter = mAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPlayStart(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPlayStart(placementId);
                 }
             } catch (Throwable e) {
 
@@ -290,11 +289,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdPlayEnd(String placementId) {
+        public void onInterstitialAdPlayEnd(String placementId) {
             AnyThinkBaseAdapter baseAdapter = mAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPlayEnd(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPlayEnd(placementId);
                 }
             } catch (Throwable e) {
 
@@ -302,11 +301,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdClicked(String placementId) {
+        public void onInterstitialAdClicked(String placementId) {
             AnyThinkBaseAdapter baseAdapter = mAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdClicked(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdClicked(placementId);
                 }
             } catch (Throwable e) {
 
@@ -314,11 +313,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdClosed(String placementId) {
+        public void onInterstitialAdClosed(String placementId) {
             AnyThinkBaseAdapter baseAdapter = mAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdClosed(placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdClosed(placementId);
                 }
             } catch (Throwable e) {
 
@@ -327,11 +326,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdLoadError(WindAdError windAdError, String placementId) {
+        public void onInterstitialAdLoadError(WindAdError windAdError, String placementId) {
             AnyThinkBaseAdapter baseAdapter = mLoadResultAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdLoadError(windAdError, placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdLoadError(windAdError, placementId);
                 }
             } catch (Throwable e) {
 
@@ -340,11 +339,11 @@ public class SigmobATInitManager extends ATInitMediation {
         }
 
         @Override
-        public void onFullScreenVideoAdPlayError(WindAdError windAdError, String placementId) {
+        public void onInterstitialAdPlayError(WindAdError windAdError, String placementId) {
             AnyThinkBaseAdapter baseAdapter = mAdapterMap.get(placementId);
             try {
                 if (baseAdapter instanceof SigmobATInterstitialAdapter) {
-                    ((SigmobATInterstitialAdapter) baseAdapter).onFullScreenVideoAdPlayError(windAdError, placementId);
+                    ((SigmobATInterstitialAdapter) baseAdapter).onInterstitialAdPlayError(windAdError, placementId);
                 }
             } catch (Throwable e) {
 
@@ -388,24 +387,24 @@ public class SigmobATInitManager extends ATInitMediation {
             //enable or disable debug log ouput
 //            ads.setDebugEnable(ATSDK.isNetworkLogDebug());
 
-            // start SDK Init with Options
-            if (ads.startWithOptions(context.getApplicationContext(), new WindAdOptions(app_id, app_key))) {
+            // start SDK Init with Options(WindAdOptions: appId, appKey, useMediation)
+            if (ads.startWithOptions(context.getApplicationContext(), new WindAdOptions(app_id, app_key, false))) {
                 mAppId = app_id;
                 mAppKey = app_key;
             }
         }
 
         WindRewardedVideoAd.sharedInstance().setWindRewardedVideoAdListener(windRewardedVideoAdListener);
-        WindFullScreenVideoAd.sharedInstance().setWindFullScreenVideoAdListener(windFullScreenVideoAdListener);
+        WindInterstitialAd.sharedInstance().setWindInterstitialAdListener(windInterstitialAdListener);
 
         if (initCallback != null) {
             initCallback.onFinish();
         }
     }
 
-    public void loadInterstitial(final String placementid, WindFullScreenAdRequest request, SigmobATInterstitialAdapter arpuInterstitialAdapter) {
+    public void loadInterstitial(final String placementid, WindInterstitialAdRequest request, SigmobATInterstitialAdapter arpuInterstitialAdapter) {
         putLoadResultAdapter(placementid, arpuInterstitialAdapter);
-        WindFullScreenVideoAd.sharedInstance().loadAd(request);
+        WindInterstitialAd.sharedInstance().loadAd(request);
     }
 
     public void loadRewardedVideo(final String placementid, WindRewardAdRequest request, AnyThinkBaseAdapter arpuRewardedVideoAdapter) {
@@ -446,6 +445,11 @@ public class SigmobATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Sigmob";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return SigmobATConst.getNetworkVersion();
     }
 
     @Override

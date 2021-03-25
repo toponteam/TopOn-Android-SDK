@@ -41,6 +41,7 @@ public class BaiduATNativeAd extends CustomNativeAd {
         setDescriptionText(nativeResponse.getDesc());
         setCallToActionText(nativeResponse.isDownloadApp() ? "下载" : "查看");
         setAdFrom(nativeResponse.getBrandName());
+        setImageUrlList(nativeResponse.getMultiPicUrls());
 
     }
 
@@ -63,7 +64,6 @@ public class BaiduATNativeAd extends CustomNativeAd {
                 }
             }
         });
-        mNativeResponse.recordImpression(view);
         if (mMediaView != null) {
             mMediaView.render();
         }
@@ -88,7 +88,6 @@ public class BaiduATNativeAd extends CustomNativeAd {
                 });
             }
         }
-        mNativeResponse.recordImpression(view);
         if (mMediaView != null) {
             mMediaView.render();
         }
@@ -165,4 +164,10 @@ public class BaiduATNativeAd extends CustomNativeAd {
         mContext = null;
     }
 
+    @Override
+    public void impressionTrack(View adView) {
+        if (mNativeResponse != null) {
+            mNativeResponse.recordImpression(adView);
+        }
+    }
 }

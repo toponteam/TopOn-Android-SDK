@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.chartboost;
 
 import android.app.Activity;
@@ -11,9 +18,6 @@ import com.chartboost.sdk.Model.CBError;
 
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/6/27.
- */
 
 
 public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
@@ -106,7 +110,7 @@ public class ChartboostATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return ChartboostATConst.getNetworkVersion();
+        return ChartboostATInitManager.getInstance().getNetworkVersion();
     }
 
 

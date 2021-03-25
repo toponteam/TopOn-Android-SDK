@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.adcolony;
 
 import android.app.Activity;
@@ -27,14 +34,6 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-//        serverExtras.put("app_id", "app251236acbb494d48a8");
-//        serverExtras.put("zone_id", "vz627ee9b423cc4de09b");
-//        serverExtras.put("zone_ids", "[\"vz627ee9b423cc4de09b\"]");
-//        serverExtras.put("size", "320x50");
-//        serverExtras.put("size", "300x250");
-//        serverExtras.put("size", "728x90");
-//        serverExtras.put("size", "160x600");
-
 
         String mAppId = "";
         if (serverExtras != null) {
@@ -100,6 +99,7 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
                 }
             }
 
+
             public void onLeftApplication(AdColonyAdView ad) {
             }
 
@@ -141,7 +141,7 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdColonyATConst.getNetworkVersion();
+        return AdColonyATInitManager.getInstance().getNetworkVersion();
     }
 
 
@@ -174,5 +174,10 @@ public class AdColonyATBannerAdapter extends CustomBannerAdapter {
     @Override
     public View getBannerView() {
         return adColonyAdView;
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 }

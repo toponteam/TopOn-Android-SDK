@@ -13,6 +13,7 @@ public class AgentInfoBean extends LoggerInfoInterface {
 
     public String key;
     public String requestId;
+    public String appid;
     public String unitId;
     public String psid;
     public String sessionId;
@@ -34,6 +35,8 @@ public class AgentInfoBean extends LoggerInfoInterface {
     public String msg9;
     public String msg10;
     public String msg11;
+    public String msg12;
+    public String msg13;
 
     public String format;
 

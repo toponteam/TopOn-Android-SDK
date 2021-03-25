@@ -1,8 +1,16 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.toutiao;
 
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.anythink.core.api.ATAdConst;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
@@ -20,6 +28,8 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     String slotId = "";
     private TTRewardVideoAd mttRewardVideoAd;
+
+    boolean hasCallbackReward;
 
     //TT Ad load listener
     TTAdNative.RewardVideoAdListener ttRewardAdListener = new TTAdNative.RewardVideoAdListener() {
@@ -78,15 +88,6 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             if (mImpressionListener != null) {
                 mImpressionListener.onRewardedVideoAdPlayEnd();
             }
-
-            if (mImpressionListener != null) {
-                mImpressionListener.onReward();
-            }
-        }
-
-        @Override
-        public void onRewardVerify(boolean rewardVerify, int rewardAmount, String rewardName) {
-
         }
 
         @Override
@@ -94,81 +95,78 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
         }
 
-
         public void onVideoError() {
             if (mImpressionListener != null) {
                 mImpressionListener.onRewardedVideoAdPlayFailed("", "Callback VideoError");
             }
         }
+
+        @Override
+        public void onRewardVerify(boolean rewardVerify, int rewardAmount, String rewardName) {
+            Log.i(TAG, "onRewardVerify(), rewardVerify: " + rewardVerify);
+            if (rewardVerify && !hasCallbackReward && mImpressionListener != null) {
+                hasCallbackReward = true;
+                mImpressionListener.onReward();
+            }
+        }
+
     };
 
-    @Override
-    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
-
-
-        String appId = (String) serverExtras.get("app_id");
-        slotId = (String) serverExtras.get("slot_id");
-
-        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
-            if (mLoadListener != null) {
-                mLoadListener.onAdLoadError("", "app_id or slot_id is empty!");
-            }
-            return;
-        }
-
-
-        TTATInitManager.getInstance().initSDK(context, serverExtras, new TTATInitManager.InitCallback() {
+    private void startLoad(final Context activity, final Map<String, Object> localExtra, final String personalized_template) {
+        runOnNetworkRequestThread(new Runnable() {
             @Override
-            public void onFinish() {
+            public void run() {
+                TTAdManager ttAdManager = TTAdSdk.getAdManager();
+
+                TTAdNative mTTAdNative = ttAdManager.createAdNative(activity);//baseContext is recommended for activity
+                AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
+                int width = activity.getResources().getDisplayMetrics().widthPixels;
+                int height = activity.getResources().getDisplayMetrics().heightPixels;
+                adSlotBuilder.setImageAcceptedSize(width, height); //must be set
+
                 try {
-                    startLoad(context, localExtras);
+                    if (!TextUtils.isEmpty(personalized_template) && TextUtils.equals("1", personalized_template)) {
+                        adSlotBuilder.setExpressViewAcceptedSize(px2dip(activity, width), px2dip(activity, height));
+                    }
                 } catch (Throwable e) {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdLoadError("", e.getMessage());
+                    e.printStackTrace();
+                }
+
+
+                if (localExtra != null) {
+                    try {
+                        adSlotBuilder.setSupportDeepLink((Boolean) localExtra.get(ATAdConst.KEY.AD_IS_SUPPORT_DEEP_LINK));
+                    } catch (Exception e) {
+                    }
+
+                    try {
+                        int orientation = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_ORIENTATION).toString());
+                        switch (orientation) {
+                            case ATAdConst.ORIENTATION_HORIZONTAL:
+                                adSlotBuilder.setOrientation(TTAdConstant.HORIZONTAL);
+                                break;
+                            case ATAdConst.ORIENTATION_VERTICAL:
+                                adSlotBuilder.setOrientation(TTAdConstant.VERTICAL);
+                                break;
+                        }
+                    } catch (Exception e) {
                     }
                 }
+
+                if (!TextUtils.isEmpty(mUserId)) {
+                    adSlotBuilder.setUserID(mUserId);
+                }
+
+                if (!TextUtils.isEmpty(mUserData)) {
+                    adSlotBuilder.setMediaExtra(mUserData);
+                }
+
+                adSlotBuilder.setAdCount(1);
+
+                AdSlot adSlot = adSlotBuilder.build();
+                mTTAdNative.loadRewardVideoAd(adSlot, ttRewardAdListener);
             }
         });
-    }
-
-    private void startLoad(Context activity, Map<String, Object> localExtras) {
-        TTAdManager ttAdManager = TTAdSdk.getAdManager();
-
-        TTAdNative mTTAdNative = ttAdManager.createAdNative(activity);//baseContext is recommended for activity
-        AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
-        int width = activity.getResources().getDisplayMetrics().widthPixels;
-        int height = activity.getResources().getDisplayMetrics().heightPixels;
-        adSlotBuilder.setImageAcceptedSize(width, height); //must be set
-
-        try {
-            if (localExtras.containsKey(ATAdConst.KEY.AD_ORIENTATION)) {
-                int orientation = Integer.parseInt(localExtras.get(ATAdConst.KEY.AD_ORIENTATION).toString());
-                switch (orientation) {
-                    case ATAdConst.ORIENTATION_HORIZONTAL:
-                        adSlotBuilder.setOrientation(TTAdConstant.HORIZONTAL);
-                        break;
-                    case ATAdConst.ORIENTATION_VERTICAL:
-                        adSlotBuilder.setOrientation(TTAdConstant.VERTICAL);
-                        break;
-                }
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        if (!TextUtils.isEmpty(mUserId)) {
-            adSlotBuilder.setUserID(mUserId);
-        }
-
-        if (!TextUtils.isEmpty(mUserData)) {
-            adSlotBuilder.setMediaExtra(mUserData);
-        }
-
-        adSlotBuilder.setAdCount(1);
-
-
-        AdSlot adSlot = adSlotBuilder.build();
-        mTTAdNative.loadRewardVideoAd(adSlot, ttRewardAdListener);
     }
 
     @Override
@@ -177,17 +175,43 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     }
 
     @Override
-    public boolean setUserDataConsent(Context context, boolean isConsent, boolean isEUTraffic) {
-        return TTATInitManager.getInstance().setUserDataConsent(context, isConsent, isEUTraffic);
-    }
-
-    @Override
     public void show(Activity activity) {
         if (activity != null && mttRewardVideoAd != null) {
             mttRewardVideoAd.setRewardAdInteractionListener(interactionListener);
             mttRewardVideoAd.showRewardVideoAd(activity);
         }
+    }
 
+    @Override
+    public String getNetworkName() {
+        return TTATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, final Map<String, Object> localExtra) {
+        String appId = (String) serverExtra.get("app_id");
+        slotId = (String) serverExtra.get("slot_id");
+        final String personalized_template = (String) serverExtra.get("personalized_template");
+
+        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(slotId)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "app_id or slot_id is empty!");
+            }
+            return;
+        }
+
+        TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                try {
+                    startLoad(context, localExtra, personalized_template);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
+            }
+        });
     }
 
     @Override
@@ -201,19 +225,18 @@ public class TTATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         interactionListener = null;
     }
 
-
-    @Override
-    public String getNetworkSDKVersion() {
-        return TTATConst.getNetworkVersion();
-    }
-
-    @Override
-    public String getNetworkName() {
-        return TTATInitManager.getInstance().getNetworkName();
-    }
-
     @Override
     public String getNetworkPlacementId() {
         return slotId;
+    }
+
+    @Override
+    public String getNetworkSDKVersion() {
+        return TTATInitManager.getInstance().getNetworkVersion();
+    }
+
+    private static int px2dip(Context context, float pxValue) {
+        final float scale = context.getResources().getDisplayMetrics().density;
+        return (int) (pxValue / (scale <= 0 ? 1 : scale) + 0.5f);
     }
 }

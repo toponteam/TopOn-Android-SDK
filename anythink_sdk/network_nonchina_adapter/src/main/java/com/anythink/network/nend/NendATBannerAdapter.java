@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.nend;
 
 import android.content.Context;
@@ -107,5 +114,10 @@ public class NendATBannerAdapter extends CustomBannerAdapter {
             e.printStackTrace();
             return "";
         }
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 }

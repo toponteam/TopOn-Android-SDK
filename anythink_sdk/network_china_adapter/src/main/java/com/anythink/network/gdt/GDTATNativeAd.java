@@ -8,18 +8,25 @@
 package com.anythink.network.gdt;
 
 
+import android.app.Activity;
 import android.content.Context;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.anythink.nativead.api.NativeAdInteractionType;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.qq.e.ads.cfg.VideoOption;
 import com.qq.e.ads.nativ.MediaView;
 import com.qq.e.ads.nativ.NativeADEventListener;
+import com.qq.e.ads.nativ.NativeADEventListenerWithClickInfo;
 import com.qq.e.ads.nativ.NativeADMediaListener;
 import com.qq.e.ads.nativ.NativeUnifiedADData;
 import com.qq.e.ads.nativ.widget.NativeAdContainer;
+import com.qq.e.comm.compliance.DownloadConfirmCallBack;
+import com.qq.e.comm.compliance.DownloadConfirmListener;
 import com.qq.e.comm.constants.AdPatternType;
 import com.qq.e.comm.util.AdError;
 
@@ -27,9 +34,6 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by zhou on 2018/1/16.
- */
 
 public class GDTATNativeAd extends CustomNativeAd {
     private static final String TAG = GDTATNativeAd.class.getSimpleName();
@@ -43,7 +47,7 @@ public class GDTATNativeAd extends CustomNativeAd {
     int mVideoDuration;
 
 
-    protected GDTATNativeAd(Context context, Object gdtad, int videoMuted, int videoAutoPlay, int videoDuration) {
+    protected GDTATNativeAd(Context context, NativeUnifiedADData gdtad, int videoMuted, int videoAutoPlay, int videoDuration) {
 
         mApplicationContext = context.getApplicationContext();
         mContext = new WeakReference<>(context);
@@ -52,23 +56,37 @@ public class GDTATNativeAd extends CustomNativeAd {
         mVideoAutoPlay = videoAutoPlay;
         mVideoDuration = videoDuration;
 
-        if (gdtad instanceof NativeUnifiedADData) {
-            mUnifiedAdData = (NativeUnifiedADData) gdtad;
-            setAdData(mUnifiedAdData);
-        }
+        mUnifiedAdData = gdtad;
+        setAdData(mUnifiedAdData);
 
     }
 
+    @Override
+    public void registerDownloadConfirmListener() {
+        mUnifiedAdData.setDownloadConfirmListener(new DownloadConfirmListener() {
+            @Override
+            public void onDownloadConfirm(Activity activity, int i, String s, DownloadConfirmCallBack downloadConfirmCallBack) {
+                Log.i("GDTATNativeAd", "onDownloadConfirm....");
+                View clickView = mClickView;
+                mClickView = null;
+                GDTDownloadFirmInfo gdtDownloadFirmInfo = new GDTDownloadFirmInfo();
+                gdtDownloadFirmInfo.appInfoUrl = s;
+                gdtDownloadFirmInfo.scenes = i;
+                gdtDownloadFirmInfo.confirmCallBack = downloadConfirmCallBack;
+                notifyDownloadConfirm(activity, clickView, gdtDownloadFirmInfo);
+            }
+        });
+    }
 
-    public String getCallToACtion(Object ad) {
-        boolean isapp = false;
-        int status = 0, pro = 0;
-
-        if (ad instanceof NativeUnifiedADData) {
-            isapp = ((NativeUnifiedADData) ad).isAppAd();
-            status = ((NativeUnifiedADData) ad).getAppStatus();
-            pro = ((NativeUnifiedADData) ad).getProgress();
+    public String getCallToACtion(NativeUnifiedADData ad) {
+        if (!TextUtils.isEmpty(ad.getCTAText())) {
+            return ad.getCTAText();
         }
+        boolean isapp = false;
+        int status = 0;
+
+        isapp = ad.isAppAd();
+        status = ad.getAppStatus();
 
 
         if (!isapp) {
@@ -90,6 +108,8 @@ public class GDTATNativeAd extends CustomNativeAd {
         }
     }
 
+    View mClickView;
+
     private void setAdData(NativeUnifiedADData unifiedADData) {
         setTitle(unifiedADData.getTitle());
         setDescriptionText(unifiedADData.getDesc());
@@ -103,22 +123,28 @@ public class GDTATNativeAd extends CustomNativeAd {
 
         setImageUrlList(unifiedADData.getImgList());
 
+        setNativeInteractionType(unifiedADData.isAppAd() ? NativeAdInteractionType.APP_TYPE : NativeAdInteractionType.UNKNOW);
+
         if (unifiedADData.getAdPatternType() == AdPatternType.NATIVE_VIDEO) {
             mAdSourceType = VIDEO_TYPE;
         } else {
             mAdSourceType = IMAGE_TYPE;
         }
 
-        unifiedADData.setNativeAdEventListener(new NativeADEventListener() {
+        unifiedADData.setNativeAdEventListener(new NativeADEventListenerWithClickInfo() {
             @Override
             public void onADExposed() {
-
+                notifyAdImpression();
             }
+
 
             @Override
-            public void onADClicked() {
+            public void onADClicked(View view) {
+                mClickView = view; //Record click view
+                Log.i("GDTATNativeAd", "onADClicked...." + view);
                 notifyAdClicked();
             }
+
 
             @Override
             public void onADError(AdError adError) {
@@ -130,6 +156,7 @@ public class GDTATNativeAd extends CustomNativeAd {
 
             }
         });
+
     }
 
 
@@ -170,10 +197,14 @@ public class GDTATNativeAd extends CustomNativeAd {
         if (mUnifiedAdData != null && mContainer != null) {
             List<View> childView = new ArrayList<>();
             fillChildView(view, childView);
-            mUnifiedAdData.bindAdToView(view.getContext(), mContainer, layoutParams, childView);
+            ExtraInfo extraInfo = getExtraInfo();
+            mUnifiedAdData.bindAdToView(view.getContext(), mContainer, layoutParams, childView, extraInfo != null ? extraInfo.getCustomViews() : null);
             try {
                 mUnifiedAdData.bindMediaView(mMediaView, new VideoOption.Builder()
-                        .setAutoPlayMuted(mVideoMuted == 1).setAutoPlayPolicy(mVideoAutoPlay).build(), new NativeADMediaListener() {
+                        .setAutoPlayMuted(mVideoMuted == 1)
+                        .setDetailPageMuted(mVideoMuted == 1)
+                        .setAutoPlayPolicy(mVideoAutoPlay)
+                        .build(), new NativeADMediaListener() {
                     @Override
                     public void onVideoInit() {
                     }
@@ -233,10 +264,14 @@ public class GDTATNativeAd extends CustomNativeAd {
     @Override
     public void prepare(View view, List<View> clickViewList, FrameLayout.LayoutParams layoutParams) {
         if (mUnifiedAdData != null && mContainer != null) {
-            mUnifiedAdData.bindAdToView(view.getContext(), mContainer, layoutParams, clickViewList);
+            ExtraInfo extraInfo = getExtraInfo();
+            mUnifiedAdData.bindAdToView(view.getContext(), mContainer, layoutParams, clickViewList, extraInfo != null ? extraInfo.getCustomViews() : null);
             try {
                 mUnifiedAdData.bindMediaView(mMediaView, new VideoOption.Builder()
-                        .setAutoPlayMuted(mVideoMuted == 1).setAutoPlayPolicy(mVideoAutoPlay).build(), new NativeADMediaListener() {
+                        .setAutoPlayMuted(mVideoMuted == 1)
+                        .setDetailPageMuted(mVideoMuted == 1)
+                        .setAutoPlayPolicy(mVideoAutoPlay)
+                        .build(), new NativeADMediaListener() {
                     @Override
                     public void onVideoInit() {
                     }

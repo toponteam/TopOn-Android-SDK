@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.app.Activity;
@@ -5,22 +12,19 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-import com.mintegral.msdk.mtgbid.out.BidManager;
-import com.mintegral.msdk.out.CustomInfoManager;
-import com.mintegral.msdk.out.MTGBidRewardVideoHandler;
-import com.mintegral.msdk.out.MTGRewardVideoHandler;
-import com.mintegral.msdk.out.RewardVideoListener;
+import com.mbridge.msdk.mbbid.out.BidManager;
+import com.mbridge.msdk.out.CustomInfoManager;
+import com.mbridge.msdk.out.MBBidRewardVideoHandler;
+import com.mbridge.msdk.out.MBRewardVideoHandler;
+import com.mbridge.msdk.out.RewardVideoListener;
 
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/6/27.
- */
 public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private final String TAG = MintegralATRewardedVideoAdapter.class.getSimpleName();
 
-    MTGRewardVideoHandler mMvRewardVideoHandler;
-    MTGBidRewardVideoHandler mMvBidRewardVideoHandler;
+    MBRewardVideoHandler mMvRewardVideoHandler;
+    MBBidRewardVideoHandler mMvBidRewardVideoHandler;
     String placementId = "";
     String unitId = "";
     String mPayload;
@@ -119,10 +123,10 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         };
 
         if (TextUtils.isEmpty(mPayload)) {
-            mMvRewardVideoHandler = new MTGRewardVideoHandler(context.getApplicationContext(), placementId, unitId);
+            mMvRewardVideoHandler = new MBRewardVideoHandler(context.getApplicationContext(), placementId, unitId);
             mMvRewardVideoHandler.setRewardVideoListener(videoListener);
         } else {
-            mMvBidRewardVideoHandler = new MTGBidRewardVideoHandler(context.getApplicationContext(), placementId, unitId);
+            mMvBidRewardVideoHandler = new MBBidRewardVideoHandler(context.getApplicationContext(), placementId, unitId);
             mMvBidRewardVideoHandler.setRewardVideoListener(videoListener);
         }
     }
@@ -253,7 +257,7 @@ public class MintegralATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

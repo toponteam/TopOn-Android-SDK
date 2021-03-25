@@ -21,17 +21,18 @@ public class NotificationBroadcaseReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        String url = intent.getStringExtra(ApkNotificationManager.BROADCAST_RECEIVER_EXTRA);
+        String url = intent.getStringExtra(ApkNotificationManager.BROADCAST_RECEIVER_EXTRA_URL);
+        String uniqueID = intent.getStringExtra(ApkNotificationManager.BROADCAST_RECEIVER_EXTRA_UNIQUE_ID);
 
         switch (action) {
             case ApkNotificationManager.ACTION_NOTIFICATION_CLICK:
                 CommonLogUtil.i(TAG, "onReceive: click...");
-                ApkDownloadManager.getInstance(context).onClickNotification(url);
+                ApkDownloadManager.getInstance(context).onClickNotification(uniqueID, url);
 
                 break;
             case ApkNotificationManager.ACTION_NOTIFICATION_CANNEL:
                 CommonLogUtil.i(TAG, "onReceive: cancel...");
-                ApkDownloadManager.getInstance(context).onCleanNotification(url);
+                ApkDownloadManager.getInstance(context).onCleanNotification(uniqueID, url);
                 break;
         }
     }

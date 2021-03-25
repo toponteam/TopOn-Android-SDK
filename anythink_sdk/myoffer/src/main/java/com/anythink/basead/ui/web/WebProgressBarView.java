@@ -13,9 +13,6 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
-/**
- * Created by Z on 2018/6/4.
- */
 
 public class WebProgressBarView extends View {
 

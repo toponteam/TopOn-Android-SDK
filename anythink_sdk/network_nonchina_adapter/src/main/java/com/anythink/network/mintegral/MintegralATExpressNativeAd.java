@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.content.Context;
@@ -5,22 +12,19 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
-import com.mintegral.msdk.out.MTGNativeAdvancedHandler;
-import com.mintegral.msdk.out.NativeAdvancedAdListener;
+import com.mbridge.msdk.out.MBNativeAdvancedHandler;
+import com.mbridge.msdk.out.NativeAdvancedAdListener;
 
 import java.util.List;
 
-/**
- * Created by zhou on 2018/1/17.
- */
 
 public class MintegralATExpressNativeAd extends CustomNativeAd {
     private final String TAG = MintegralATExpressNativeAd.class.getSimpleName();
-    MTGNativeAdvancedHandler mtgNativeAdvancedHandler;
+    MBNativeAdvancedHandler mtgNativeAdvancedHandler;
 
-    public MintegralATExpressNativeAd(Context context, MTGNativeAdvancedHandler mtgNativeAdvancedHandler, boolean isHB) {
-        this.mtgNativeAdvancedHandler = mtgNativeAdvancedHandler;
-        mtgNativeAdvancedHandler.setAdListener(new NativeAdvancedAdListener() {
+    public MintegralATExpressNativeAd(Context context, MBNativeAdvancedHandler mbNativeAdvancedHandler, boolean isHB) {
+        this.mtgNativeAdvancedHandler = mbNativeAdvancedHandler;
+        mbNativeAdvancedHandler.setAdListener(new NativeAdvancedAdListener() {
             @Override
             public void onLoadFailed(String s) {
 
@@ -33,7 +37,7 @@ public class MintegralATExpressNativeAd extends CustomNativeAd {
 
             @Override
             public void onLogImpression() {
-
+                notifyAdImpression();
             }
 
             @Override

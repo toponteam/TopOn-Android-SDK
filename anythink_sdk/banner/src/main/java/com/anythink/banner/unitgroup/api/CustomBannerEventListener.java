@@ -19,4 +19,6 @@ public interface CustomBannerEventListener {
 
     void onBannerAdClose();////Callback of Ad close
 
+    void onDeeplinkCallback(boolean isSuccess);
+
 }

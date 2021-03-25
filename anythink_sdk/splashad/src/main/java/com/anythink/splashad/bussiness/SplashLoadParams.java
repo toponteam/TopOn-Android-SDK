@@ -7,14 +7,12 @@
 
 package com.anythink.splashad.bussiness;
 
-import android.app.Activity;
-import android.view.ViewGroup;
+import android.content.Context;
 
 import com.anythink.core.common.FormatLoadParams;
-import com.anythink.splashad.api.ATSplashAdListener;
 
 public class SplashLoadParams extends FormatLoadParams {
-    Activity activity;
-    ViewGroup containerView;
-    ATSplashAdListener listener;
+    Context context;
+    AdLoadListener listener;
+    int timeout;
 }

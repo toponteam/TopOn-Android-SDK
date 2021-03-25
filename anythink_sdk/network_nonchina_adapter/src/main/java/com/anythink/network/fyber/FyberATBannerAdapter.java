@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.fyber;
 
 import android.content.Context;
@@ -79,7 +86,9 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
 
                     @Override
                     public void onAdImpression(InneractiveAdSpot inneractiveAdSpot) {
-
+                        if (mImpressionEventListener != null) {
+                            mImpressionEventListener.onBannerAdShow();
+                        }
                     }
 
                     @Override
@@ -164,7 +173,7 @@ public class FyberATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return FyberATConst.getNetworkVersion();
+        return FyberATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

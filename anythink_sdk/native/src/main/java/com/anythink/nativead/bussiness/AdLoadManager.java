@@ -9,6 +9,7 @@ package com.anythink.nativead.bussiness;
 
 import android.content.Context;
 
+import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.AdCacheManager;
 import com.anythink.core.common.CommonAdManager;
@@ -16,6 +17,7 @@ import com.anythink.core.common.CommonMediationManager;
 import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.entity.AdCacheInfo;
+import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.nativead.api.ATNativeNetworkListener;
@@ -40,7 +42,6 @@ public class AdLoadManager extends CommonAdManager<NativeLoadParams> {
             adLoadManager = new AdLoadManager(context, placementId);
             PlacementAdManager.getInstance().addAdManager(placementId, adLoadManager);
         }
-        adLoadManager.refreshContext(context);
         return (AdLoadManager) adLoadManager;
     }
 
@@ -50,12 +51,18 @@ public class AdLoadManager extends CommonAdManager<NativeLoadParams> {
     }
 
 
-    public AdCacheInfo showNativeAd() {
+    public AdCacheInfo showNativeAd(String scenaio) {
 
         AdCacheInfo adCacheInfo = AdCacheManager.getInstance().getCache(mApplicationContext, mPlacementId);
         if (adCacheInfo != null && adCacheInfo.getAdObject() instanceof BaseNativeAd && adCacheInfo.getBaseAdapter() instanceof CustomNativeAdapter) {
+            ATBaseAdAdapter baseAdAdapter = adCacheInfo.getBaseAdapter();
+            AdTrackingInfo adTrackingInfo = baseAdAdapter.getTrackingInfo();
+            adTrackingInfo.setmScenario(scenaio);
             BaseNativeAd nativeAd = (BaseNativeAd) adCacheInfo.getAdObject();
-            nativeAd.setTrackingInfo(adCacheInfo.getBaseAdapter().getTrackingInfo());
+            nativeAd.setTrackingInfo(adTrackingInfo);
+            /**Remove cache**/
+            AdCacheManager.getInstance().removeAdCache(mPlacementId, adTrackingInfo.getmUnitGroupUnitId(), adCacheInfo);
+
             return adCacheInfo;
         }
         return null;
@@ -92,7 +99,7 @@ public class AdLoadManager extends CommonAdManager<NativeLoadParams> {
     }
 
     @Override
-    public void onCallbacInternalError(NativeLoadParams loadParams, String placementId, String requestId, AdError adError) {
+    public void onCallbackInternalError(NativeLoadParams loadParams, String placementId, String requestId, AdError adError) {
         if (loadParams.listener != null) {
             loadParams.listener.onNativeAdLoadFail(adError);
         }

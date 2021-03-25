@@ -125,18 +125,18 @@ public class FileUtils {
     }
 
     /**
-     * Get resource name by url
+     * Get resource name by uniqueID
      */
-    public static String getResourceName(String url) {
-        return CommonMD5.getMD5(url);
+    public static String getResourceName(String uniqueID) {
+        return CommonMD5.getMD5(uniqueID);
     }
     /**
      * Get resource
      */
-    public static String getResourcePath(String url) {
+    public static String getResourcePath(String uniqueID) {
         String saveDirectory = getSaveDirectory();
         if(saveDirectory != null) {
-            return saveDirectory + File.separator + getResourceName(url);
+            return saveDirectory + File.separator + getResourceName(uniqueID);
         } else {
             return null;
         }

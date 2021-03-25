@@ -9,14 +9,15 @@ package com.anythink.core.strategy;
 
 import android.text.TextUtils;
 
+import com.anythink.core.api.ATCustomRuleKeys;
 import com.anythink.core.api.ATRewardInfo;
 import com.anythink.core.common.HeadBiddingKey;
 import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.AdxAdSetting;
-import com.anythink.core.common.entity.AdxRequestInfo;
+import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
+import com.anythink.core.common.entity.OwnBaseAdSetting;
 import com.anythink.core.common.entity.MyOfferAd;
-import com.anythink.core.common.entity.MyOfferRequestInfo;
 import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.common.entity.TemplateStrategy;
 import com.anythink.core.common.net.PlaceStrategyLoader;
@@ -27,11 +28,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /***
  * @author Z
@@ -102,10 +103,16 @@ public class PlaceStrategy {
     private String normalUnitGroupListStr;
 
     /**
+     * Online UnitGroup JSON String
+     */
+    private String onlineUnitGroupListStr;
+
+    /**
      * Headbidding UnitGroup JSON String
      */
     private String s2sheadbiddingUnitGroupListStr;
     private String c2sHeadbiddingUnitGroupListStr;
+    private String fbInHouseHeadbiddingUnitGroupListStr;
 
     private List<UnitGroupInfo> mNormalUnitGroupList;
     private List<UnitGroupInfo> mHBUnitGroupList;
@@ -176,6 +183,52 @@ public class PlaceStrategy {
      **/
     private List<MyOfferAd> myOfferAdList;
     private MyOfferSetting myOfferSetting;
+
+    /**
+     * v5.7.5
+     *
+     * @return
+     */
+    private long fbInHouseTimeout;
+
+    /**
+     * v5.7.9
+     * @return
+     */
+    private double accountExchageRate;
+    private String accountCurrency;
+
+    public double getAccountExchageRate() {
+        return accountExchageRate;
+    }
+
+    public void setAccountExchageRate(double exchageRate) {
+        this.accountExchageRate = exchageRate;
+    }
+
+    public String getAccountCurrency() {
+        return accountCurrency;
+    }
+
+    public void setAccountCurrency(String accountCurrency) {
+        this.accountCurrency = accountCurrency;
+    }
+
+    public long getFbInHouseTimeout() {
+        return fbInHouseTimeout;
+    }
+
+    public void setFbInHouseTimeout(long fbInHouseTimeout) {
+        this.fbInHouseTimeout = fbInHouseTimeout;
+    }
+
+    public String getFbInHouseHeadbiddingUnitGroupListStr() {
+        return fbInHouseHeadbiddingUnitGroupListStr;
+    }
+
+    public void setFbInHouseHeadbiddingUnitGroupListStr(String fbInHouseHeadbiddingUnitGroupListStr) {
+        this.fbInHouseHeadbiddingUnitGroupListStr = fbInHouseHeadbiddingUnitGroupListStr;
+    }
 
     /**
      * v5.6.8
@@ -441,7 +494,7 @@ public class PlaceStrategy {
     }
 
     public int getRequestUnitGroupNumber() {
-        return requestUnitGroupNumber;
+        return this.requestUnitGroupNumber;
     }
 
     public void setRequestUnitGroupNumber(int requestUnitGroupNumber) {
@@ -538,6 +591,14 @@ public class PlaceStrategy {
         this.normalUnitGroupListStr = normalUnitGroupListStr;
     }
 
+    public String getOnlineUnitGroupListStr() {
+        return onlineUnitGroupListStr;
+    }
+
+    public void setOnlineUnitGroupListStr(String onlineUnitGroupListStr) {
+        this.onlineUnitGroupListStr = onlineUnitGroupListStr;
+    }
+
     public String getS2SHeadbiddingUnitGroupListStr() {
         return s2sheadbiddingUnitGroupListStr;
     }
@@ -621,6 +682,7 @@ public class PlaceStrategy {
         private final static String showType_key = "show_type";
         private final static String refreshr_key = "refresh";
         private final static String unitGroup_key = "ug_list";
+        private final static String online_unitGroup_key = "ol_list";
         private final static String group_id_key = "gro_id";
         private final static String unitGroup_hb_list_key = "hb_list";
 
@@ -662,6 +724,11 @@ public class PlaceStrategy {
         private final static String reward = "reward"; //placement reward info
         private final static String currency = "currency"; //currency
         private final static String cc = "cc"; //country
+        /**
+         * v5.7.9
+         */
+        private final static String exch_r = "exch_r"; //exchange rate
+        private final static String acct_cy = "acct_cy"; //account currency
 
         /**
          * v5.5.7
@@ -698,6 +765,12 @@ public class PlaceStrategy {
          */
         public final static String c2s_hb_list_key = "hb_list";
 
+        /**
+         * v5.7.5
+         */
+        public final static String fb_inh_hb_list_key = "inh_list";
+        public final static String fb_inh_timeout_key = "fbhb_bid_wtime";
+
     }
 
     public static class UnitGroupInfo implements Comparable<UnitGroupInfo> {
@@ -707,9 +780,13 @@ public class PlaceStrategy {
          */
         public int level;
         /***
-         * netowkr firm id
+         * network firm id
          */
         public int networkType;
+        /**
+         * network name
+         */
+        public String networkName;
         /**
          * Max Daily Cap
          */
@@ -843,6 +920,16 @@ public class PlaceStrategy {
         public long bidFailInterval;
 
         /**
+         * Acccount currency ecpm
+         */
+        public double accountCurrencyEcpm;
+
+        /**
+         * Auto Ready Switch，1:close 2:open
+         */
+        public int autoReadySwitch;
+
+        /**
          * adsourceType (0: normal  1: s2s   2: c2s   3: adx)
          */
         public int adsourceType;
@@ -850,10 +937,13 @@ public class PlaceStrategy {
         public static int TYPE_HB_S2S = 1;
         public static int TYPE_HB_C2S = 2;
         public static int TYPE_ADX = 3;
+        public static int TYPE_ONLINE_API = 4;
+        public static int TYPE_FACEBOOK_INHOUSE = 5;
 
 
         public UnitGroupInfo() {
         }
+
 
         public long getBidTokenAvailTime() {
             return bidTokenAvailTime;
@@ -1039,6 +1129,22 @@ public class PlaceStrategy {
             this.bidFailInterval = bidFailInterval;
         }
 
+        public double getAccountCurrencyEcpm() {
+            return accountCurrencyEcpm;
+        }
+
+        public void setAccountCurrencyEcpm(double accountCurrencyEcpm) {
+            this.accountCurrencyEcpm = accountCurrencyEcpm;
+        }
+
+        public int getAutoReadySwitch() {
+            return autoReadySwitch;
+        }
+
+        public void setAutoReadySwitch(int autoReadySwitch) {
+            this.autoReadySwitch = autoReadySwitch;
+        }
+
         @Override
         public int compareTo(UnitGroupInfo o) {
             if (this.ecpm > o.ecpm) {
@@ -1204,11 +1310,18 @@ public class PlaceStrategy {
 
             if (jsonObject.isNull(ResponseKey.unitGroup_key)) {
                 strategy.setNormalUnitGroupListStr("[]");
-                strategy.setNormalUnitGroupList(new ArrayList<UnitGroupInfo>());
             } else {
                 strategy.setNormalUnitGroupListStr(jsonObject.optString(ResponseKey.unitGroup_key));
-                strategy.setNormalUnitGroupList(parseUnitGroupInfoList(jsonObject.optString(ResponseKey.unitGroup_key), UnitGroupInfo.TYPE_NORMAL));
             }
+
+            if (jsonObject.isNull(ResponseKey.online_unitGroup_key)) {
+                strategy.setOnlineUnitGroupListStr("[]");
+            } else {
+                strategy.setOnlineUnitGroupListStr(jsonObject.optString(ResponseKey.online_unitGroup_key));
+            }
+
+            strategy.setNormalUnitGroupList(parseNormalUnitGroupInfoList(strategy.getNormalUnitGroupListStr(), strategy.getOnlineUnitGroupListStr()));
+
 
             if (jsonObject.isNull(ResponseKey.unitGroup_hb_s2s_list_key)) {
                 strategy.setS2SHeadbiddingUnitGroupListStr("[]");
@@ -1228,8 +1341,17 @@ public class PlaceStrategy {
                 strategy.setC2SHeadbiddingUnitGroupListStr(jsonObject.optString(ResponseKey.c2s_hb_list_key));
             }
 
+            if (jsonObject.isNull(ResponseKey.fb_inh_hb_list_key)) {
+                strategy.setFbInHouseHeadbiddingUnitGroupListStr("[]");
+            } else {
+                strategy.setFbInHouseHeadbiddingUnitGroupListStr(jsonObject.optString(ResponseKey.fb_inh_hb_list_key));
+            }
+
             try {
-                strategy.setHeadBiddingList(parseHeadBiddingUnitGroupInfoList(strategy.getS2SHeadbiddingUnitGroupListStr(), strategy.getAdxUnitGroupListStr(), strategy.getC2SHeadbiddingUnitGroupListStr()));
+                strategy.setHeadBiddingList(parseHeadBiddingUnitGroupInfoList(strategy.getS2SHeadbiddingUnitGroupListStr()
+                        , strategy.getAdxUnitGroupListStr()
+                        , strategy.getC2SHeadbiddingUnitGroupListStr()
+                        , strategy.getFbInHouseHeadbiddingUnitGroupListStr()));
             } catch (Exception e) {
 
             }
@@ -1339,6 +1461,14 @@ public class PlaceStrategy {
                 if (!callbackObject.isNull(ResponseKey.cc)) {
                     strategy.setCountry(callbackObject.optString(ResponseKey.cc));
                 }
+
+                if (!callbackObject.isNull(ResponseKey.exch_r)) {
+                    strategy.setAccountExchageRate(callbackObject.optDouble(ResponseKey.exch_r));
+                }
+                if (!callbackObject.isNull(ResponseKey.acct_cy)) {
+                    strategy.setAccountCurrency(callbackObject.optString(ResponseKey.acct_cy));
+                }
+
             }
 
             /** v5.5.7 */
@@ -1400,6 +1530,15 @@ public class PlaceStrategy {
                 strategy.setAdxAdSettingStr("");
             } else {
                 strategy.setAdxAdSettingStr(jsonObject.optString(ResponseKey.adx_ad_setting_key));
+            }
+
+            /**
+             * v5.7.5
+             */
+            if (jsonObject.isNull(ResponseKey.fb_inh_timeout_key)) {
+                strategy.setFbInHouseTimeout(4000L);
+            } else {
+                strategy.setFbInHouseTimeout(jsonObject.optLong(ResponseKey.fb_inh_timeout_key));
             }
 
             return strategy;
@@ -1476,15 +1615,28 @@ public class PlaceStrategy {
      * @param adxHbInfo
      * @return
      */
-    public static List<PlaceStrategy.UnitGroupInfo> parseHeadBiddingUnitGroupInfoList(String s2sHbInfo, String adxHbInfo, String c2sHbInfo) {
+    public static List<PlaceStrategy.UnitGroupInfo> parseHeadBiddingUnitGroupInfoList(String s2sHbInfo, String adxHbInfo, String c2sHbInfo, String fbInHouseInfo) {
         List<PlaceStrategy.UnitGroupInfo> s2sHbInfoList = parseUnitGroupInfoList(s2sHbInfo, UnitGroupInfo.TYPE_HB_S2S);
         List<PlaceStrategy.UnitGroupInfo> adxHbInfoList = parseUnitGroupInfoList(adxHbInfo, UnitGroupInfo.TYPE_ADX);
         List<PlaceStrategy.UnitGroupInfo> c2sHbInfoList = parseUnitGroupInfoList(c2sHbInfo, UnitGroupInfo.TYPE_HB_C2S);
+        List<PlaceStrategy.UnitGroupInfo> fbInHoseHbInfoList = parseUnitGroupInfoList(fbInHouseInfo, UnitGroupInfo.TYPE_FACEBOOK_INHOUSE);
 
         s2sHbInfoList.addAll(adxHbInfoList);
         s2sHbInfoList.addAll(c2sHbInfoList);
+        s2sHbInfoList.addAll(fbInHoseHbInfoList);
 
         return s2sHbInfoList;
+    }
+
+    public static List<PlaceStrategy.UnitGroupInfo> parseNormalUnitGroupInfoList(String normalUnitGroupListStr, String onlineUnitGroupListStr) {
+        List<PlaceStrategy.UnitGroupInfo> normalInfoList = parseUnitGroupInfoList(normalUnitGroupListStr, UnitGroupInfo.TYPE_NORMAL);
+        List<PlaceStrategy.UnitGroupInfo> onlineInfoList = parseUnitGroupInfoList(onlineUnitGroupListStr, UnitGroupInfo.TYPE_ONLINE_API);
+
+        normalInfoList.addAll(onlineInfoList);
+
+        Collections.sort(normalInfoList);
+
+        return normalInfoList;
     }
 
     /**
@@ -1493,9 +1645,9 @@ public class PlaceStrategy {
      * @param successArray
      * @return
      */
-    public static List<PlaceStrategy.UnitGroupInfo> parseUnitGroupInfoList(String successArray, int adsourceType) {
-        boolean isHB = adsourceType != UnitGroupInfo.TYPE_NORMAL;
-        CopyOnWriteArrayList<UnitGroupInfo> unitGroupList = new CopyOnWriteArrayList<PlaceStrategy.UnitGroupInfo>();
+    private static List<PlaceStrategy.UnitGroupInfo> parseUnitGroupInfoList(String successArray, int adsourceType) {
+        boolean isHB = adsourceType != UnitGroupInfo.TYPE_NORMAL && adsourceType != UnitGroupInfo.TYPE_ONLINE_API;
+        ArrayList<UnitGroupInfo> unitGroupList = new ArrayList<PlaceStrategy.UnitGroupInfo>();
         try {
             JSONArray unitGroupArray = new JSONArray(successArray);
 
@@ -1523,6 +1675,7 @@ public class PlaceStrategy {
                     unitGroupInfo.capsByDay = arryItemTemp.optInt(HeadBiddingKey.unitGroup_capsByDay_key);
                 }
 
+
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_capsByHour_key)) {
                     unitGroupInfo.capsByHour = -1;
                 } else {
@@ -1539,6 +1692,12 @@ public class PlaceStrategy {
                     unitGroupInfo.networkType = -1;
                 } else {
                     unitGroupInfo.networkType = arryItemTemp.optInt(HeadBiddingKey.unitGroup_networkType_key);
+                }
+
+                if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_networkName_key)) {
+                    unitGroupInfo.networkName = "";
+                } else {
+                    unitGroupInfo.networkName = arryItemTemp.optString(HeadBiddingKey.unitGroup_networkName_key);
                 }
 
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_unitGroupId_key)) {
@@ -1561,7 +1720,7 @@ public class PlaceStrategy {
                 }
 
                 if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_unitAdRequestNumber_key)) {
-                    unitGroupInfo.setUnitAdRequestNumber(0);
+                    unitGroupInfo.setUnitAdRequestNumber(1);
                 } else {
                     unitGroupInfo.setUnitAdRequestNumber(arryItemTemp.optInt(HeadBiddingKey.unitGroup_unitAdRequestNumber_key));
                 }
@@ -1646,7 +1805,7 @@ public class PlaceStrategy {
 
                 /**v5.2.1**/
                 if (arryItemTemp.isNull(HeadBiddingKey.headbidding_sortType)) {
-                    unitGroupInfo.setSortType(1);
+                    unitGroupInfo.setSortType(isHB ? 0 : 1);
                 } else {
                     unitGroupInfo.setSortType(arryItemTemp.optInt(HeadBiddingKey.headbidding_sortType));
                 }
@@ -1688,6 +1847,23 @@ public class PlaceStrategy {
                     unitGroupInfo.setBidFailInterval(arryItemTemp.optLong(HeadBiddingKey.unitGroup_bid_fail_interval));
                 }
 
+                /**
+                 * v5.7.9
+                 */
+                if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_account_currency_ecpm)){
+                    unitGroupInfo.setAccountCurrencyEcpm(0);
+                } else {
+                    unitGroupInfo.setAccountCurrencyEcpm(arryItemTemp.optDouble(HeadBiddingKey.unitGroup_account_currency_ecpm));
+                }
+
+                /**
+                 * v5.7.9
+                 */
+                if (arryItemTemp.isNull(HeadBiddingKey.unitGroup_auto_ready_switch)) {
+                    unitGroupInfo.setAutoReadySwitch(1);
+                } else {
+                    unitGroupInfo.setAutoReadySwitch(arryItemTemp.optInt(HeadBiddingKey.unitGroup_auto_ready_switch));
+                }
 
                 unitGroupList.add(unitGroupInfo);
             }
@@ -1747,7 +1923,7 @@ public class PlaceStrategy {
                 myOfferAd.setOfferPacing(offerObject.optLong("o_a_p"));
                 myOfferAd.setUpdateTime(updateTime);
 
-                myOfferAd.setResourceType(offerObject.optInt("unit_type"));
+                myOfferAd.setUnitType(offerObject.optInt("unit_type"));
                 myOfferAd.setClickMode(offerObject.optInt("c_m"));
 
                 /**v5.6.6**/
@@ -1796,36 +1972,94 @@ public class PlaceStrategy {
      */
     public Map<String, Object> getServerExtrasMap(String placementId, String requestId, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
         Map<String, Object> serviceExtras = CommonUtil.jsonObjectToMap(unitGroupInfo.content);
+        boolean isAgeLess13 = false;
+        try {
+            Map<String, Object> customMap = SDKContext.getInstance().getCustomMap();
+            if (customMap != null && customMap.containsKey(ATCustomRuleKeys.AGE)) {
+                int age = Integer.parseInt(customMap.get(ATCustomRuleKeys.AGE).toString());
+                if (age <= 13) {
+                    isAgeLess13 = true;
+                }
+            }
+        } catch (Throwable e) {
 
+        }
+
+        AppStrategy appStrategy = AppStrategyManager.getInstance(SDKContext.getInstance().getContext()).getAppStrategyByAppId(SDKContext.getInstance().getAppId());
         serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.BID_PAYLOAD_KEY, unitGroupInfo.getPayload());
+        serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY, appStrategy.getCcpaSwitch() == 3 ? true : false);
+        serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY, (appStrategy.getCoppaSwitch() == 2 && isAgeLess13) ? true : false);
 
-        if (unitGroupInfo.networkType == MyOfferAPIProxy.MYOFFER_NETWORK_FIRM_ID) {
-            MyOfferRequestInfo myOfferRequestInfo = new MyOfferRequestInfo();
-            myOfferRequestInfo.placementId = placementId;
-            myOfferRequestInfo.requestId = requestId;
-            myOfferRequestInfo.myOfferSetting = getMyOfferSetting();
-            if (myOfferRequestInfo.myOfferSetting != null) {
-                myOfferRequestInfo.myOfferSetting.setFormat(format);
-            }
-
-            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY, myOfferRequestInfo);
+        if (Const.FORMAT.NATIVE_FORMAT.equals(String.valueOf(getFormat()))) {
+            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM, unitGroupInfo.getUnitAdRequestNumber());
         }
 
-        if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) { //Adx Network Firm Id
-            AdxRequestInfo adxRequestInfo = new AdxRequestInfo();
-            adxRequestInfo.bidId = unitGroupInfo.getPayload();
-            adxRequestInfo.adsourceId = unitGroupInfo.unitId;
-            adxRequestInfo.groupId = groupId;
-            adxRequestInfo.placementId = placementId;
-            adxRequestInfo.requestId = requestId;
-            adxRequestInfo.trafficGroupId = tracfficGroupId;
-            adxRequestInfo.adxAdSetting = AdxAdSetting.parseAdxSetting(getAdxAdSettingStr());
-            if (adxRequestInfo.adxAdSetting != null) {
-                adxRequestInfo.adxAdSetting.setFormat(format);
+//        if (unitGroupInfo.networkType == MyOfferAPIProxy.MYOFFER_NETWORK_FIRM_ID) {
+//            MyOfferRequestInfo myOfferRequestInfo = new MyOfferRequestInfo();
+//            myOfferRequestInfo.placementId = placementId;
+//            myOfferRequestInfo.requestId = requestId;
+//            myOfferRequestInfo.myOfferSetting = getMyOfferSetting();
+//            if (myOfferRequestInfo.myOfferSetting != null) {
+//                myOfferRequestInfo.myOfferSetting.setFormat(format);
+//            }
+//
+//            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY, myOfferRequestInfo);
+//        }
+
+        if (unitGroupInfo.networkType == MyOfferAPIProxy.MYOFFER_NETWORK_FIRM_ID || unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID ||
+                unitGroupInfo.adsourceType == UnitGroupInfo.TYPE_ONLINE_API) { //Adx Network Firm Id
+            BaseAdRequestInfo ownBaseAdRequestInfo = new BaseAdRequestInfo();
+            ownBaseAdRequestInfo.bidId = unitGroupInfo.getPayload();
+            ownBaseAdRequestInfo.networkFirmId = unitGroupInfo.networkType;
+            ownBaseAdRequestInfo.adsourceId = unitGroupInfo.unitId;
+            ownBaseAdRequestInfo.requestId = requestId;
+            ownBaseAdRequestInfo.placementId = placementId;
+            ownBaseAdRequestInfo.trafficGroupId = tracfficGroupId;
+            ownBaseAdRequestInfo.groupId = groupId;
+            ownBaseAdRequestInfo.networkName = unitGroupInfo.networkName;
+            if (unitGroupInfo.networkType == MyOfferAPIProxy.MYOFFER_NETWORK_FIRM_ID) {
+                ownBaseAdRequestInfo.baseAdSetting = getMyOfferSetting();
+            } else {
+                ownBaseAdRequestInfo.baseAdSetting = OwnBaseAdSetting.parseAdSetting(getAdxAdSettingStr());
+            }
+            if (ownBaseAdRequestInfo.baseAdSetting != null) {
+                ownBaseAdRequestInfo.baseAdSetting.setFormat(format);
             }
 
-            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.ADX_PARAMS_KEY, adxRequestInfo);
+            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY, ownBaseAdRequestInfo);
         }
+
+//        if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) { //Adx Network Firm Id
+//            AdxRequestInfo adxRequestInfo = new AdxRequestInfo();
+//            adxRequestInfo.bidId = unitGroupInfo.getPayload();
+//            adxRequestInfo.adsourceId = unitGroupInfo.unitId;
+//            adxRequestInfo.groupId = groupId;
+//            adxRequestInfo.placementId = placementId;
+//            adxRequestInfo.requestId = requestId;
+//            adxRequestInfo.trafficGroupId = tracfficGroupId;
+//            adxRequestInfo.adxAdSetting = OwnBaseAdSetting.parseAdSetting(getAdxAdSettingStr());
+//            if (adxRequestInfo.adxAdSetting != null) {
+//                adxRequestInfo.adxAdSetting.setFormat(format);
+//            }
+//
+//            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.ADX_PARAMS_KEY, adxRequestInfo);
+//        }
+//
+//        if (unitGroupInfo.adsourceType == UnitGroupInfo.TYPE_ONLINE_API) {
+//            OnlineApiRequestInfo onlineApiRequestInfo = new OnlineApiRequestInfo();
+//            onlineApiRequestInfo.networkFirmId = unitGroupInfo.networkType;
+//            onlineApiRequestInfo.adsourceId = unitGroupInfo.unitId;
+//            onlineApiRequestInfo.requestId = requestId;
+//            onlineApiRequestInfo.placementId = placementId;
+//            onlineApiRequestInfo.trafficGroupId = tracfficGroupId;
+//            onlineApiRequestInfo.groupId = groupId;
+//            onlineApiRequestInfo.networkName = unitGroupInfo.networkName;
+//            onlineApiRequestInfo.ownBaseAdSetting = OwnBaseAdSetting.parseAdSetting(getAdxAdSettingStr());
+//            if (onlineApiRequestInfo.ownBaseAdSetting != null) {
+//                onlineApiRequestInfo.ownBaseAdSetting.setFormat(format);
+//            }
+//            serviceExtras.put(Const.NETWORK_REQUEST_PARAMS_KEY.ONLINE_PARAMS_KEY, onlineApiRequestInfo);
+//        }
 
         return serviceExtras;
     }

@@ -12,6 +12,7 @@ import android.text.TextUtils;
 
 import com.anythink.basead.buiness.OfferResourceManager;
 import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.BaseAdSetting;
 import com.anythink.core.common.entity.MyOfferAd;
 import com.anythink.core.common.entity.MyOfferSetting;
 import com.anythink.core.strategy.PlaceStrategy;
@@ -157,7 +158,7 @@ public class MyOfferAdManager {
     /**
      * Download MyOffer's Resource
      */
-    public void load(String placementId, MyOfferAd myOfferAd, MyOfferSetting myOfferSetting, final OfferResourceLoader.ResourceLoaderListener listener) {
+    public void load(String placementId, MyOfferAd myOfferAd, BaseAdSetting myOfferSetting, final OfferResourceLoader.ResourceLoaderListener listener) {
         if (checkInExcludeOffer(myOfferAd)) {
             if (listener != null) {
                 listener.onFailed(OfferErrorCode.get(OfferErrorCode.exclueOfferError, OfferErrorCode.fail_in_exclude_offer));
@@ -200,7 +201,7 @@ public class MyOfferAdManager {
      * @param isDefault
      * @return
      */
-    public boolean isReady(MyOfferAd myOfferAd, MyOfferSetting myOfferSetting, boolean isDefault) {
+    public boolean isReady(MyOfferAd myOfferAd, BaseAdSetting myOfferSetting, boolean isDefault) {
         if (mContext == null || myOfferAd == null) {
             return false;
         }

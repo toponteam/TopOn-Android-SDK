@@ -675,6 +675,50 @@ task makeNetworkFyberJar(type: Jar) {
     from(buildDir.absolutePath + '/../../outputs/' + class_nonchina_adapter_output_dir)
     include "com/anythink/network/fyber/**/*.class"
 }
+
+
+task makeNetworkHuaweiJar(type: Jar) {
+    println '=============== makeNetworkHuaweiJar ==============='
+    baseName 'anythink'
+    appendix = 'dex'
+    version = '1.0.0'
+    classifier = 'release'
+    extension = 'jar'
+    //最终的 Jar 包名，如果没设置，默认为 [baseName]-[appendix]-[version]-[classifier].[extension]
+    archiveName = 'anythink_network_huawei.jar'
+    destinationDir file(buildDir.absolutePath + '/../../outputs/libs')
+    from(buildDir.absolutePath + '/../../outputs/' + class_nonchina_adapter_output_dir)
+    include "com/anythink/network/huawei/**/*.class"
+}
+
+task makeNetworkKidozJar(type: Jar) {
+    println '=============== makeNetworkKidozJar ==============='
+    baseName 'anythink'
+    appendix = 'dex'
+    version = '1.0.0'
+    classifier = 'release'
+    extension = 'jar'
+    //最终的 Jar 包名，如果没设置，默认为 [baseName]-[appendix]-[version]-[classifier].[extension]
+    archiveName = 'anythink_network_kidoz.jar'
+    destinationDir file(buildDir.absolutePath + '/../../outputs/libs')
+    from(buildDir.absolutePath + '/../../outputs/' + class_nonchina_adapter_output_dir)
+    include "com/anythink/network/kidoz/**/*.class"
+}
+
+task makeNetworkMyTargetJar(type: Jar) {
+    println '=============== makeNetworkMyTargetJar ==============='
+    baseName 'anythink'
+    appendix = 'dex'
+    version = '1.0.0'
+    classifier = 'release'
+    extension = 'jar'
+    //最终的 Jar 包名，如果没设置，默认为 [baseName]-[appendix]-[version]-[classifier].[extension]
+    archiveName = 'anythink_network_mytarget.jar'
+    destinationDir file(buildDir.absolutePath + '/../../outputs/libs')
+    from(buildDir.absolutePath + '/../../outputs/' + class_nonchina_adapter_output_dir)
+    include "com/anythink/network/mytarget/**/*.class"
+}
+
 /**------------------------------------------------NonChina Adapter Jar End-----------------------------------------------**/
 
 
@@ -1280,6 +1324,10 @@ task copyNonChinaNecessaryResPackage  {
         networkNonChinaLibsPath.add("vungle");
         networkNonChinaLibsPath.add("ogury")
         networkNonChinaLibsPath.add("pangle")
+        networkNonChinaLibsPath.add("fyber")
+        networkNonChinaLibsPath.add("huawei")
+        networkNonChinaLibsPath.add("kidoz")
+        networkNonChinaLibsPath.add("mytarget")
 
 
         copy {
@@ -1385,7 +1433,10 @@ makeNetworkKSJar.dependsOn 'makeNetworkSuperawesomeJar'
 makeNetworkSigmobJar.dependsOn 'makeNetworkKSJar'
 makeNetworkOguryJar.dependsOn 'makeNetworkSigmobJar'
 makeNetworkFyberJar.dependsOn 'makeNetworkOguryJar'
-cpSDKResToOutput.dependsOn 'makeNetworkFyberJar'
+makeNetworkHuaweiJar.dependsOn 'makeNetworkFyberJar'
+makeNetworkKidozJar.dependsOn 'makeNetworkHuaweiJar'
+makeNetworkMyTargetJar.dependsOn 'makeNetworkKidozJar'
+cpSDKResToOutput.dependsOn 'makeNetworkMyTargetJar'
 //
 
 outputCoreAAR.dependsOn 'assembleRelease'

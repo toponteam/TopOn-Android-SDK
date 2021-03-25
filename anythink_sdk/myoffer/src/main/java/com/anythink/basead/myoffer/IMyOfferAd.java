@@ -7,11 +7,13 @@
 
 package com.anythink.basead.myoffer;
 
+import com.anythink.basead.listeners.AdLoadListener;
+
 import java.util.Map;
 
 public interface IMyOfferAd {
 
-    void load();
+    void load(AdLoadListener adLoadListener);
     void show(Map<String, Object> extraMap);
     boolean isReady();
 }

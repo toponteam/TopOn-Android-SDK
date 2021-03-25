@@ -1,9 +1,12 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.applovin.view;
 
-/**
- * ErrorCode during playing
- * Created by zhou on 2017/11/9.
- */
 public class PlayerErrorConstant {
 
 	public final static String MEDIAPLAYER_INIT_FAILED = "MediaPlayer init error";

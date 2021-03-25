@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.chartboost;
 
 import android.app.Activity;
@@ -20,9 +27,6 @@ import com.chartboost.sdk.Events.ChartboostShowEvent;
 
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/6/27.
- */
 
 
 public class ChartboostATBannerAdapter extends CustomBannerAdapter {
@@ -155,14 +159,6 @@ public class ChartboostATBannerAdapter extends CustomBannerAdapter {
     @Override
     public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
 
-//        serverExtras.put("app_id", "4f7b433509b6025804000002");
-//        serverExtras.put("app_signature", "dd2d41b69ac01b80f443f5b6cf06096d457f82bd");
-//        serverExtras.put("location", CBLocation.LOCATION_DEFAULT);
-//        serverExtras.put("size", "320x50");
-//        serverExtras.put("size", "300x250");
-//        serverExtras.put("size", "728x90");
-
-
         String appid = (String) serverExtras.get("app_id");
         String appkey = (String) serverExtras.get("app_signature");
 
@@ -203,7 +199,7 @@ public class ChartboostATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return ChartboostATConst.getNetworkVersion();
+        return ChartboostATInitManager.getInstance().getNetworkVersion();
     }
 
 

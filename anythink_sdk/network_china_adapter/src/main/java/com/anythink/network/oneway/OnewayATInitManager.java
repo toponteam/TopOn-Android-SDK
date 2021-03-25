@@ -58,6 +58,11 @@ public class OnewayATInitManager extends ATInitMediation {
     }
 
     @Override
+    public String getNetworkVersion() {
+        return OnewayATConst.getNetworkVersion();
+    }
+
+    @Override
     public String getNetworkSDKClass() {
         return "mobi.oneway.export.Ad.OnewaySdk";
     }

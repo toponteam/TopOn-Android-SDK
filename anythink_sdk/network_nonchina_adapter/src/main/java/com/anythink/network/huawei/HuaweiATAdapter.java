@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.huawei;
 
 import android.content.Context;
@@ -11,7 +18,7 @@ public class HuaweiATAdapter extends CustomNativeAdapter {
     String mAdId;
 
     @Override
-    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, final Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras.containsKey("ad_id")) {
             mAdId = (String) serverExtras.get("ad_id");
 
@@ -22,6 +29,15 @@ public class HuaweiATAdapter extends CustomNativeAdapter {
             return;
         }
 
+        HuaweiATInitManager.getInstance().initSDK(context, serverExtras, new HuaweiATInitManager.InitListener() {
+            @Override
+            public void onSuccess() {
+                startLoadAd(context, serverExtras);
+            }
+        });
+    }
+
+    private void startLoadAd(Context context, Map<String, Object> serverExtras) {
         HuaweiATNativeAd huaweiATNativeAd = new HuaweiATNativeAd(context, mAdId);
         huaweiATNativeAd.loadAd(serverExtras, new HuaweiATNativeAd.LoadCallbackListener() {
             @Override
@@ -57,7 +73,7 @@ public class HuaweiATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return HuaweiATInitManager.getInstance().getNetworkSDKVersion();
+        return HuaweiATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

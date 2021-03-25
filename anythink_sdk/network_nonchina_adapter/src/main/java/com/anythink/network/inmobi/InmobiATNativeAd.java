@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.inmobi;
 
 import android.content.Context;
@@ -13,9 +20,6 @@ import com.inmobi.ads.listeners.NativeAdEventListener;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by Z on 2018/1/12.
- */
 public class InmobiATNativeAd extends CustomNativeAd {
 
     private final String TAG = InmobiATNativeAd.class.getSimpleName();
@@ -38,6 +42,20 @@ public class InmobiATNativeAd extends CustomNativeAd {
                 setMainImageUrl(mInMobiNative.getAdLandingPageUrl());
                 setStarRating((double) mInMobiNative.getAdRating());
 
+                mInMobiNative.setListener(new NativeAdEventListener() {
+                    @Override
+                    public void onAdImpressed(InMobiNative inMobiNative) {
+                        notifyAdImpression();
+                    }
+
+                    @Override
+                    public void onAdClicked(InMobiNative inMobiNative) {
+                        //TODO Test
+                        notifyAdClicked();
+                    }
+                });
+
+
                 if (mCustonNativeListener != null) {
                     mCustonNativeListener.onSuccess(InmobiATNativeAd.this);
                 }
@@ -52,7 +70,7 @@ public class InmobiATNativeAd extends CustomNativeAd {
             }
 
             public void onAdClicked(InMobiNative inMobiNative) {
-                notifyAdClicked();
+
             }
 
         });

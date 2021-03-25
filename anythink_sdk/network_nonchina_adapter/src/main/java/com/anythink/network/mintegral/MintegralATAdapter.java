@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.app.Activity;
@@ -6,30 +13,27 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.anythink.core.api.ATAdConst;
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
-import com.mintegral.msdk.MIntegralConstans;
-import com.mintegral.msdk.mtgbid.out.BidManager;
-import com.mintegral.msdk.out.AutoPlayMode;
-import com.mintegral.msdk.out.Campaign;
-import com.mintegral.msdk.out.CustomInfoManager;
-import com.mintegral.msdk.out.Frame;
-import com.mintegral.msdk.out.MTGMultiStateEnum;
-import com.mintegral.msdk.out.MTGNativeAdvancedHandler;
-import com.mintegral.msdk.out.MtgBidNativeHandler;
-import com.mintegral.msdk.out.MtgNativeHandler;
-import com.mintegral.msdk.out.NativeAdvancedAdListener;
-import com.mintegral.msdk.out.NativeListener;
+import com.mbridge.msdk.MBridgeConstans;
+import com.mbridge.msdk.mbbid.out.BidManager;
+import com.mbridge.msdk.out.AutoPlayMode;
+import com.mbridge.msdk.out.Campaign;
+import com.mbridge.msdk.out.CustomInfoManager;
+import com.mbridge.msdk.out.Frame;
+import com.mbridge.msdk.out.MBBidNativeHandler;
+import com.mbridge.msdk.out.MBConfiguration;
+import com.mbridge.msdk.out.MBMultiStateEnum;
+import com.mbridge.msdk.out.MBNativeAdvancedHandler;
+import com.mbridge.msdk.out.MBNativeHandler;
+import com.mbridge.msdk.out.NativeAdvancedAdListener;
+import com.mbridge.msdk.out.NativeListener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
-/**
- * @author zhou
- * @date 2018/1/17
- */
 
 public class MintegralATAdapter extends CustomNativeAdapter {
 
@@ -109,7 +113,7 @@ public class MintegralATAdapter extends CustomNativeAdapter {
         int requestNum = 1;
         try {
             if (serverExtras != null) {
-                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+                requestNum = Integer.parseInt(serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -181,14 +185,14 @@ public class MintegralATAdapter extends CustomNativeAdapter {
     }
 
     private void loadExpressAd(final Context context, final String placementId, final String unitId) {
-        final MTGNativeAdvancedHandler mtgNativeAdvancedHandler = new MTGNativeAdvancedHandler((Activity) context, placementId, unitId);
+        final MBNativeAdvancedHandler mtgNativeAdvancedHandler = new MBNativeAdvancedHandler((Activity) context, placementId, unitId);
         if (!TextUtils.isEmpty(videoMuted)) {
             switch (videoMuted) {
                 case "0":
-                    mtgNativeAdvancedHandler.setPlayMuteState(MIntegralConstans.REWARD_VIDEO_PLAY_MUTE);
+                    mtgNativeAdvancedHandler.setPlayMuteState(MBridgeConstans.REWARD_VIDEO_PLAY_MUTE);
                     break;
                 case "1":
-                    mtgNativeAdvancedHandler.setPlayMuteState(MIntegralConstans.REWARD_VIDEO_PLAY_NOT_MUTE);
+                    mtgNativeAdvancedHandler.setPlayMuteState(MBridgeConstans.REWARD_VIDEO_PLAY_NOT_MUTE);
                     break;
             }
         }
@@ -210,10 +214,10 @@ public class MintegralATAdapter extends CustomNativeAdapter {
         if (!TextUtils.isEmpty(closeButton)) {
             switch (closeButton) {
                 case "0":
-                    mtgNativeAdvancedHandler.setCloseButtonState(MTGMultiStateEnum.positive);
+                    mtgNativeAdvancedHandler.setCloseButtonState(MBMultiStateEnum.positive);
                     break;
                 case "1":
-                    mtgNativeAdvancedHandler.setCloseButtonState(MTGMultiStateEnum.negative);
+                    mtgNativeAdvancedHandler.setCloseButtonState(MBMultiStateEnum.negative);
                     break;
             }
         }
@@ -288,22 +292,22 @@ public class MintegralATAdapter extends CustomNativeAdapter {
 
 
     private void loadAd(final Context context, final int adnum, final String placementId, final String unitId, boolean supportVideo, final boolean isAutoPlay) {
-        Map<String, Object> properties = MtgNativeHandler
+        Map<String, Object> properties = MBNativeHandler
                 .getNativeProperties(placementId, unitId);
 
-        properties.put(MIntegralConstans.PROPERTIES_AD_NUM, adnum);
-        properties.put(MIntegralConstans.PROPERTIES_LAYOUT_TYPE,
-                MIntegralConstans.LAYOUT_NATIVE);
+        properties.put(MBridgeConstans.PROPERTIES_AD_NUM, adnum);
+        properties.put(MBridgeConstans.PROPERTIES_LAYOUT_TYPE,
+                MBridgeConstans.LAYOUT_NATIVE);
 //        properties.put(MIntegralConstans.PLACEMENT_ID, placementId);
 //        //MV 广告位 ID 必传
 //        properties.put(MIntegralConstans.PROPERTIES_UNIT_ID, unitId);
 
         //设置是否支持视频
-        properties.put(MIntegralConstans.NATIVE_VIDEO_SUPPORT, supportVideo);
+        properties.put(MBridgeConstans.NATIVE_VIDEO_SUPPORT, supportVideo);
 
 
-        MtgNativeHandler mvNativeHandler = null;
-        MtgBidNativeHandler mtgBidNativeHandler = null;
+        MBNativeHandler mvNativeHandler = null;
+        MBBidNativeHandler mtgBidNativeHandler = null;
 
         if (TextUtils.isEmpty(mPayload)) {
             try {
@@ -311,18 +315,18 @@ public class MintegralATAdapter extends CustomNativeAdapter {
             } catch (Throwable e) {
             }
 
-            mvNativeHandler = new MtgNativeHandler(properties, context.getApplicationContext());
+            mvNativeHandler = new MBNativeHandler(properties, context.getApplicationContext());
         } else {
             try {
                 CustomInfoManager.getInstance().setCustomInfo(unitId, CustomInfoManager.TYPE_BIDLOAD, mCustomData);
             } catch (Throwable e) {
             }
 
-            mtgBidNativeHandler = new MtgBidNativeHandler(properties, context.getApplicationContext());
+            mtgBidNativeHandler = new MBBidNativeHandler(properties, context.getApplicationContext());
         }
 
-        final MtgNativeHandler finalMvNativeHandler = mvNativeHandler;
-        final MtgBidNativeHandler finalMtgBidNativeHandler = mtgBidNativeHandler;
+        final MBNativeHandler finalMvNativeHandler = mvNativeHandler;
+        final MBBidNativeHandler finalMtgBidNativeHandler = mtgBidNativeHandler;
         NativeListener.NativeAdListener listener = new NativeListener.NativeAdListener() {
 
             @Override
@@ -407,7 +411,7 @@ public class MintegralATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

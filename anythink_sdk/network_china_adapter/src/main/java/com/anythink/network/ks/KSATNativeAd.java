@@ -8,12 +8,14 @@
 package com.anythink.network.ks;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.anythink.nativead.api.NativeAdInteractionType;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.kwad.sdk.api.KsAdVideoPlayConfig;
 import com.kwad.sdk.api.KsAppDownloadListener;
@@ -48,6 +50,8 @@ public class KSATNativeAd extends CustomNativeAd {
         setStarRating((double) ksNativeAd.getAppScore());
         setDescriptionText(ksNativeAd.getAdDescription());
         List<KsImage> imageList = ksNativeAd.getImageList();
+        setNativeInteractionType(ksNativeAd.getInteractionType() == KsNativeAd.InteractionType.DOWNLOAD ? NativeAdInteractionType.APP_TYPE : NativeAdInteractionType.UNKNOW);
+
         ArrayList<String> imageStringList = new ArrayList<>();
 
         if (imageList != null && imageList.size() > 0) {
@@ -113,7 +117,12 @@ public class KSATNativeAd extends CustomNativeAd {
 
             @Override
             public void onAdShow(KsNativeAd ksNativeAd) {
+                notifyAdImpression();
+            }
 
+            @Override
+            public boolean handleDownloadDialog(DialogInterface.OnClickListener onClickListener) {
+                return false;
             }
         });
 

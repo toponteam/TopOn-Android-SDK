@@ -8,37 +8,32 @@
 package com.anythink.nativead.api;
 
 import android.content.Context;
+import android.text.TextUtils;
+import android.util.Log;
 
+import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.PlacementAdManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.nativead.bussiness.AdLoadManager;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2017/12/28.
- */
 
 public class ATNative {
+    private final String TAG = ATNative.class.getSimpleName();
     Context mContext;
     String mPlacementId;
     ATNativeNetworkListener mListener;
 
-    Map<String, Object> mLocalMap;
 
     AdLoadManager mAdLoadManager;
 
     ATNativeOpenSetting mOpenSetting = new ATNativeOpenSetting();
-
-    @Deprecated
-    public static final String KEY_WIDTH = "key_width";
-    @Deprecated
-    public static final String KEY_HEIGHT = "key_height";
-
 
     /**
      * Init
@@ -88,15 +83,6 @@ public class ATNative {
         }
     };
 
-
-    @Deprecated
-    public void makeAdRequest(Map<String, String> customMap) {
-
-        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_NATIVE, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
-
-        mAdLoadManager.startLoadAd(mContext, mSelfListener);
-    }
-
     /**
      * Ad Request
      */
@@ -122,12 +108,39 @@ public class ATNative {
      */
     public NativeAd getNativeAd() {
 
-        AdCacheInfo adCacheInfo = mAdLoadManager.showNativeAd();
+        AdCacheInfo adCacheInfo = mAdLoadManager.showNativeAd("");
         if (adCacheInfo != null) {
             NativeAd nativeAd = new NativeAd(mContext, mPlacementId, adCacheInfo);
             return nativeAd;
         }
         return null;
+    }
+
+    public NativeAd getNativeAd(String scenario) {
+        String realScenario = "";
+        if (CommonSDKUtil.isVailScenario(scenario)) {
+            realScenario = scenario;
+        }
+        AdCacheInfo adCacheInfo = mAdLoadManager.showNativeAd(realScenario);
+        if (adCacheInfo != null) {
+            NativeAd nativeAd = new NativeAd(mContext, mPlacementId, adCacheInfo);
+            return nativeAd;
+        }
+        return null;
+    }
+
+    public ATAdStatusInfo checkAdStatus() {
+        if (SDKContext.getInstance().getContext() == null
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
+            Log.e(TAG, "SDK init error!");
+            return new ATAdStatusInfo(false, false, null);
+        }
+
+        ATAdStatusInfo adStatusInfo = mAdLoadManager.checkAdStatus(mContext);
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_NATIVE, Const.LOGKEY.API_AD_STATUS, adStatusInfo.toString(), "");
+
+        return adStatusInfo;
     }
 
 

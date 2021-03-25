@@ -15,6 +15,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,17 +30,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-
 import com.anythink.basead.BaseAdConst;
-import com.anythink.basead.adx.manager.AdxApkManager;
 import com.anythink.basead.buiness.OfferAdFunctionUtil;
+import com.anythink.basead.buiness.OfferClickResultManager;
 import com.anythink.basead.buiness.OfferUrlHandler;
 import com.anythink.basead.entity.AdActivityStartParams;
+import com.anythink.basead.entity.OfferClickResult;
 import com.anythink.basead.ui.util.WebViews;
 import com.anythink.core.common.base.SDKContext;
-import com.anythink.core.common.entity.AdxOffer;
 import com.anythink.core.common.entity.BaseAdContent;
-import com.anythink.core.common.entity.BaseAdSetting;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.core.common.utils.CommonUtil;
 
 import java.lang.reflect.Method;
@@ -67,25 +67,25 @@ public class WebLandPageActivity extends Activity {
         Intent intent = new Intent();
         intent.setClass(context, WebLandPageActivity.class);
 
-        intent.putExtra(BaseAdConst.AcitvityParamsKey.EXTRA_REQUEST_ID, adActivityStartParams.requestId);
         intent.putExtra(BaseAdConst.AcitvityParamsKey.EXTRA_BASE_AD, adActivityStartParams.baseAdContent);
-        intent.putExtra(BaseAdConst.AcitvityParamsKey.EXTRA_BASEAD_SETTING, adActivityStartParams.baseAdSetting);
+        intent.putExtra(BaseAdConst.AcitvityParamsKey.EXTRA_BASE_REQUEST_INFO, adActivityStartParams.baseAdRequestInfo);
+        intent.putExtra(BaseAdConst.AcitvityParamsKey.EXTRA_TARGET_URL, adActivityStartParams.targetUrl);
 
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
 
-    private String mRequestId;
     private BaseAdContent mBaseAdContent;
-    private BaseAdSetting mBaseAdSetting;
+    private BaseAdRequestInfo mBaseAdRequestInfo;
+    private String mUrl;
 
     private void parseExtra() {
         Intent intent = getIntent();
         try {
             if (intent != null) {
-                mRequestId = intent.getStringExtra(BaseAdConst.AcitvityParamsKey.EXTRA_REQUEST_ID);
                 mBaseAdContent = (BaseAdContent) intent.getSerializableExtra(BaseAdConst.AcitvityParamsKey.EXTRA_BASE_AD);
-                mBaseAdSetting = (BaseAdSetting) intent.getSerializableExtra(BaseAdConst.AcitvityParamsKey.EXTRA_BASEAD_SETTING);
+                mBaseAdRequestInfo = (BaseAdRequestInfo) intent.getSerializableExtra(BaseAdConst.AcitvityParamsKey.EXTRA_BASE_REQUEST_INFO);
+                mUrl = intent.getStringExtra(BaseAdConst.AcitvityParamsKey.EXTRA_TARGET_URL);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -115,7 +115,7 @@ public class WebLandPageActivity extends Activity {
 
         parseExtra();
 
-        if (mBaseAdContent == null || mBaseAdSetting == null) {
+        if (mBaseAdContent == null || mBaseAdRequestInfo == null) {
             finish();
             return;
         }
@@ -199,7 +199,12 @@ public class WebLandPageActivity extends Activity {
             }
         }
 
-        mWebView.loadUrl(mBaseAdContent.getClickUrl());
+        if (TextUtils.isEmpty(mUrl)) {
+            mWebView.loadUrl(mBaseAdContent.getClickUrl());
+        } else {
+            mWebView.loadUrl(mUrl);
+        }
+
 
         mWebView.setWebViewClient(new BrowserWebViewClient(this));
 
@@ -207,23 +212,24 @@ public class WebLandPageActivity extends Activity {
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                 if (url.contains(".apk")) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mBaseAdContent instanceof AdxOffer) {
-                                AdxApkManager.getInstance(getApplicationContext()).registerAdxApkBroadcastReceiver();
-                                AdxApkManager.getInstance(getApplicationContext()).register(mBaseAdContent.getOfferId(), ((AdxOffer) mBaseAdContent));
-                            }
-
-                            OfferAdFunctionUtil.startDownloadApp(getApplicationContext(), mRequestId, mBaseAdSetting, mBaseAdContent, url);
-                        }
-                    });
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+                    if (!OfferAdFunctionUtil.startDownloadApp(getApplicationContext(), mBaseAdRequestInfo, mBaseAdContent, getOfferClickResult(), url)) {
+                        OfferUrlHandler.openBrowserUrl(WebLandPageActivity.this, url);
+                    }
+//                        }
+//                    });
                 } else {
                     OfferUrlHandler.openBrowserUrl(WebLandPageActivity.this, url);
                 }
 
             }
         });
+    }
+
+    private OfferClickResult getOfferClickResult() {
+        return OfferClickResultManager.getInstance().getOfferClickResult(mBaseAdContent.getOfferSourceType(), mBaseAdContent.getOfferId());
     }
 
     private void initializeButtons() {
@@ -313,7 +319,9 @@ public class WebLandPageActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mWebView.destroy();
+        if (mWebView != null) {
+            mWebView.destroy();
+        }
         mWebView = null;
     }
 

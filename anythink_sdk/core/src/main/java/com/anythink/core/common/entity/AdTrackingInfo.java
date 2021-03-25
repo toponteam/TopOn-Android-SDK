@@ -17,10 +17,6 @@ import org.json.JSONObject;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/1/10.
- */
-
 public class AdTrackingInfo extends TrackerInfo {
 
 
@@ -41,7 +37,7 @@ public class AdTrackingInfo extends TrackerInfo {
 
     private int mGroupId;
 
-    private int mNetworkType; //Mediation type
+    protected int mNetworkType; //Mediation type
     private String mSourceType; //Source type: image or video
     private String mNetworkContent; //AdSource placement info
     private int mHourlyFrequency; //Hourly impression
@@ -67,7 +63,7 @@ public class AdTrackingInfo extends TrackerInfo {
     public String mShowCurrentRequestId; //Current RequestId
 
     int mBidType; //Bid type
-    double mBidPrice; //Bid price
+    protected double mBidPrice; //Bid price
     String mBidId; //Bid Id（Payload）
 
     public int mMyOfferShowType;//1:Default MyOffer，0：Normal MyOffer
@@ -85,6 +81,10 @@ public class AdTrackingInfo extends TrackerInfo {
 
     private String mCountry;
     private String mCurrency;
+    //5.7.9
+    private double mAccountExchangeRate;
+    private String mAccountCurrency;
+    private double mAccountEcpm;
 
     private ATRewardInfo mPlacementRewardInfo;
 
@@ -100,6 +100,33 @@ public class AdTrackingInfo extends TrackerInfo {
     private long mHBBidTimeout;
 
     private String mHandlClassName;
+
+    private long mShowTime;
+
+    public double getmAccountEcpm() {
+        return mAccountEcpm;
+    }
+
+    public void setmAccountEcpm(double mAccountEcpm) {
+        this.mAccountEcpm = mAccountEcpm;
+    }
+
+    public double getmAccountExchangeRate() {
+        return mAccountExchangeRate;
+    }
+
+    public void setmAccountExchangeRate(double mAccountExchangeRate) {
+        this.mAccountExchangeRate = mAccountExchangeRate;
+    }
+
+    public String getmAccountCurrency() {
+        return mAccountCurrency;
+    }
+
+    public void setmAccountCurrency(String mAccountCurrency) {
+        this.mAccountCurrency = mAccountCurrency;
+    }
+
 
     public String getmHandlClassName() {
         return mHandlClassName;
@@ -157,6 +184,7 @@ public class AdTrackingInfo extends TrackerInfo {
     public void setmNetworkPlacementId(String mNetworkPlacementId) {
         this.mNetworkPlacementId = mNetworkPlacementId;
     }
+
 
     public String getmShowId() {
         return mShowId;
@@ -680,5 +708,8 @@ public class AdTrackingInfo extends TrackerInfo {
         return jsonObject;
     }
 
+    protected JSONObject toBaseJSONObject(int trakcingType) {
+        return super.toJSONObject(trakcingType);
+    }
 
 }

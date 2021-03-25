@@ -1,9 +1,18 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.facebook;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.View;
 
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
+import com.anythink.core.api.MediationBidManager;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
 import com.facebook.ads.AdListener;
@@ -24,6 +33,7 @@ public class FacebookATBannerAdapter extends CustomBannerAdapter {
     AdView mBannerView;
 
     String size = "";
+    String mPayload;
 
     @Override
     public void loadCustomNetworkAd(final Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
@@ -42,6 +52,10 @@ public class FacebookATBannerAdapter extends CustomBannerAdapter {
 
         if (serverExtras.containsKey("size")) {
             size = serverExtras.get("size").toString();
+        }
+
+        if (serverExtras.containsKey("payload")) {
+            mPayload = serverExtras.get("payload").toString();
         }
 
 
@@ -94,7 +108,12 @@ public class FacebookATBannerAdapter extends CustomBannerAdapter {
                 adView = new AdView(activity, unitid, AdSize.BANNER_HEIGHT_50);
                 break;
         }
-        adView.loadAd(adView.buildLoadAdConfig().withAdListener(adListener).build());
+        if (TextUtils.isEmpty(mPayload)) {
+            adView.loadAd(adView.buildLoadAdConfig().withAdListener(adListener).build());
+        } else {
+            adView.loadAd(adView.buildLoadAdConfig().withBid(mPayload).withAdListener(adListener).build());
+        }
+
     }
 
     @Override
@@ -112,7 +131,7 @@ public class FacebookATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return FacebookATConst.getNetworkVersion();
+        return FacebookATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -128,6 +147,11 @@ public class FacebookATBannerAdapter extends CustomBannerAdapter {
     @Override
     public String getNetworkPlacementId() {
         return unitid;
+    }
+
+    @Override
+    public MediationBidManager getBidManager() {
+        return FacebookBidkitManager.getInstance();
     }
 
 }

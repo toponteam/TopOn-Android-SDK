@@ -3,7 +3,6 @@
  * https://www.toponad.com
  * Licensed under the TopOn SDK License Agreement
  * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
- *
  */
 
 package com.test.ad.demo;
@@ -17,14 +16,22 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATMediationRequestInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.splashad.api.ATSplashAd;
-import com.anythink.splashad.api.ATSplashAdListener;
+import com.anythink.splashad.api.ATSplashExListener;
 
-public class SplashAdShowActivity extends Activity implements ATSplashAdListener {
+import java.util.HashMap;
+import java.util.Map;
+
+public class SplashAdShowActivity extends Activity implements ATSplashExListener {
+
+    private static final String TAG = SplashAdShowActivity.class.getSimpleName();
+
     ATSplashAd splashAd;
+    FrameLayout container;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,10 +39,9 @@ public class SplashAdShowActivity extends Activity implements ATSplashAdListener
 
         setContentView(R.layout.splash_ad_show);
 
-        String unitId = getIntent().getStringExtra("unitId");
-        FrameLayout container = findViewById(R.id.splash_ad_container);
+        String placementId = getIntent().getStringExtra("placementId");
+        container = findViewById(R.id.splash_ad_container);
         ViewGroup.LayoutParams layoutParams = container.getLayoutParams();
-
         Configuration cf = getResources().getConfiguration();
 
         int ori = cf.orientation;
@@ -43,7 +49,7 @@ public class SplashAdShowActivity extends Activity implements ATSplashAdListener
         /**You should set size to the layout param.**/
         if (ori == Configuration.ORIENTATION_LANDSCAPE) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            layoutParams.width = (int)(getResources().getDisplayMetrics().widthPixels * 0.9);
+            layoutParams.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
             layoutParams.height = getResources().getDisplayMetrics().heightPixels;
         } else if (ori == Configuration.ORIENTATION_PORTRAIT) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
@@ -55,51 +61,63 @@ public class SplashAdShowActivity extends Activity implements ATSplashAdListener
             layoutParams.height = (int) (getResources().getDisplayMetrics().heightPixels * 0.85);
         }
 
-
-
         ATMediationRequestInfo atMediationRequestInfo = null;
+
 //        atMediationRequestInfo = new MintegralATRequestInfo("100947", "ef13ef712aeb0f6eb3d698c4c08add96", "210169", "276803");
 //        atMediationRequestInfo.setAdSourceId("68188");
 
 //        atMediationRequestInfo = new AdmobATRequestInfo("ca-app-pub-9488501426181082~6354662111", "ca-app-pub-3940256099942544/1033173712", AdmobATRequestInfo.ORIENTATION_PORTRAIT);
 //        atMediationRequestInfo.setAdSourceId("145022");
-        splashAd = new ATSplashAd(this, container, unitId, atMediationRequestInfo, this);
+        splashAd = new ATSplashAd(this, placementId, atMediationRequestInfo, this, 5000);
+
+        Map<String, Object> localMap = new HashMap<>();
+        localMap.put(ATAdConst.KEY.AD_WIDTH, layoutParams.width);
+        localMap.put(ATAdConst.KEY.AD_HEIGHT, layoutParams.height);
+        splashAd.setLocalExtra(localMap);
+
+        if (splashAd.isAdReady()) {
+            Log.i(TAG, "SplashAd is ready to show.");
+            splashAd.show(this, container);
+        } else {
+            Log.i(TAG, "SplashAd isn't ready to show, start to request.");
+            splashAd.loadAd();
+        }
 
 
-        ATSplashAd.checkSplashDefaultConfigList(this, unitId, null);
+        ATSplashAd.checkSplashDefaultConfigList(this, placementId, null);
+    }
+
+    @Override
+    public void onDeeplinkCallback(ATAdInfo adInfo, boolean isSuccess) {
+        Log.i(TAG, "onDeeplinkCallback:" + adInfo.toString() + "--status:" + isSuccess);
     }
 
     @Override
     public void onAdLoaded() {
-        Log.i("SplashAdShowActivity", "onAdLoaded---------");
+        Log.i(TAG, "onAdLoaded---------");
+        splashAd.show(this, container);
     }
 
     @Override
     public void onNoAdError(AdError adError) {
-        Log.i("SplashAdShowActivity", "onNoAdError---------:" + adError.printStackTrace());
+        Log.i(TAG, "onNoAdError---------:" + adError.getFullErrorInfo());
         jumpToMainActivity();
     }
 
     @Override
     public void onAdShow(ATAdInfo entity) {
-        Log.i("SplashAdShowActivity", "onAdShow:\n" + entity.toString());
+        Log.i(TAG, "onAdShow:\n" + entity.toString());
     }
-
 
     @Override
     public void onAdClick(ATAdInfo entity) {
-        Log.i("SplashAdShowActivity", "onAdClick:\n" + entity.toString());
+        Log.i(TAG, "onAdClick:\n" + entity.toString());
     }
 
     @Override
     public void onAdDismiss(ATAdInfo entity) {
-        Log.i("SplashAdShowActivity", "onAdDismiss:\n" + entity.toString());
+        Log.i(TAG, "onAdDismiss:\n" + entity.toString());
         jumpToMainActivity();
-    }
-
-    @Override
-    public void onAdTick(long millisUtilFinished) {
-        Log.i("SplashAdShowActivity", "onAdTick---------：" + millisUtilFinished);
     }
 
     boolean hasHandleJump = false;

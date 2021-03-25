@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mopub;
 
 import android.content.Context;
@@ -6,18 +13,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.core.api.AdError;
-import com.anythink.core.api.ErrorCode;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.mopub.nativeads.BaseNativeAd;
-import com.mopub.nativeads.MediaLayout;
 import com.mopub.nativeads.MoPubAdRenderer;
 import com.mopub.nativeads.MoPubNative;
 import com.mopub.nativeads.NativeAd;
 import com.mopub.nativeads.NativeErrorCode;
 import com.mopub.nativeads.RequestParameters;
 import com.mopub.nativeads.StaticNativeAd;
-import com.mopub.nativeads.VideoNativeAd;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -105,11 +108,11 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
 
     @Override
     public View getAdMediaView(Object... object) {
-        if (mNativeAd != null && mNativeAd.getBaseNativeAd() instanceof VideoNativeAd) {
-            MediaLayout mMediaView = new MediaLayout(mContext);
-            ((VideoNativeAd) mNativeAd.getBaseNativeAd()).render(mMediaView); //渲染
-            return mMediaView;
-        }
+//        if (mNativeAd != null && mNativeAd.getBaseNativeAd() instanceof VideoNativeAd) {
+//            MediaLayout mMediaView = new MediaLayout(mContext);
+//            ((VideoNativeAd) mNativeAd.getBaseNativeAd()).render(mMediaView); //渲染
+//            return mMediaView;
+//        }
         return null;
     }
 
@@ -151,21 +154,21 @@ public class MopubATNativeAd extends CustomNativeAd implements MoPubNative.MoPub
             mAdSourceType = IMAGE_TYPE;
         }
 
-        if (nativeAd.getBaseNativeAd() instanceof VideoNativeAd) {
-            VideoNativeAd videoNativeAd = (VideoNativeAd) nativeAd.getBaseNativeAd();
-            setTitle(videoNativeAd.getTitle());
-            setDescriptionText(videoNativeAd.getText());
-            setIconImageUrl(videoNativeAd.getIconImageUrl());
-            setMainImageUrl(videoNativeAd.getMainImageUrl());
-            setVideoUrl(videoNativeAd.getVastVideo());
-            setCallToActionText(videoNativeAd.getCallToAction());
-
-            mAdSourceType = VIDEO_TYPE;
-        }
+//        if (nativeAd.getBaseNativeAd() instanceof VideoNativeAd) {
+//            VideoNativeAd videoNativeAd = (VideoNativeAd) nativeAd.getBaseNativeAd();
+//            setTitle(videoNativeAd.getTitle());
+//            setDescriptionText(videoNativeAd.getText());
+//            setIconImageUrl(videoNativeAd.getIconImageUrl());
+//            setMainImageUrl(videoNativeAd.getMainImageUrl());
+//            setVideoUrl(videoNativeAd.getVastVideo());
+//            setCallToActionText(videoNativeAd.getCallToAction());
+//
+//            mAdSourceType = VIDEO_TYPE;
+//        }
         mNativeAd.setMoPubNativeEventListener(new NativeAd.MoPubNativeEventListener() {
             @Override
             public void onImpression(View view) {
-
+                notifyAdImpression();
             }
 
             @Override

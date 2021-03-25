@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.flurry;
 
 import android.content.Context;
@@ -14,9 +21,6 @@ import com.flurry.android.ads.FlurryAdErrorType;
 
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/6/27.
- */
 
 public class FlurryATBannerAdapter extends CustomBannerAdapter {
     private static final String TAG = FlurryATBannerAdapter.class.getSimpleName();

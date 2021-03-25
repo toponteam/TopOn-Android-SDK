@@ -101,7 +101,7 @@ public class OnewayATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return OnewayATConst.getNetworkVersion();
+        return OnewayATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

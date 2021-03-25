@@ -60,7 +60,7 @@ public class PangleNativeAdapter extends CustomNativeAdapter {
 
         int requestNum = 1;
         try {
-            requestNum = Integer.parseInt(serverExtra.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+            requestNum = Integer.parseInt(serverExtra.get("request_ad_num").toString());
         } catch (Exception e) {
         }
 
@@ -81,8 +81,15 @@ public class PangleNativeAdapter extends CustomNativeAdapter {
         final int finalMediaSize = mediaSize;
         PangleInitManager.getInstance().initSDK(context, serverExtra, new PangleInitManager.InitCallback() {
             @Override
-            public void onFinish() {
+            public void onSuccess() {
                 startLoad(context, localExtra, finalRequestNum, finalMediaSize);
+            }
+
+            @Override
+            public void onError(String errorCode, String errorMsg) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
+                }
             }
         });
     }

@@ -49,7 +49,6 @@ public class AdLoadManager extends CommonAdManager<RewardedVideoLoadParams> {
             adLoadManager = new AdLoadManager(context, placementId);
             PlacementAdManager.getInstance().addAdManager(placementId, adLoadManager);
         }
-        adLoadManager.refreshContext(context);
         return (AdLoadManager) adLoadManager;
     }
 
@@ -99,7 +98,7 @@ public class AdLoadManager extends CommonAdManager<RewardedVideoLoadParams> {
 
                     AdTrackingManager.getInstance(mApplicationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo, timestamp);
 
-                    AdCacheManager.getInstance().saveShowTimeToDisk(mApplicationContext, adCacheInfo.getBaseAdapter(), adCacheInfo.isLast());
+                    AdCacheManager.getInstance().saveShowTimeToDisk(mApplicationContext, adCacheInfo);
 
 
                     final CustomRewardVideoAdapter customRewardVideoAdapter = ((CustomRewardVideoAdapter) adCacheInfo.getBaseAdapter());
@@ -155,7 +154,7 @@ public class AdLoadManager extends CommonAdManager<RewardedVideoLoadParams> {
     }
 
     @Override
-    public void onCallbacInternalError(RewardedVideoLoadParams formatLoadParams, String placementId, String requestId, AdError adError) {
+    public void onCallbackInternalError(RewardedVideoLoadParams formatLoadParams, String placementId, String requestId, AdError adError) {
         if (formatLoadParams.listener != null) {
             formatLoadParams.listener.onRewardedVideoAdFailed(adError);
         }

@@ -7,11 +7,10 @@
 
 package com.anythink.china.common.download;
 
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.anythink.china.api.ApkError;
-import com.anythink.china.api.ApkErrorCode;
 import com.anythink.china.common.download.task.TaskManager;
 import com.anythink.china.common.resource.FileUtils;
 import com.anythink.core.common.base.Const;
@@ -52,6 +51,7 @@ public abstract class ApkBaseLoader {
     private ApkRequest mApkRequest;
 
     protected String mURL;
+    protected String mUniqueID;
 
 
     protected boolean mIsStop;
@@ -73,6 +73,7 @@ public abstract class ApkBaseLoader {
     public ApkBaseLoader(ApkRequest apkRequest) {
         this.mApkRequest = apkRequest;
         this.mURL = apkRequest.url;
+        this.mUniqueID = apkRequest.uniqueID;
     }
 
     public void start(DownloadListener downloadListener) {
@@ -92,7 +93,9 @@ public abstract class ApkBaseLoader {
 
     protected long mStartPos;
     protected long downloadStartTime;
+    protected long downloadStartRealTime;
     protected long downloadEndTime;
+    protected long downloadEndRealTime;
     protected long downloadSize;
     protected long writeLength;
 
@@ -134,6 +137,7 @@ public abstract class ApkBaseLoader {
             private void doUrlConnect(String urlStr) {
 
                 downloadStartTime = System.currentTimeMillis();
+                downloadStartRealTime = SystemClock.elapsedRealtime();
 
                 HttpURLConnection httpConn = null;
                 try {
@@ -200,7 +204,7 @@ public abstract class ApkBaseLoader {
                         mDownloadListener.onStartBefore(mApkRequest, mStartPos, downloadSize);
                     }
 
-                    int status = writeToLocal(mURL, inputStream);
+                    int status = writeToLocal(mUniqueID, inputStream);
                     mStatus = status;
 
                     if (inputStream != null) {
@@ -208,7 +212,8 @@ public abstract class ApkBaseLoader {
                     }
 
                     downloadEndTime = System.currentTimeMillis();
-                    mApkRequest.downloadTime = downloadEndTime - downloadStartTime;
+                    downloadEndRealTime = SystemClock.elapsedRealtime();
+                    mApkRequest.downloadTime = downloadEndRealTime - downloadStartRealTime;
 
                     switch (status) {
                         case SUCCESS:
@@ -288,9 +293,9 @@ public abstract class ApkBaseLoader {
 
     }
 
-    private int writeToLocal(String url, InputStream inputStream) {
+    private int writeToLocal(String uniqueID, InputStream inputStream) {
 
-        String resourcePath = FileUtils.getResourcePath(url);
+        String resourcePath = FileUtils.getResourcePath(uniqueID);
         if (TextUtils.isEmpty(resourcePath)) {
             return FAIL;
         }
@@ -385,8 +390,8 @@ public abstract class ApkBaseLoader {
     }
 
     private void readLogFile() {
-        File logFile = new File(FileUtils.getResourcePath(mURL) + SUFFIX_LOG);
-        File tempFile = new File(FileUtils.getResourcePath(mURL) + SUFFIX_TEMP);
+        File logFile = new File(FileUtils.getResourcePath(mUniqueID) + SUFFIX_LOG);
+        File tempFile = new File(FileUtils.getResourcePath(mUniqueID) + SUFFIX_TEMP);
         if (!logFile.exists() || !tempFile.exists()) {
             try {
                 logFile.delete();

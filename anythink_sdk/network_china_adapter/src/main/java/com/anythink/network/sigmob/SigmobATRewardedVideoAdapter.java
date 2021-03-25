@@ -111,7 +111,7 @@ public class SigmobATRewardedVideoAdapter extends CustomRewardVideoAdapter imple
 
     @Override
     public String getNetworkSDKVersion() {
-        return SigmobATConst.getSDKVersion();
+        return SigmobATInitManager.getInstance().getNetworkVersion();
     }
 
 

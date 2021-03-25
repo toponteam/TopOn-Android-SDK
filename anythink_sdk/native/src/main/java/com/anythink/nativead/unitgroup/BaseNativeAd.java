@@ -7,13 +7,12 @@
 
 package com.anythink.nativead.unitgroup;
 
+import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.core.api.ATSDK;
-import com.anythink.core.common.base.Const;
-import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.api.ATNetworkConfirmInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.api.BaseAd;
 import com.anythink.core.common.utils.CommonLogUtil;
@@ -23,10 +22,6 @@ import org.json.JSONObject;
 
 import java.util.List;
 
-
-/**
- * Created by Z on 2018/1/8.
- */
 
 public abstract class BaseNativeAd extends BaseAd {
     private final static String TAG = BaseNativeAd.class.getSimpleName();
@@ -40,9 +35,9 @@ public abstract class BaseNativeAd extends BaseAd {
     public final int NETWORK_UNKNOW = -1;
 
     public interface NativeEventListener {
-//        void onAdImpressed();
+        void onAdImpressed();
 
-        void onAdClicked();
+        void onAdClicked(View childView);
 
         void onAdVideoStart();
 
@@ -51,6 +46,10 @@ public abstract class BaseNativeAd extends BaseAd {
         void onAdVideoProgress(int progress);
 
         void onAdDislikeButtonClick();
+
+        void onDeeplinkCallback(boolean isSuccess);
+
+        void onDownloadConfirmCallback(Context context, View clickView, ATNetworkConfirmInfo networkConfirmInfo);
     }
 
 
@@ -116,6 +115,8 @@ public abstract class BaseNativeAd extends BaseAd {
 
     public abstract void prepare(final View view, List<View> clickViewList, final FrameLayout.LayoutParams layoutParams);
 
+    public abstract void bindDislikeListener(View.OnClickListener onClickListener);
+
     /**
      * Your {@link BaseNativeAd} subclass should implement this method if the network requires the developer
      * to reset or clear state of the native ad after it goes off screen and before it is rendered
@@ -140,7 +141,17 @@ public abstract class BaseNativeAd extends BaseAd {
     public final void notifyAdClicked() {
         CommonLogUtil.d(TAG, "notifyAdClicked...");
         if (mNativeEventListener != null) {
-            mNativeEventListener.onAdClicked();
+            mNativeEventListener.onAdClicked(null);
+        }
+    }
+
+    /**
+     * Notifies the SDK that the user has impressoned the ad.
+     */
+    public final void notifyAdImpression() {
+        CommonLogUtil.d(TAG, "notifyAdImpression...");
+        if (mNativeEventListener != null) {
+            mNativeEventListener.onAdImpressed();
         }
     }
 
@@ -165,6 +176,16 @@ public abstract class BaseNativeAd extends BaseAd {
     }
 
     /**
+     * Notifies the SDK that the Ad Deeplink callback status.
+     */
+    public final void notifyDeeplinkCallback(boolean isSuccess) {
+        CommonLogUtil.d(TAG, "notifyDeeplinkCallback...");
+        if (mNativeEventListener != null) {
+            mNativeEventListener.onDeeplinkCallback(isSuccess);
+        }
+    }
+
+    /**
      * Notifies the SDK that the user the video progress.
      */
     public final void notifyAdVideoPlayProgress(int progress) {
@@ -183,6 +204,13 @@ public abstract class BaseNativeAd extends BaseAd {
         CommonLogUtil.d(TAG, "notifyAdDislikeClick...");
         if (mNativeEventListener != null) {
             mNativeEventListener.onAdDislikeButtonClick();
+        }
+    }
+
+    public final void notifyDownloadConfirm(Context context, View clickView, ATNetworkConfirmInfo atNetworkConfirmInfo) {
+        CommonLogUtil.d(TAG, "notifyDownloadConfirm...");
+        if (mNativeEventListener != null) {
+            mNativeEventListener.onDownloadConfirmCallback(context, clickView, atNetworkConfirmInfo);
         }
     }
 

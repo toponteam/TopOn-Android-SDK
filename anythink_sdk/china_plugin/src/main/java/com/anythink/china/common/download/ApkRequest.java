@@ -9,7 +9,6 @@ package com.anythink.china.common.download;
 
 import android.graphics.Bitmap;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ApkRequest {
     public String requestId;
@@ -21,6 +20,10 @@ public class ApkRequest {
     public long progress;
     public long apkSize;
     public long downloadTime;
+
+    public String clickId; //For Network Agent ClickId
+
+    public String uniqueID;//For download
 
     private volatile Status status = Status.IDLE;
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.nend;
 
 import android.app.Activity;
@@ -6,9 +13,11 @@ import android.content.Context;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 
 import net.nend.android.NendAdRewardItem;
-import net.nend.android.NendAdRewardedListener;
+import net.nend.android.NendAdRewardedActionListener;
 import net.nend.android.NendAdRewardedVideo;
 import net.nend.android.NendAdVideo;
+import net.nend.android.NendAdVideoPlayingState;
+import net.nend.android.NendAdVideoPlayingStateListener;
 
 import java.util.Map;
 
@@ -34,7 +43,7 @@ public class NendATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
         mNendAdRewardedVideo = new NendAdRewardedVideo(context.getApplicationContext(), mSpotId, mApiKey);
         mNendAdRewardedVideo.setUserId(mUserId);
-        mNendAdRewardedVideo.setAdListener(new NendAdRewardedListener() {
+        mNendAdRewardedVideo.setActionListener(new NendAdRewardedActionListener() {
             @Override
             public void onRewarded(NendAdVideo nendAdVideo, NendAdRewardItem nendAdRewardItem) {
                 if (mImpressionListener != null) {
@@ -44,6 +53,38 @@ public class NendATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
             @Override
             public void onLoaded(NendAdVideo nendAdVideo) {
+                switch (mNendAdRewardedVideo.getType()) {
+
+                    case NORMAL:
+                        NendAdVideoPlayingState state = mNendAdRewardedVideo.playingState();
+                        if (state != null) {
+                            state.setPlayingStateListener(new NendAdVideoPlayingStateListener() {
+                                @Override
+                                public void onStarted(NendAdVideo nendAdVideo) {
+                                    if (mImpressionListener != null) {
+                                        mImpressionListener.onRewardedVideoAdPlayStart();
+                                    }
+                                }
+
+                                @Override
+                                public void onStopped(NendAdVideo nendAdVideo) {
+                                    // 视频停止播放
+                                }
+
+                                @Override
+                                public void onCompleted(NendAdVideo nendAdVideo) {
+                                    if (mImpressionListener != null) {
+                                        mImpressionListener.onRewardedVideoAdPlayEnd();
+                                    }
+                                }
+                            });
+                        }
+                        break;
+                    case PLAYABLE:
+                    default:
+                        break;
+                }
+
                 if (mLoadListener != null) {
                     mLoadListener.onAdCacheLoaded();
                 }
@@ -72,25 +113,6 @@ public class NendATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             public void onClosed(NendAdVideo nendAdVideo) {
                 if (mImpressionListener != null) {
                     mImpressionListener.onRewardedVideoAdClosed();
-                }
-            }
-
-            @Override
-            public void onStarted(NendAdVideo nendAdVideo) {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart();
-                }
-            }
-
-            @Override
-            public void onStopped(NendAdVideo nendAdVideo) {
-
-            }
-
-            @Override
-            public void onCompleted(NendAdVideo nendAdVideo) {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd();
                 }
             }
 
@@ -135,7 +157,8 @@ public class NendATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public void destory() {
         if (mNendAdRewardedVideo != null) {
-            mNendAdRewardedVideo.setAdListener(null);
+            mNendAdRewardedVideo.setActionListener(null);
+            mNendAdRewardedVideo.releaseAd();
             mNendAdRewardedVideo = null;
         }
     }

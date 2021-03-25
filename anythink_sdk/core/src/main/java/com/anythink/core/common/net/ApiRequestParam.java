@@ -10,11 +10,10 @@ package com.anythink.core.common.net;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.api.IATChinaSDKHandler;
+import com.anythink.core.api.IExHandler;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.base.UploadDataLevelManager;
-import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonDeviceUtil;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
@@ -58,6 +57,16 @@ public class ApiRequestParam {
 
     public static final String JSON_REQUEST_FIRST_INIT_TIME = "first_init_time";
     public static final String JSON_REQUEST_DAYS_FROM_FIRST_INIT = "days_from_first_init";
+
+    /**
+     * 5.7.5
+     */
+    public static final String JSON_REQUEST_CUSTOM_SDK_CODE = "cs_cl";
+
+    /**
+     * 5.7.8
+     */
+    public static final String JSON_REQUEST_IS_OFM = "is_ofm";
 
 
     public static final String JSON_REQUEST_APPID = "app_id";
@@ -135,6 +144,14 @@ public class ApiRequestParam {
 
             deviceJSONObject.put(ApiRequestParam.JSON_REQUEST_GDPR_LEVEL, String.valueOf(UploadDataLevelManager.getInstance(context).getUploadDataLevel()));
 
+            if (Const.CUSTOM_SDK_CODE != 0) {
+                deviceJSONObject.put(JSON_REQUEST_CUSTOM_SDK_CODE, String.valueOf(Const.CUSTOM_SDK_CODE));
+            }
+
+            if (SDKContext.getInstance().getInitType() == SDKContext.OFM_INIT_TYPE) {
+                deviceJSONObject.put(JSON_REQUEST_IS_OFM, SDKContext.OFM_INIT_TYPE);
+            }
+
         } catch (Exception e) {
             if (Const.DEBUG) {
                 e.printStackTrace();
@@ -167,7 +184,7 @@ public class ApiRequestParam {
             }
             mainObject.put(JSON_REQUEST_ANDROID_ID, (isUpLoadAndroidId ? CommonDeviceUtil.getAndroidID(context) : ""));
             mainObject.put(JSON_REQUEST_COMMON_GAID, CommonDeviceUtil.getGoogleAdId());
-            IATChinaSDKHandler chinaSDKHandler = SDKContext.getInstance().getChinaHandler();
+            IExHandler chinaSDKHandler = SDKContext.getInstance().getExHandler();
             if (chinaSDKHandler != null) {
                 chinaSDKHandler.fillRequestData(mainObject, appStrategy);
                 mainObject.put("is_cn_sdk", "1");

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 import android.content.Context;
@@ -126,13 +133,6 @@ public class GoogleAdATBannerAdapter extends CustomBannerAdapter {
             }
 
             @Override
-            public void onAdOpened() {
-                if (mImpressionEventListener != null) {
-                    mImpressionEventListener.onBannerAdShow();
-                }
-            }
-
-            @Override
             public void onAdLeftApplication() {
                 if (mImpressionEventListener != null) {
                     mImpressionEventListener.onBannerAdClicked();
@@ -168,7 +168,7 @@ public class GoogleAdATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdmobATConst.getNetworkVersion();
+        return AdMobATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -191,4 +191,8 @@ public class GoogleAdATBannerAdapter extends CustomBannerAdapter {
         return (int) (pxValue / (scale <= 0 ? 1 : scale) + 0.5f);
     }
 
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
+    }
 }

@@ -1,11 +1,17 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.fyber;
 
 import android.content.Context;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
+import com.anythink.core.common.base.Const;
 import com.fyber.inneractive.sdk.external.InneractiveAdManager;
 import com.fyber.inneractive.sdk.mraid.IAMraidKit;
 import com.fyber.inneractive.sdk.video.IAVideoKit;
@@ -44,9 +50,14 @@ public class FyberATInitManager extends ATInitMediation {
                 InneractiveAdManager.destroy();
             }
 
-//            if (ATSDK.isNetworkLogDebug()) {
-//                InneractiveAdManager.setLogLevel(Log.VERBOSE);
-//            }
+            try {
+                boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                if (ccpaSwitch) {
+                    InneractiveAdManager.setUSPrivacyString("1YNN");
+                }
+            } catch (Throwable e) {
+
+            }
             InneractiveAdManager.initialize(context.getApplicationContext(), app_id);
 
             mAppId = app_id;
@@ -107,5 +118,10 @@ public class FyberATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Fyber";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return FyberATConst.getNetworkVersion();
     }
 }

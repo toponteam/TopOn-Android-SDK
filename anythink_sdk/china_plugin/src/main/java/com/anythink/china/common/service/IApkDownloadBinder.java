@@ -9,9 +9,9 @@ package com.anythink.china.common.service;
 
 public interface IApkDownloadBinder {
 
-    void pause(String url);
+    void pause(String uniqueID);
 
-    void stop(String url);
+    void stop(String uniqueID);
 
     boolean canStopSelf();
 

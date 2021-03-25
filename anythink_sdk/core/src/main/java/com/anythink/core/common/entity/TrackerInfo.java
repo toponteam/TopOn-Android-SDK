@@ -12,6 +12,8 @@ import com.anythink.core.common.base.SDKContext;
 import org.json.JSONObject;
 
 public abstract class TrackerInfo {
+    public static final String OFM_TID_KEY = "ofm_tid_key";
+
     public static final int CAPPING_REASON = 1; //For showing
     public static final int PACCING_REASON = 2; //For showing
     public static final int LOADING_REASON = 3;
@@ -48,6 +50,38 @@ public abstract class TrackerInfo {
     public int mClickTkDelayMaxTime;
 
     protected String mNetworkName; //Mediation Name;
+
+    /**
+     * 5.7.8 - ofm
+     */
+    protected int systemId;
+    protected int tid;
+    protected int isOfm;
+
+    public void setIsOfm(int isOfm) {
+        this.isOfm = isOfm;
+    }
+
+    public int isOfm() {
+        return this.isOfm;
+    }
+
+
+    public int getSystemId() {
+        return systemId;
+    }
+
+    public void setSystemId(int systemId) {
+        this.systemId = systemId;
+    }
+
+    public int getTid() {
+        return tid;
+    }
+
+    public void setTid(int tid) {
+        this.tid = tid;
+    }
 
     public String getNetworkName() {
         return mNetworkName;
@@ -161,6 +195,12 @@ public abstract class TrackerInfo {
             jsonObject.put("ps_id", SDKContext.getInstance().getPsid());
             jsonObject.put("sessionid", SDKContext.getInstance().getSessionId(mPlacementId));
             jsonObject.put("traffic_group_id", mTrafficGroupId);
+            if (isOfm == 1) {
+                jsonObject.put("ofm_tid", tid);
+                jsonObject.put("ofm_system", systemId);
+            }
+            jsonObject.put("is_ofm", isOfm);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,10 +1,16 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.awesome;
 
 import android.app.Application;
 import android.content.Context;
 
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.base.AnyThinkBaseAdapter;
 import com.moat.analytics.mobile.sup.MoatAdEvent;
 
@@ -150,6 +156,11 @@ public class AwesomeATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Superawesome";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return AwesomeATConst.getNetworkVersion();
     }
 
     @Override

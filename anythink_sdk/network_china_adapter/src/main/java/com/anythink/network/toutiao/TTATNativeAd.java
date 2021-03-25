@@ -14,7 +14,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.anythink.nativead.api.NativeAdInteractionType;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
+import com.bytedance.sdk.openadsdk.TTAdDislike;
 import com.bytedance.sdk.openadsdk.TTDrawFeedAd;
 import com.bytedance.sdk.openadsdk.TTFeedAd;
 import com.bytedance.sdk.openadsdk.TTImage;
@@ -58,6 +60,8 @@ public class TTATNativeAd extends CustomNativeAd {
                 ((TTDrawFeedAd) mTTFeedAd).setPauseIcon(videoPlayBitmap, videoPlaySize);
             }
         }
+
+        setNativeInteractionType(mTTFeedAd.getInteractionType() == 4 ? NativeAdInteractionType.APP_TYPE : NativeAdInteractionType.UNKNOW);
 
         if (mTTFeedAd instanceof TTFeedAd) {
             ((TTFeedAd) mTTFeedAd).setVideoAdListener(new TTFeedAd.VideoAdListener() {
@@ -128,18 +132,20 @@ public class TTATNativeAd extends CustomNativeAd {
 
             @Override
             public void onAdShow(TTNativeAd ttNativeAd) {
-
+                notifyAdImpression();
             }
         });
 
-        if(view.getContext() instanceof Activity) {
+        if (view.getContext() instanceof Activity) {
             mTTFeedAd.setActivityForDownloadApp(((Activity) view.getContext()));
+
+            bindDislike(((Activity) view.getContext()));
         }
 
     }
 
     @Override
-    public void prepare(View view, List<View> clickViewList, FrameLayout.LayoutParams layoutParams) {
+    public void prepare(final View view, List<View> clickViewList, FrameLayout.LayoutParams layoutParams) {
         mTTFeedAd.registerViewForInteraction((ViewGroup) view, clickViewList, clickViewList, new TTNativeAd.AdInteractionListener() {
             @Override
             public void onAdClicked(View view, TTNativeAd ttNativeAd) {
@@ -153,12 +159,53 @@ public class TTATNativeAd extends CustomNativeAd {
 
             @Override
             public void onAdShow(TTNativeAd ttNativeAd) {
-
+                notifyAdImpression();
             }
         });
-        if(view.getContext() instanceof Activity) {
+        if (view.getContext() instanceof Activity) {
             mTTFeedAd.setActivityForDownloadApp(((Activity) view.getContext()));
+
+            bindDislike(((Activity) view.getContext()));
         }
+    }
+
+    private void bindDislike(final Activity activity) {
+
+        bindDislikeListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mTTFeedAd == null) {
+                    return;
+                }
+
+                TTAdDislike dislikeDialog = mTTFeedAd.getDislikeDialog(activity);
+                dislikeDialog.setDislikeInteractionCallback(new TTAdDislike.DislikeInteractionCallback() {
+                    @Override
+                    public void onShow() {
+
+                    }
+
+                    @Override
+                    public void onSelected(int i, String s) {
+                        notifyAdDislikeClick();
+                    }
+
+                    @Override
+                    public void onCancel() {
+
+                    }
+
+                    @Override
+                    public void onRefuse() {
+
+                    }
+                });
+                if (!dislikeDialog.isShow()) {
+                    dislikeDialog.showDislikeDialog();
+                }
+            }
+        });
+
     }
 
     @Override

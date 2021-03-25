@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.ironsource;
 
 import android.app.Activity;
@@ -8,6 +15,7 @@ import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
 import com.anythink.core.common.base.AnyThinkBaseAdapter;
+import com.anythink.core.common.base.Const;
 import com.ironsource.mediationsdk.IronSource;
 import com.ironsource.mediationsdk.logger.IronSourceError;
 import com.ironsource.mediationsdk.sdk.ISDemandOnlyInterstitialListener;
@@ -169,6 +177,15 @@ public class IronsourceATInitManager extends ATInitMediation {
         }
         if (TextUtils.isEmpty(mAppKey) || !TextUtils.equals(mAppKey, appkey)) {
 
+            try {
+                boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                if (ccpaSwitch) {
+                    IronSource.setMetaData("do_not_sell", "true");
+                }
+            } catch (Throwable e) {
+
+            }
+
             IronSource.setISDemandOnlyInterstitialListener(isDemandOnlyInterstitialListener);
             IronSource.setISDemandOnlyRewardedVideoListener(isDemandOnlyRewardedVideoListener);
 
@@ -237,6 +254,11 @@ public class IronsourceATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Ironsource";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return IronsourceATConst.getNetworkVersion();
     }
 
     @Override

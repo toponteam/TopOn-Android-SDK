@@ -58,7 +58,7 @@ class OnewayATNativeAd extends CustomNativeAd {
             iFeedAd.handleAdEvent(((ViewGroup) view), new OWFeedAdEventListener() {
                 @Override
                 public void onExposured(IFeedAd iFeedAd) {
-
+                    notifyAdImpression();
                 }
 
                 @Override

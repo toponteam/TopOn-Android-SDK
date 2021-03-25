@@ -3,11 +3,11 @@ apply plugin: 'com.android.application'
 
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "com.superapp.filemanager"
         minSdkVersion 19
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
         multiDexEnabled = true
@@ -40,7 +40,22 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.browser:browser:1.0.0'
+
+    //Mopub
+    implementation 'androidx.media2:media2-session:1.0.1'
+    implementation 'androidx.media2:media2-widget:1.0.1'
+    implementation 'androidx.media2:media2-player:1.0.1'
+    implementation 'androidx.core:core-ktx:1.1.0'
+    implementation 'org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.61'
+
+    //Nend
+    implementation ('androidx.preference:preference:1.1.1') {
+        exclude module: 'recyclerview'
+    }
 //    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+
+    //Mintegral
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.12.2'
 
     implementation project(':anythink:core')
     implementation project(':anythink:banner')
@@ -63,7 +78,7 @@ task initReleaseType {
         def properties = new Properties()
         properties.load(new FileReader(rootDir.absolutePath + '/../anythink_sdk/package.properties'))
         properties.setProperty("sdk_release_type", "1")
-        properties.setProperty("china_plugin_class", "com.anythink.china.api.ATChinaSDKHandler")
+        properties.setProperty("china_plugin_class", "com.anythink.pd.ExHandler")
         properties.store(new FileOutputStream(rootDir.absolutePath + '/../anythink_sdk/package.properties'), "Do NOT commit this file, just an build modification !")
     }
 }

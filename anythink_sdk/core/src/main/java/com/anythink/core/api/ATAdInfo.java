@@ -54,6 +54,8 @@ public class ATAdInfo {
     private String mChannel;
     private Map<String, Object> mCustomRule;
 
+    private Map<String, Object> mExtInfoMap;
+
     public ATAdInfo() {
         this.mNetworkFirmId = -1;
         this.mAdsourceId = "";
@@ -84,14 +86,6 @@ public class ATAdInfo {
     }
 
 
-    /**
-     * Use {@link #getNetworkFirmId()} method instead of this method. This method works temporarily and will be removed in the future
-     */
-    @Deprecated
-    public int getNetworkType() {
-        return mNetworkFirmId;
-    }
-
     public int getNetworkFirmId() {
         return mNetworkFirmId;
     }
@@ -100,30 +94,14 @@ public class ATAdInfo {
         return mAdsourceId;
     }
 
-    /**
-     * Use {@link #getAdsourceIndex()} ()} method instead of this method. This method works temporarily and will be removed in the future
-     */
-    @Deprecated
-    public int getLevel() {
-        return mAdsourceIndex;
-    }
-
     public int getAdsourceIndex() {
         return mAdsourceIndex;
     }
-
 
     public double getEcpm() {
         return mEcpm;
     }
 
-    /**
-     * Use {@link #isHeaderBiddingAdsource()} ()} method instead of this method. This method works temporarily and will be removed in the future
-     */
-    @Deprecated
-    public boolean isHBAdsource() {
-        return mIsHBAdsource == 1;
-    }
 
     /**
      * @return 1：HeaderBidding<p>
@@ -197,22 +175,6 @@ public class ATAdInfo {
         return mScenarioRewardNumber;
     }
 
-    /**
-     * Use {@link #getScenarioRewardName()} ()} method instead of this method. This method returns an empty string and will be removed in the future
-     */
-    @Deprecated
-    public String getPlacementRewardName() {
-        return "";
-    }
-
-    /**
-     * Use {@link #getScenarioRewardNumber()} ()} method instead of this method. This method returns 0 and will be removed in the future
-     */
-    @Deprecated
-    public int getPlacementRewardNumber() {
-        return 0;
-    }
-
     public String getSubChannel() {
         return mSubChannel;
     }
@@ -229,16 +191,40 @@ public class ATAdInfo {
         }
     }
 
+    public Map<String, Object> getExtInfoMap() {
+        return mExtInfoMap;
+    }
+
+    public String getRewardUserCustomData() {
+        if (mBaseAdapter != null) {
+            return mBaseAdapter.getUserCustomData();
+        }
+        return "";
+    }
+
     public static ATAdInfo fromAdapter(AnyThinkBaseAdapter adapter) {
         if (adapter != null) {
             ATAdInfo atAdInfo = fromAdTrackingInfo(adapter.getTrackingInfo());
             if (adapter instanceof ATBaseAdAdapter) {
                 atAdInfo.mBaseAdapter = (ATBaseAdAdapter) adapter;
+                atAdInfo.mExtInfoMap = atAdInfo.mBaseAdapter.getNetworkInfoMap();
             }
+
+
             return atAdInfo;
         }
         return new ATAdInfo();
     }
+
+    public static ATAdInfo fromBaseAd(BaseAd baseAd) {
+        if (baseAd != null) {
+            ATAdInfo atAdInfo = fromAdTrackingInfo(baseAd.getDetail());
+            atAdInfo.mExtInfoMap = baseAd.getNetworkInfoMap();
+            return atAdInfo;
+        }
+        return new ATAdInfo();
+    }
+
 
     public static ATAdInfo fromAdTrackingInfo(AdTrackingInfo trackingInfo) {
         ATAdInfo entity = new ATAdInfo();
@@ -252,13 +238,21 @@ public class ATAdInfo {
         entity.mNetworkFirmId = trackingInfo.getmNetworkType();          // Mediation type
         entity.mAdsourceId = trackingInfo.getmUnitGroupUnitId();       // Adsource id
         entity.mAdsourceIndex = trackingInfo.getImpressionLevel();              //AdSource impression Level
-        entity.mEcpm = trackingInfo.getmBidPrice();                    //Adsource ecpm
+
         entity.mIsHBAdsource = trackingInfo.getmBidType();        //AdSource type, 1: headbidding, 0: non-headbidding
+
+        if (entity.mIsHBAdsource == 1) {
+            entity.mEcpm = trackingInfo.getmBidPrice() * trackingInfo.getmAccountExchangeRate();                    //Adsource ecpm
+        } else {
+            entity.mEcpm = trackingInfo.getmAccountEcpm();
+        }
+
+        entity.mCurrency = trackingInfo.getmAccountCurrency();
 
 
         entity.mShowId = trackingInfo.getmShowId();
         entity.mPublisherRevenue = entity.mEcpm / 1000;
-        entity.mCurrency = trackingInfo.getmCurrency();
+
         entity.mCountry = trackingInfo.getmCountry();
 
         entity.mTopOnAdFormat = CommonSDKUtil.getFormatString(trackingInfo.getmAdType());
@@ -311,13 +305,6 @@ public class ATAdInfo {
         return entity;
     }
 
-    /**
-     * Use {@link #toString()} method instead of this method. This method returns an empty string and will be removed in the future
-     */
-    @Deprecated
-    public String printInfo() {
-        return "";
-    }
 
     @Override
     public String toString() {
@@ -361,6 +348,15 @@ public class ATAdInfo {
             jsonObject.put("adsource_index", mAdsourceIndex);
             jsonObject.put("adsource_price", mEcpm);
             jsonObject.put("adsource_isheaderbidding", mIsHBAdsource);
+
+            if (mExtInfoMap != null && mExtInfoMap.size() > 0) {
+                jsonObject.put("ext_info", new JSONObject(mExtInfoMap));
+            }
+
+            if (mBaseAdapter != null) {
+                jsonObject.put("reward_custom_data", mBaseAdapter.getUserCustomData());
+            }
+
         } catch (Throwable e) {
             e.printStackTrace();
         }

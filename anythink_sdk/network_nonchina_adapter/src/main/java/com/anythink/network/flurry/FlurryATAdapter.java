@@ -1,8 +1,16 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.flurry;
 
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 
@@ -10,9 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by Z on 2018/1/18.
- */
 
 public class FlurryATAdapter extends CustomNativeAdapter {
 
@@ -50,7 +55,7 @@ public class FlurryATAdapter extends CustomNativeAdapter {
         int requestNum = 1;
         try {
             if (serverExtras != null) {
-                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+                requestNum = Integer.parseInt(serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
             }
         } catch (Exception e) {
             e.printStackTrace();

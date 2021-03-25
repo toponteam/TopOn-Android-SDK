@@ -12,10 +12,11 @@ import android.view.View;
 
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
 import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.listeners.AdListener;
+import com.anythink.basead.listeners.AdEventListener;
+import com.anythink.basead.listeners.AdLoadListener;
 import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.MyOfferRequestInfo;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.basead.myoffer.MyOfferBannerAd;
 
 import java.util.Map;
@@ -27,13 +28,13 @@ public class MyOfferATBannerAdapter extends CustomBannerAdapter {
     private View mBannerView;
 
     private boolean isDefaultOffer = false; //用于判断兜底offer的
-    MyOfferRequestInfo mMyOfferRequestInfo;
+    BaseAdRequestInfo mMyOfferRequestInfo;
 
     @Override
     public View getBannerView() {
         if (mBannerView == null) {
             if (mMyOfferBannerAd != null && mMyOfferBannerAd.isReady()) {
-                mBannerView = mMyOfferBannerAd.getBannerView(getTrackingInfo().getmRequestId());
+                mBannerView = mMyOfferBannerAd.getBannerView();
             }
         }
         return mBannerView;
@@ -44,18 +45,13 @@ public class MyOfferATBannerAdapter extends CustomBannerAdapter {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
-            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (BaseAdRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
         }
 
         initBannerAdObject(context);
 
-        mMyOfferBannerAd.load();
-    }
-
-    private void initBannerAdObject(Context context) {
-        mMyOfferBannerAd = new MyOfferBannerAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, isDefaultOffer);
-        mMyOfferBannerAd.setListener(new AdListener() {
+        mMyOfferBannerAd.load(new AdLoadListener() {
             @Override
             public void onAdDataLoaded() {
 
@@ -63,7 +59,7 @@ public class MyOfferATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onAdCacheLoaded() {
-                mBannerView = mMyOfferBannerAd.getBannerView(getTrackingInfo().getmRequestId());
+                mBannerView = mMyOfferBannerAd.getBannerView();
 
                 if (mLoadListener != null) {
                     if (mBannerView != null) {
@@ -80,6 +76,12 @@ public class MyOfferATBannerAdapter extends CustomBannerAdapter {
                     mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
                 }
             }
+        });
+    }
+
+    private void initBannerAdObject(Context context) {
+        mMyOfferBannerAd = new MyOfferBannerAd(context, mMyOfferRequestInfo, offer_id, isDefaultOffer);
+        mMyOfferBannerAd.setListener(new AdEventListener() {
 
             @Override
             public void onAdShow() {
@@ -101,6 +103,11 @@ public class MyOfferATBannerAdapter extends CustomBannerAdapter {
                     mImpressionEventListener.onBannerAdClicked();
                 }
             }
+
+            @Override
+            public void onDeeplinkCallback(boolean isSuccess) {
+
+            }
         });
     }
 
@@ -110,8 +117,8 @@ public class MyOfferATBannerAdapter extends CustomBannerAdapter {
             offer_id = serverExtras.get("my_oid").toString();
         }
 
-        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
-            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (BaseAdRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
         }
 
         if (serverExtras.containsKey(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG)) {

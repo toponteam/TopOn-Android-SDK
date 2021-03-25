@@ -15,7 +15,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Looper;
-import android.provider.Settings;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -745,7 +744,9 @@ public class CommonDeviceUtil {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 userAgent = WebSettings.getDefaultUserAgent(context);
             } else {
-                userAgent = new WebView(context).getSettings().getUserAgentString();
+                WebView webView = new WebView(context);
+                CommonSDKUtil.configSafeWebView(webView);
+                userAgent = webView.getSettings().getUserAgentString();
             }
             //更新一下UA
             SPUtil.putString(context, Const.SPU_NAME, Const.SPU_LOCAL_USERAGENT, userAgent);
@@ -798,7 +799,7 @@ public class CommonDeviceUtil {
             return "";
         }
 
-        if (SDKContext.getInstance().getChinaHandler() != null) {
+        if (SDKContext.getInstance().getExHandler() != null) {
             return "";
         }
 

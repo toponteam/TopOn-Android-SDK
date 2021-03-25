@@ -92,6 +92,10 @@ public class UniplayATBannerAdapter extends CustomBannerAdapter {
                 if (mLoadListener != null) {
                     mLoadListener.onAdCacheLoaded();
                 }
+
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
+                }
             }
 
             @Override

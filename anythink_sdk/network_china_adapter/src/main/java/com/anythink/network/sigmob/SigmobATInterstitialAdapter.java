@@ -13,18 +13,18 @@ import android.text.TextUtils;
 
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.sigmob.windad.WindAdError;
-import com.sigmob.windad.fullscreenvideo.WindFullScreenAdRequest;
-import com.sigmob.windad.fullscreenvideo.WindFullScreenVideoAd;
-import com.sigmob.windad.fullscreenvideo.WindFullScreenVideoAdListener;
+import com.sigmob.windad.interstitial.WindInterstitialAd;
+import com.sigmob.windad.interstitial.WindInterstitialAdListener;
+import com.sigmob.windad.interstitial.WindInterstitialAdRequest;
 import com.sigmob.windad.rewardedVideo.WindRewardAdRequest;
 import com.sigmob.windad.rewardedVideo.WindRewardedVideoAd;
 
 import java.util.Map;
 
-public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter implements WindFullScreenVideoAdListener {
+public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter implements WindInterstitialAdListener {
 
     private static final String TAG = SigmobATInterstitialAdapter.class.getSimpleName();
-    private WindFullScreenAdRequest windFullScreenAdRequest;
+    private WindInterstitialAdRequest windInterstitialAdRequest;
     private String mPlacementId = "";
 
     private WindRewardAdRequest windVideoAdRequest;
@@ -69,8 +69,8 @@ public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter imple
                                 windVideoAdRequest = new WindRewardAdRequest(mPlacementId, "", null);
                                 SigmobATInitManager.getInstance().loadRewardedVideo(mPlacementId, windVideoAdRequest, SigmobATInterstitialAdapter.this);
                             } else {
-                                windFullScreenAdRequest = new WindFullScreenAdRequest(mPlacementId, "", null);
-                                SigmobATInitManager.getInstance().loadInterstitial(mPlacementId, windFullScreenAdRequest, SigmobATInterstitialAdapter.this);
+                                windInterstitialAdRequest = new WindInterstitialAdRequest(mPlacementId, "", null);
+                                SigmobATInitManager.getInstance().loadInterstitial(mPlacementId, windInterstitialAdRequest, SigmobATInterstitialAdapter.this);
                             }
 
                         }
@@ -96,7 +96,7 @@ public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter imple
                 if (isUseRewardedVideoAsInterstital) {
                     WindRewardedVideoAd.sharedInstance().show(activity, windVideoAdRequest);
                 } else {
-                    WindFullScreenVideoAd.sharedInstance().show(activity, windFullScreenAdRequest);
+                    WindInterstitialAd.sharedInstance().show(activity, windInterstitialAdRequest);
                 }
 
             }
@@ -110,7 +110,7 @@ public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter imple
         if (isUseRewardedVideoAsInterstital) {
             return WindRewardedVideoAd.sharedInstance() != null && WindRewardedVideoAd.sharedInstance().isReady(mPlacementId);
         } else {
-            return WindFullScreenVideoAd.sharedInstance() != null && WindFullScreenVideoAd.sharedInstance().isReady(mPlacementId);
+            return WindInterstitialAd.sharedInstance() != null && WindInterstitialAd.sharedInstance().isReady(mPlacementId);
         }
     }
 
@@ -122,7 +122,7 @@ public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter imple
     @Override
     public void destory() {
         windVideoAdRequest = null;
-        windFullScreenAdRequest = null;
+        windInterstitialAdRequest = null;
     }
 
     @Override
@@ -132,11 +132,10 @@ public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter imple
 
     @Override
     public String getNetworkSDKVersion() {
-        return SigmobATConst.getSDKVersion();
+        return SigmobATInitManager.getInstance().getNetworkVersion();
     }
 
-    @Override
-    public void onFullScreenVideoAdLoadSuccess(String s) {
+    public void onInterstitialAdLoadSuccess(String s) {
         if (mLoadListener != null) {
             mLoadListener.onAdCacheLoaded();
         }
@@ -148,38 +147,32 @@ public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter imple
         }
     }
 
-    @Override
-    public void onFullScreenVideoAdPreLoadSuccess(String s) {
+    public void onInterstitialAdPreLoadSuccess(String s) {
     }
 
-    @Override
-    public void onFullScreenVideoAdPreLoadFail(String s) {
+    public void onInterstitialAdPreLoadFail(String s) {
     }
 
-    @Override
-    public void onFullScreenVideoAdPlayStart(String s) {
+    public void onInterstitialAdPlayStart(String s) {
         if (mImpressListener != null) {
             mImpressListener.onInterstitialAdShow();
             mImpressListener.onInterstitialAdVideoStart();
         }
     }
 
-    @Override
-    public void onFullScreenVideoAdPlayEnd(String s) {
+    public void onInterstitialAdPlayEnd(String s) {
         if (mImpressListener != null) {
             mImpressListener.onInterstitialAdVideoEnd();
         }
     }
 
-    @Override
-    public void onFullScreenVideoAdClicked(String s) {
+    public void onInterstitialAdClicked(String s) {
         if (mImpressListener != null) {
             mImpressListener.onInterstitialAdClicked();
         }
     }
 
-    @Override
-    public void onFullScreenVideoAdClosed(String s) {
+    public void onInterstitialAdClosed(String s) {
         if (mImpressListener != null) {
             mImpressListener.onInterstitialAdClose();
         }
@@ -187,15 +180,14 @@ public class SigmobATInterstitialAdapter extends CustomInterstitialAdapter imple
         SigmobATInitManager.getInstance().remove(getTrackingInfo().getmUnitGroupUnitId());
     }
 
-    @Override
-    public void onFullScreenVideoAdLoadError(WindAdError windAdError, String s) {
+    public void onInterstitialAdLoadError(WindAdError windAdError, String s) {
         if (mLoadListener != null) {
             mLoadListener.onAdLoadError("" + windAdError.getErrorCode(), windAdError.toString());
         }
     }
 
     @Override
-    public void onFullScreenVideoAdPlayError(WindAdError windAdError, String s) {
+    public void onInterstitialAdPlayError(WindAdError windAdError, String s) {
         if (mImpressListener != null) {
             mImpressListener.onInterstitialAdVideoError("" + windAdError.getErrorCode(), windAdError.toString());
         }

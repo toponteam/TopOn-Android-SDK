@@ -7,19 +7,17 @@
 
 package com.anythink.china.utils;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.china.api.ChinaDeviceDataInfo;
 import com.anythink.china.common.PermissionRequestManager;
-import com.anythink.china.oaid.OaidAidlUtil;
 import com.anythink.china.oaid.OaidCallback;
+import com.anythink.china.oaid.OaidObtainUtil;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.utils.SPUtil;
 
-import java.lang.reflect.Method;
 import java.util.regex.Pattern;
 
 public class ChinaDeviceUtils {
@@ -31,17 +29,15 @@ public class ChinaDeviceUtils {
 
     public static void initDeviceInfo(final Context context) {
         String spuOaid = SPUtil.getString(context, Const.SPU_NAME, "oaid", "");
+        oaid = spuOaid;
         if (TextUtils.isEmpty(oaid)) {
             if (!SDKContext.getInstance().containDeniedDeviceKey(ChinaDeviceDataInfo.OAID)) {
-                initOaid(context);
                 if (TextUtils.isEmpty(oaid)) {
-                    OaidAidlUtil oaidAidlUtil = new OaidAidlUtil(context);
-                    oaidAidlUtil.getOaid(new OaidCallback() {
-
+                    OaidObtainUtil.initOaidInfo(context, new OaidCallback() {
                         @Override
                         public void onSuccuss(String oaid, boolean isOaidTrackLimited) {
                             //check oaid status
-                            if (isInvailOaid(oaid)) {
+                            if (isInvalidOaid(oaid)) {
                                 return;
                             }
                             ChinaDeviceUtils.oaid = oaid;
@@ -55,8 +51,6 @@ public class ChinaDeviceUtils {
                     });
                 }
             }
-        } else {
-            oaid = spuOaid;
         }
 
         mac = MacUtils.getMac(context);
@@ -64,7 +58,7 @@ public class ChinaDeviceUtils {
 
     }
 
-    private static boolean isInvailOaid(String oaid) {
+    private static boolean isInvalidOaid(String oaid) {
         return Pattern.matches("^[0-]+$", oaid);
     }
 
@@ -90,73 +84,5 @@ public class ChinaDeviceUtils {
             return "";
         }
         return oaid;
-    }
-
-    public static String initOaid(Context context) {
-        if (!TextUtils.isEmpty(oaid)) {
-            return oaid;
-        }
-        try {
-            oaid = new a(context).b;
-            return oaid;
-        } catch (Throwable t) {
-            return "";
-        }
-    }
-
-    @SuppressLint({"PrivateApi"})
-    static final class a {
-        private static Object e;
-        private static Class<?> f;
-        private static Method g;
-        private static Method h;
-        private static Method i;
-        private static Method j;
-        final String a;
-        final String b;
-        final String c;
-        final String d;
-
-        static {
-            g = null;
-            h = null;
-            i = null;
-            j = null;
-            try {
-                f = Class.forName("com.android.id.impl.IdProviderImpl");
-                e = f.newInstance();
-                g = f.getMethod("getUDID", new Class[]{Context.class});
-                h = f.getMethod("getOAID", new Class[]{Context.class});
-                i = f.getMethod("getVAID", new Class[]{Context.class});
-                j = f.getMethod("getAAID", new Class[]{Context.class});
-            } catch (Throwable e) {
-
-            }
-        }
-
-        a(Context context) {
-            this.a = a(context, g);
-            this.b = a(context, h);
-            this.c = a(context, i);
-            this.d = a(context, j);
-        }
-
-        static boolean a() {
-            return (f == null || e == null) ? false : true;
-        }
-
-        private static String a(Context context, Method method) {
-            if (!(e == null || method == null)) {
-                try {
-                    Object invoke = method.invoke(e, new Object[]{context});
-                    if (invoke != null) {
-                        return (String) invoke;
-                    }
-                } catch (Throwable e) {
-
-                }
-            }
-            return null;
-        }
     }
 }

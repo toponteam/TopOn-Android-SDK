@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mopub;
 
 import android.content.Context;
@@ -55,9 +62,6 @@ public class MopubATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onBannerExpanded(MoPubView banner) {
-                if (mImpressionEventListener != null) {
-                    mImpressionEventListener.onBannerAdShow();
-                }
             }
 
             @Override
@@ -121,7 +125,7 @@ public class MopubATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MopubATConst.getNetworkVersion();
+        return MopubATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -137,5 +141,10 @@ public class MopubATBannerAdapter extends CustomBannerAdapter {
     @Override
     public String getNetworkPlacementId() {
         return adUnitId;
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 }

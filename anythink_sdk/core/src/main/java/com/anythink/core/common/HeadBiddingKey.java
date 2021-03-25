@@ -13,6 +13,7 @@ public class HeadBiddingKey {
     public final static String unitGroup_unitADCacheTime_key = "nw_cache_time";
 
     public final static String unitGroup_networkType_key = "nw_firm_id";
+    public final static String unitGroup_networkName_key = "nw_firm_name";
     public final static String unitGroup_capsByDay_key = "caps_d";
     public final static String unitGroup_capsByHour_key = "caps_h";
     public final static String unitGroup_content_key = "content";
@@ -35,6 +36,8 @@ public class HeadBiddingKey {
     public final static String unitGroup_precision = "precision";//ecpm precision
     public final static String unitGroup_request_fail_interval = "nx_req_time"; //request fail interval
     public final static String unitGroup_bid_fail_interval = "bid_fail_interval"; //bid fail interval
+    public final static String unitGroup_account_currency_ecpm = "cy_ecpm";
+    public final static String unitGroup_auto_ready_switch = "irrf_sw";
 
 
     //Delcare by AnyThink

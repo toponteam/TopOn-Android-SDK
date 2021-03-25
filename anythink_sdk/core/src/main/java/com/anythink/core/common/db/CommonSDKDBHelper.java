@@ -13,10 +13,6 @@ import android.database.sqlite.SQLiteDatabase;
 import com.anythink.core.common.base.Const;
 
 
-/**
- * SDK DB
- * Created by zhou on 2017/12/29.
- */
 
 public class CommonSDKDBHelper extends CommonAbsDBHelper {
 

@@ -24,9 +24,6 @@ import com.mintegral.msdk.out.OnMTGMediaViewListener;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/1/17.
- */
 
 public class MintegralATNativeAd extends CustomNativeAd {
     private final String TAG = MintegralATNativeAd.class.getSimpleName();
@@ -69,7 +66,7 @@ public class MintegralATNativeAd extends CustomNativeAd {
 
                 @Override
                 public void onLoggingImpression(int i) {
-
+                    notifyAdImpression();
                 }
             });
         } else {
@@ -96,7 +93,7 @@ public class MintegralATNativeAd extends CustomNativeAd {
 
                 @Override
                 public void onLoggingImpression(int i) {
-
+                    notifyAdImpression();
                 }
             });
         }

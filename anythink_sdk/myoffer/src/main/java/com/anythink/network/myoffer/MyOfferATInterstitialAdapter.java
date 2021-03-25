@@ -11,9 +11,10 @@ import android.app.Activity;
 import android.content.Context;
 
 import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.listeners.VideoAdListener;
+import com.anythink.basead.listeners.AdLoadListener;
+import com.anythink.basead.listeners.VideoAdEventListener;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.MyOfferRequestInfo;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.core.common.utils.CommonDeviceUtil;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.anythink.core.common.MyOfferAPIProxy;
@@ -29,7 +30,7 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
     private MyOfferInterstitialAd mMyOfferInterstitialAd;
     private boolean isDefaultOffer = false; //用于判断兜底offer的
 
-    MyOfferRequestInfo mMyOfferRequestInfo;
+    BaseAdRequestInfo mMyOfferRequestInfo;
 
     /**
      * @param context
@@ -41,39 +42,13 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
-            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (BaseAdRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
         }
 
         initInterstitialAdObject(context);
 
-        mMyOfferInterstitialAd.load();
-    }
-
-    private void initInterstitialAdObject(Context context) {
-        mMyOfferInterstitialAd = new MyOfferInterstitialAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, isDefaultOffer);
-        mMyOfferInterstitialAd.setListener(new VideoAdListener() {
-            @Override
-            public void onVideoAdPlayStart() {
-                if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoStart();
-                }
-            }
-
-            @Override
-            public void onVideoAdPlayEnd() {
-                if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoEnd();
-                }
-            }
-
-            @Override
-            public void onVideoShowFailed(OfferError error) {
-                if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdVideoError(error.getCode(), error.getDesc());
-                }
-            }
-
+        mMyOfferInterstitialAd.load(new AdLoadListener() {
             @Override
             public void onAdDataLoaded() {
 
@@ -92,33 +67,11 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
                     mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
                 }
             }
-
-            @Override
-            public void onAdShow() {
-                if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdShow();
-                }
-            }
-
-            @Override
-            public void onAdClosed() {
-                if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClose();
-                }
-            }
-
-            @Override
-            public void onAdClick() {
-                if (mImpressListener != null) {
-                    mImpressListener.onInterstitialAdClicked();
-                }
-            }
-
-            @Override
-            public void onRewarded() {
-
-            }
         });
+    }
+
+    private void initInterstitialAdObject(Context context) {
+        mMyOfferInterstitialAd = new MyOfferInterstitialAd(context, mMyOfferRequestInfo, offer_id, isDefaultOffer);
     }
 
     /**
@@ -132,8 +85,8 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
-            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (BaseAdRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
         }
         if (serverExtras.containsKey(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG)) {
             isDefaultOffer = (Boolean) serverExtras.get(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG);
@@ -153,6 +106,61 @@ public class MyOfferATInterstitialAdapter extends CustomInterstitialAdapter {
             extraMap.put(MyOfferBaseAd.EXTRA_REQUEST_ID, mMyOfferRequestInfo.requestId);
             extraMap.put(MyOfferBaseAd.EXTRA_SCENARIO, mScenario);
             extraMap.put(MyOfferBaseAd.EXTRA_ORIENTATION, orientation);
+
+            mMyOfferInterstitialAd.setListener(new VideoAdEventListener() {
+                @Override
+                public void onVideoAdPlayStart() {
+                    if (mImpressListener != null) {
+                        mImpressListener.onInterstitialAdVideoStart();
+                    }
+                }
+
+                @Override
+                public void onVideoAdPlayEnd() {
+                    if (mImpressListener != null) {
+                        mImpressListener.onInterstitialAdVideoEnd();
+                    }
+                }
+
+                @Override
+                public void onVideoShowFailed(OfferError error) {
+                    if (mImpressListener != null) {
+                        mImpressListener.onInterstitialAdVideoError(error.getCode(), error.getDesc());
+                    }
+                }
+
+                @Override
+                public void onAdShow() {
+                    if (mImpressListener != null) {
+                        mImpressListener.onInterstitialAdShow();
+                    }
+                }
+
+                @Override
+                public void onAdClosed() {
+                    if (mImpressListener != null) {
+                        mImpressListener.onInterstitialAdClose();
+                    }
+                }
+
+                @Override
+                public void onAdClick() {
+                    if (mImpressListener != null) {
+                        mImpressListener.onInterstitialAdClicked();
+                    }
+                }
+
+                @Override
+                public void onDeeplinkCallback(boolean isSuccess) {
+
+                }
+
+                @Override
+                public void onRewarded() {
+
+                }
+            });
+
             mMyOfferInterstitialAd.show(extraMap);
         }
     }

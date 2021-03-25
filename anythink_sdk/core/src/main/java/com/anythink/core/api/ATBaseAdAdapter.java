@@ -90,4 +90,21 @@ public abstract class ATBaseAdAdapter extends AnyThinkBaseAdapter {
     public String getBiddingToken(Context context) {
         return null;
     }
+
+    //Only for supporting Facebook Bidkit
+    public MediationBidManager getBidManager() {
+        return null;
+    }
+
+    public boolean supportImpressionCallback() {
+        return true;
+    }
+
+    public Map<String, Object> getNetworkInfoMap() {
+        return null;
+    }
+
+    public String getUserCustomData() {
+        return mUserData;
+    }
 }

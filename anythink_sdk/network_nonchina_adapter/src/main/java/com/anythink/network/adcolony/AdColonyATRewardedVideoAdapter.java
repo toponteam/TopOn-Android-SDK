@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.adcolony;
 
 import android.app.Activity;
@@ -59,19 +66,6 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         AdColonyAppOptions appOptions = AdColony.getAppOptions();
         /** Construct optional app options object to be sent with configure */
         appOptions.setUserID(mUserId);
-
-        /** Create and set a reward listener */
-        AdColony.setRewardListener(new AdColonyRewardListener() {
-            @Override
-            public void onReward(AdColonyReward reward) {
-                /** Query reward object for info here */
-                if (reward.success()) {
-                    if (mImpressionListener != null) {
-                        mImpressionListener.onReward();
-                    }
-                }
-            }
-        });
 
         /**
          * Set up listener for interstitial ad callbacks. You only need to implement the callbacks
@@ -152,6 +146,18 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public void show(Activity activity) {
         if (mAd != null && !mAd.isExpired()) {
+            /** Create and set a reward listener */
+            AdColonyATInitManager.getInstance().addRewardListener(mZoneId, new AdColonyRewardListener() {
+                @Override
+                public void onReward(AdColonyReward reward) {
+                    /** Query reward object for info here */
+                    if (reward.success()) {
+                        if (mImpressionListener != null) {
+                            mImpressionListener.onReward();
+                        }
+                    }
+                }
+            });
             mAd.show();
         }
     }
@@ -175,7 +181,7 @@ public class AdColonyATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdColonyATConst.getNetworkVersion();
+        return AdColonyATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

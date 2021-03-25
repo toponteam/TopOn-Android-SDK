@@ -42,6 +42,11 @@ public class MyOfferSetting extends BaseAdSetting {
                 myOfferSetting.setBannerSize(jsonObject.optString("size"));
                 myOfferSetting.setIsShowCloseButton(jsonObject.optInt("cl_btn"));
 
+                //v5.7.9
+                myOfferSetting.setProbabilityForDelayShowCloseButtonInEndCard(jsonObject.optInt("ec_r"));
+                myOfferSetting.setMinDelayTimeWhenShowCloseButton(jsonObject.optInt("ec_s_t"));
+                myOfferSetting.setMaxDelayTimeWhenShowCloseButton(jsonObject.optInt("ec_l_t"));
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }

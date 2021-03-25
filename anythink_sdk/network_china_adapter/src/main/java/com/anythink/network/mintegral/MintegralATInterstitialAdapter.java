@@ -25,9 +25,6 @@ import com.mintegral.msdk.out.MTGInterstitialHandler;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
 
 
 public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
@@ -322,7 +319,7 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

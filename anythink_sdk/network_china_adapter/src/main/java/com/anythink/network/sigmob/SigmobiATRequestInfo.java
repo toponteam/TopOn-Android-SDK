@@ -8,7 +8,6 @@
 package com.anythink.network.sigmob;
 
 import com.anythink.core.api.ATMediationRequestInfo;
-import com.sigmob.windad.Adapter.SigmobSplashAdAdapter;
 
 import java.util.HashMap;
 import java.util.Map;

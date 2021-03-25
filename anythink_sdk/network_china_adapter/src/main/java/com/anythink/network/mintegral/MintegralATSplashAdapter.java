@@ -7,6 +7,7 @@
 
 package com.anythink.network.mintegral;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.text.TextUtils;
@@ -95,7 +96,7 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
             MintegralATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtra, new MintegralATInitManager.InitCallback() {
                 @Override
                 public void onSuccess() {
-                    startLoad(mContainer);
+                    startLoad();
                 }
 
                 @Override
@@ -113,9 +114,9 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
         }
     }
 
-    private void startLoad(final ViewGroup container) {
+    private void startLoad() {
         splashHandler = new MTGSplashHandler(placementId, unitId, allowSkip, countdown, orientation, 0, 0);
-        splashHandler.setLoadTimeOut(5);//unit: second
+        splashHandler.setLoadTimeOut(mFetchAdTimeout / 1000);//unit: second
         splashHandler.setSplashLoadListener(new MTGSplashLoadListener() {
             @Override
             public void onLoadSuccessed(int i) {
@@ -123,8 +124,6 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
                     if (mLoadListener != null) {
                         mLoadListener.onAdCacheLoaded();
                     }
-                    splashHandler.show(container);
-
                 } else {
                     if (mLoadListener != null) {
                         mLoadListener.onAdLoadError("", "Mintegral Splash Ad is not ready.");
@@ -179,6 +178,18 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
     }
 
     @Override
+    public boolean isAdReady() {
+        return splashHandler != null && splashHandler.isReady();
+    }
+
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+        if (splashHandler != null) {
+            splashHandler.show(container);
+        }
+    }
+
+    @Override
     public String getNetworkName() {
         return MintegralATInitManager.getInstance().getNetworkName();
     }
@@ -198,6 +209,6 @@ public class MintegralATSplashAdapter extends CustomSplashAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 }

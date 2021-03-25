@@ -7,8 +7,8 @@
 
 package com.anythink.basead.ui;
 
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Typeface;
 import android.text.TextUtils;
 import android.util.TypedValue;
@@ -20,13 +20,12 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.anythink.basead.ui.util.ViewUtil;
 import com.anythink.core.common.entity.BaseAdContent;
-import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.BaseAdSetting;
 import com.anythink.core.common.res.ImageLoader;
 import com.anythink.core.common.res.ResourceEntry;
 import com.anythink.core.common.utils.CommonUtil;
-
-import java.lang.reflect.Type;
 
 public class BannerView extends RelativeLayout {
 
@@ -40,16 +39,17 @@ public class BannerView extends RelativeLayout {
     private OnBannerListener mListener;
 
     private int mOrientation;
+    private BaseAdSetting mBaseAdSetting;
 
-    public BannerView(ViewGroup container, BaseAdContent myOfferAd, int orientation, OnBannerListener listener) {
+    public BannerView(ViewGroup container, BaseAdContent baseAdContent, BaseAdSetting baseAdSetting, int orientation, OnBannerListener listener) {
         super(container.getContext());
         this.mListener = listener;
         mOrientation = orientation;
+        mBaseAdSetting = baseAdSetting;
 
         initView();
-        setDataFrom(myOfferAd);
+        setDataFrom(baseAdContent);
         setListener();
-        //添加布局
         attachTo(container);
     }
 
@@ -66,12 +66,12 @@ public class BannerView extends RelativeLayout {
         mIvLogo = mView.findViewById(CommonUtil.getResId(getContext(), "myoffer_iv_logo", "id"));
     }
 
-    private void setDataFrom(BaseAdContent myOfferAd) {
+    private void setDataFrom(BaseAdContent baseAdContent) {
 
         ViewGroup.LayoutParams lp;
         int width;
         int height;
-        final String iconUrl = myOfferAd.getIconUrl();//icon
+        final String iconUrl = baseAdContent.getIconUrl();//icon
         if (!TextUtils.isEmpty(iconUrl)) {
             lp = mIvIcon.getLayoutParams();
             width = lp.width;
@@ -92,7 +92,7 @@ public class BannerView extends RelativeLayout {
 
         }
 
-        final String logoUrl = myOfferAd.getAdChoiceUrl();//logo
+        final String logoUrl = baseAdContent.getAdChoiceUrl();//logo
         if (!TextUtils.isEmpty(logoUrl)) {
             lp = mIvLogo.getLayoutParams();
             width = lp.width;
@@ -112,19 +112,25 @@ public class BannerView extends RelativeLayout {
             });
         }
 
-        if (TextUtils.isEmpty(myOfferAd.getIconUrl())) {
+        if (TextUtils.isEmpty(baseAdContent.getIconUrl())) {
             mIvIcon.setVisibility(GONE);
         }
 //
-        if (TextUtils.isEmpty(myOfferAd.getDesc())) {
+        if (TextUtils.isEmpty(baseAdContent.getDesc())) {
             mTvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
             mTvTitle.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
             mTvDesc.setVisibility(GONE);
         }
 
-        mTvTitle.setText(myOfferAd.getTitle());
-        mTvDesc.setText(myOfferAd.getDesc());
-        mBtnCTA.setText(myOfferAd.getCtaText());
+        mTvTitle.setText(baseAdContent.getTitle());
+        mTvDesc.setText(baseAdContent.getDesc());
+
+        if (!TextUtils.isEmpty(baseAdContent.getCtaText())) {
+            mBtnCTA.setVisibility(View.VISIBLE);
+            mBtnCTA.setText(baseAdContent.getCtaText());
+        } else {
+            mBtnCTA.setVisibility(View.GONE);
+        }
     }
 
     private void attachTo(ViewGroup container) {
@@ -142,7 +148,7 @@ public class BannerView extends RelativeLayout {
 //            }
 //        }
 
-        RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(width, height);
+        LayoutParams rl = new LayoutParams(width, height);
         rl.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         rl.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         rl.leftMargin = margin;
@@ -152,23 +158,33 @@ public class BannerView extends RelativeLayout {
     }
 
     private void setListener() {
-        mBtnCTA.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mListener != null) {
-                    mListener.onClickCTA();
-                }
-            }
-        });
-        mView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mListener != null) {
-                    mListener.onClickBanner();
-                }
-            }
-        });
+        mIvIcon.setOnClickListener(mClickListener);
+        mTvTitle.setOnClickListener(mClickListener);
+        mTvDesc.setOnClickListener(mClickListener);
+        mBtnCTA.setOnClickListener(mClickListener);
+        mIvLogo.setOnClickListener(mClickListener);
+
+        mView.setOnClickListener(mClickListener);
     }
+
+    private final OnClickListener mClickListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (mBaseAdSetting != null) {
+                if (mBaseAdSetting.getEndCardClickArea() == 1) {// cta
+                     if (v == mBtnCTA) {
+                         if (mListener != null) {
+                             mListener.onClick();
+                         }
+                     }
+                 } else {//fullscreen or banner area
+                     if (mListener != null) {
+                         mListener.onClick();
+                     }
+                 }
+            }
+        }
+    };
 
     @Override
     protected void onDetachedFromWindow() {
@@ -176,9 +192,14 @@ public class BannerView extends RelativeLayout {
     }
 
     public interface OnBannerListener {
-        void onClickCTA();
-
-        void onClickBanner();
+        void onClick();
     }
 
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        int saveCount = canvas.saveLayer(0, 0, getWidth(), getHeight(), null, Canvas.ALL_SAVE_FLAG);
+        super.dispatchDraw(canvas);
+        ViewUtil.drawRadiusMask(canvas, getWidth(), getHeight(), CommonUtil.dip2px(getContext(), 7));
+        canvas.restoreToCount(saveCount);
+    }
 }

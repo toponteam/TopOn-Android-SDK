@@ -13,9 +13,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-/**
- * Created by Z on 2018/1/8.
- */
 
 public class ATNativeAdView extends FrameLayout {
     private static final String TAG = ATNativeAdView.class.getSimpleName();

@@ -14,8 +14,9 @@ import java.io.Serializable;
 import java.util.List;
 
 public abstract class BaseAdContent<T extends BaseAdSetting> implements Serializable {
-    protected static final int MYOFFER_TYPE = 1;
-    protected static final int ADX_TYPE = 2;
+    public static final int MYOFFER_TYPE = 1;
+    public static final int ADX_TYPE = 2;
+    public static final int ONLINEAPI_TYPE = 3;
 
     protected String offerId; //OfferId
     protected String creativeId; //Resource Id
@@ -32,8 +33,20 @@ public abstract class BaseAdContent<T extends BaseAdSetting> implements Serializ
     protected String clickUrl; //Click url
     protected String pkgName; //Package Name
 
-    protected int resourceType; //1:Video，2:Image
+    protected int unitType; //1:Video，2:Image
+    public static final int UNIT_TYPE_VIDEO = 1;
+    public static final int UNIT_TYPE_IMAGE = 2;
     protected int clickType; //ClickType：1：Market，2：Browser
+
+    protected int rating;//ad rating
+
+    protected String adLogoTitle;
+
+    /**
+     * Add by 5.7.7
+     */
+    protected int offerNetworkFirmId;
+    protected String jumpUrl;
 
 
     protected BaseAdContent() {
@@ -42,6 +55,22 @@ public abstract class BaseAdContent<T extends BaseAdSetting> implements Serializ
 
     public abstract List<String> getUrlList(T baseAdSetting);
 
+
+    public int getOfferFirmId() {
+        return offerNetworkFirmId;
+    }
+
+    public void setOfferFirmId(int offerNetworkFirmId) {
+        this.offerNetworkFirmId = offerNetworkFirmId;
+    }
+
+    public String getJumpUrl() {
+        return jumpUrl;
+    }
+
+    public void setJumpUrl(String jumpUrl) {
+        this.jumpUrl = jumpUrl;
+    }
 
     public final String getOfferId() {
         return offerId;
@@ -158,12 +187,12 @@ public abstract class BaseAdContent<T extends BaseAdSetting> implements Serializ
     }
 
 
-    public final int getResourceType() {
-        return resourceType;
+    public final int getUnitType() {
+        return unitType;
     }
 
-    public final void setResourceType(int resourceType) {
-        this.resourceType = resourceType;
+    public final void setUnitType(int unitType) {
+        this.unitType = unitType;
     }
 
     public int getClickType() {
@@ -174,8 +203,24 @@ public abstract class BaseAdContent<T extends BaseAdSetting> implements Serializ
         this.clickType = clickType;
     }
 
-    public boolean isVideo() {
+    public boolean hasVideoUrl() {
         return !TextUtils.isEmpty(videoUrl);
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
+    }
+
+    public String getAdLogoTitle() {
+        return adLogoTitle;
+    }
+
+    public void setAdLogoTitle(String adLogoTitle) {
+        this.adLogoTitle = adLogoTitle;
     }
 
     public abstract int getOfferSourceType();

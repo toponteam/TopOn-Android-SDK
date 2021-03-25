@@ -15,4 +15,5 @@ public interface CustomInterstitialEventListener {
     void onInterstitialAdVideoStart();
     void onInterstitialAdVideoEnd();
     void onInterstitialAdVideoError(String errorCode, String errorMsg);
+    void onDeeplinkCallback(boolean isSuccess);
 }

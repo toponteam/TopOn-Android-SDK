@@ -28,9 +28,6 @@ import org.json.JSONObject;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by Z on 2018/4/27.
- */
 
 public class UploadDataLevelManager {
 

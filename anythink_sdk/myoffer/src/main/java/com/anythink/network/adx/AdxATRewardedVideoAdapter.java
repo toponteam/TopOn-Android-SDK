@@ -10,13 +10,16 @@ package com.anythink.network.adx;
 import android.app.Activity;
 import android.content.Context;
 
-import com.anythink.basead.adx.AdxAdConfig;
-import com.anythink.basead.adx.AdxRewardVideoAd;
+import com.anythink.basead.BaseAdUtils;
+import com.anythink.basead.innerad.OwnBaseAd;
+import com.anythink.basead.innerad.OwnBaseAdConfig;
+import com.anythink.basead.innerad.OwnRewardVideoAd;
 import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.listeners.VideoAdListener;
+import com.anythink.basead.listeners.AdLoadListener;
+import com.anythink.basead.listeners.VideoAdEventListener;
 import com.anythink.basead.myoffer.MyOfferBaseAd;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.AdxRequestInfo;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.core.common.utils.CommonDeviceUtil;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 
@@ -25,8 +28,9 @@ import java.util.Map;
 
 public class AdxATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
-    AdxRequestInfo mAdxRequestInfo;
-    AdxRewardVideoAd mAdxRewardVideoAd;
+    BaseAdRequestInfo mAdxRequestInfo;
+    OwnRewardVideoAd mAdxRewardVideoAd;
+    Map<String, Object> mCustomMap;
 
     @Override
     public void show(Activity activity) {
@@ -34,51 +38,8 @@ public class AdxATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         Map<String, Object> extra = new HashMap<>(1);
         extra.put(MyOfferBaseAd.EXTRA_SCENARIO, mScenario);
         extra.put(MyOfferBaseAd.EXTRA_ORIENTATION, orientation);
-        if (mAdxRewardVideoAd != null) {
-            mAdxRewardVideoAd.show(extra);
-        }
-    }
 
-    @Override
-    public void loadCustomNetworkAd(Context context, final Map<String, Object> serverExtra, Map<String, Object> localExtra) {
-
-        initRewardedVideoAdObject(context, serverExtra);
-
-        mAdxRewardVideoAd.load();
-    }
-
-    @Override
-    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
-        initRewardedVideoAdObject(context, serverExtras);
-        return true;
-    }
-
-    private void initRewardedVideoAdObject(Context context, Map<String, Object> serverExtra) {
-        int videoMute = 0;
-        int showCloseButtonTime = -1;
-
-        if (serverExtra.containsKey("v_m")) {
-            Object v_m = serverExtra.get("v_m");
-            if (v_m != null) {
-                videoMute = Integer.parseInt(v_m.toString());
-            }
-        }
-
-        if (serverExtra.containsKey("s_c_t")) {
-            Object s_c_t = serverExtra.get("s_c_t");
-            if (s_c_t != null) {
-                showCloseButtonTime = Integer.parseInt(s_c_t.toString());
-            }
-        }
-
-        mAdxRequestInfo = (AdxRequestInfo) serverExtra.get(Const.NETWORK_REQUEST_PARAMS_KEY.ADX_PARAMS_KEY);
-        mAdxRewardVideoAd = new AdxRewardVideoAd(context, mAdxRequestInfo);
-        mAdxRewardVideoAd.setAdxAdConfig(new AdxAdConfig.Builder()
-                .isMute(videoMute)
-                .showCloseButtonTime(showCloseButtonTime)
-                .build()
-        );
-        mAdxRewardVideoAd.setListener(new VideoAdListener() {
+        mAdxRewardVideoAd.setListener(new VideoAdEventListener() {
             @Override
             public void onVideoAdPlayStart() {
                 if (mImpressionListener != null) {
@@ -107,26 +68,6 @@ public class AdxATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                 }
             }
 
-            @Override
-            public void onAdDataLoaded() {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdDataLoaded();
-                }
-            }
-
-            @Override
-            public void onAdCacheLoaded() {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdCacheLoaded();
-                }
-            }
-
-            @Override
-            public void onAdLoadFailed(OfferError error) {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
-                }
-            }
 
             @Override
             public void onAdShow() {
@@ -146,13 +87,88 @@ public class AdxATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                     mImpressionListener.onRewardedVideoAdPlayClicked();
                 }
             }
+
+            @Override
+            public void onDeeplinkCallback(boolean isSuccess) {
+                if (mImpressionListener != null) {
+                    mImpressionListener.onDeeplinkCallback(isSuccess);
+                }
+            }
         });
+
+        if (mAdxRewardVideoAd != null) {
+            mAdxRewardVideoAd.show(extra);
+        }
+    }
+
+    @Override
+    public void loadCustomNetworkAd(Context context, final Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+
+        initRewardedVideoAdObject(context, serverExtra);
+
+        mAdxRewardVideoAd.load(new AdLoadListener() {
+            @Override
+            public void onAdDataLoaded() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
+                }
+            }
+
+            @Override
+            public void onAdCacheLoaded() {
+                mCustomMap = BaseAdUtils.fillBaseAdCustomMap(mAdxRewardVideoAd);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
+                }
+            }
+
+            @Override
+            public void onAdLoadFailed(OfferError error) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
+                }
+            }
+        });
+    }
+
+    @Override
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
+        initRewardedVideoAdObject(context, serverExtras);
+        return true;
+    }
+
+    private void initRewardedVideoAdObject(Context context, Map<String, Object> serverExtra) {
+        int videoMute = 0;
+        int showCloseButtonTime = -1;
+
+        if (serverExtra.containsKey("v_m")) {
+            Object v_m = serverExtra.get("v_m");
+            if (v_m != null) {
+                videoMute = Integer.parseInt(v_m.toString());
+            }
+        }
+
+        if (serverExtra.containsKey("s_c_t")) {
+            Object s_c_t = serverExtra.get("s_c_t");
+            if (s_c_t != null) {
+                showCloseButtonTime = Integer.parseInt(s_c_t.toString());
+            }
+        }
+
+        mAdxRequestInfo = (BaseAdRequestInfo) serverExtra.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
+        mAdxRewardVideoAd = new OwnRewardVideoAd(context, OwnBaseAd.OFFER_TYPE.ADX_OFFER_REQUEST_TYPE, mAdxRequestInfo);
+        mAdxRewardVideoAd.setAdConfig(new OwnBaseAdConfig.Builder()
+                .isMute(videoMute)
+                .showCloseButtonTime(showCloseButtonTime)
+                .build()
+        );
+
     }
 
     @Override
     public void destory() {
         if (mAdxRewardVideoAd != null) {
-            mAdxRewardVideoAd.destory();
+            mAdxRewardVideoAd.destroy();
             mAdxRewardVideoAd = null;
         }
     }
@@ -175,8 +191,14 @@ public class AdxATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public boolean isAdReady() {
         if (mAdxRewardVideoAd != null) {
-            return mAdxRewardVideoAd.isReady();
+            mCustomMap = BaseAdUtils.fillBaseAdCustomMap(mAdxRewardVideoAd);
+            return mAdxRewardVideoAd.isAdReady();
         }
         return false;
+    }
+
+    @Override
+    public Map<String, Object> getNetworkInfoMap() {
+        return mCustomMap;
     }
 }

@@ -8,32 +8,40 @@
 package com.test.ad.demo;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATAdInfo;
+import com.anythink.core.api.ATNetworkConfirmInfo;
 import com.anythink.core.api.AdError;
+import com.anythink.core.common.utils.CommonUtil;
 import com.anythink.nativead.api.ATNative;
 import com.anythink.nativead.api.ATNativeAdView;
 import com.anythink.nativead.api.ATNativeDislikeListener;
-import com.anythink.nativead.api.ATNativeEventListener;
+import com.anythink.nativead.api.ATNativeEventExListener;
 import com.anythink.nativead.api.ATNativeNetworkListener;
 import com.anythink.nativead.api.NativeAd;
+import com.anythink.network.gdt.GDTDownloadFirmInfo;
+import com.test.ad.demo.gdt.DownloadApkConfirmDialogWebView;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class NativeAdActivity extends Activity {
 
-    private static String TAG = "NativeAdActivity";
+    private static final String TAG = NativeAdActivity.class.getSimpleName();
 
     String placementIds[] = new String[]{
             DemoApplicaion.mPlacementId_native_all
@@ -45,6 +53,8 @@ public class NativeAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_native_baidu
             , DemoApplicaion.mPlacementId_native_kuaishou
             , DemoApplicaion.mPlacementId_native_kuaishou_drawer
+            , DemoApplicaion.mPlacementId_native_adx
+            , DemoApplicaion.mPlacementId_native_online
             , DemoApplicaion.mPlacementId_native_myoffer
 
     };
@@ -59,6 +69,8 @@ public class NativeAdActivity extends Activity {
             "Baidu",
             "Kuaishou",
             "Kuaishou-draw",
+            "Adx",
+            "online",
             "MyOffer"
     };
 
@@ -66,7 +78,11 @@ public class NativeAdActivity extends Activity {
     ATNativeAdView anyThinkNativeAdView;
     NativeAd mNativeAd;
 
+    ImageView mCloseView;
+
     int mCurrentSelectIndex;
+
+    CheckBox mDownloadConfimCheckBox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +92,7 @@ public class NativeAdActivity extends Activity {
         setContentView(R.layout.activity_native);
 
         Spinner spinner = (Spinner) findViewById(R.id.native_spinner);
+        mDownloadConfimCheckBox = findViewById(R.id.download_listener_check);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(
                 NativeAdActivity.this, android.R.layout.simple_spinner_dropdown_item,
@@ -90,6 +107,12 @@ public class NativeAdActivity extends Activity {
                         parent.getItemAtPosition(position).toString(),
                         Toast.LENGTH_SHORT).show();
                 mCurrentSelectIndex = position;
+
+                if (unitGroupName[mCurrentSelectIndex] == "GDT") {
+                    mDownloadConfimCheckBox.setVisibility(View.VISIBLE);
+                } else {
+                    mDownloadConfimCheckBox.setVisibility(View.GONE);
+                }
             }
 
             @Override
@@ -97,12 +120,15 @@ public class NativeAdActivity extends Activity {
             }
         });
 
+        initCloseView();
+
         int padding = dip2px(10);
         final int containerHeight = dip2px(340);
         final int adViewWidth = getResources().getDisplayMetrics().widthPixels - 2 * padding;
         final int adViewHeight = containerHeight - 2 * padding;
 
         final NativeDemoRender anyThinkRender = new NativeDemoRender(this);
+        anyThinkRender.setCloseView(mCloseView);
 
         for (int i = 0; i < placementIds.length; i++) {
             atNatives[i] = new ATNative(this, placementIds[i], new ATNativeNetworkListener() {
@@ -115,33 +141,11 @@ public class NativeAdActivity extends Activity {
 
                 @Override
                 public void onNativeAdLoadFail(AdError adError) {
-                    Log.i(TAG, "onNativeAdLoadFail, " + adError.printStackTrace());
-                    Toast.makeText(NativeAdActivity.this, "load fail...：" + adError.printStackTrace(), Toast.LENGTH_LONG).show();
+                    Log.i(TAG, "onNativeAdLoadFail, " + adError.getFullErrorInfo());
+                    Toast.makeText(NativeAdActivity.this, "load fail...：" + adError.getFullErrorInfo(), Toast.LENGTH_LONG).show();
 
                 }
             });
-
-
-            Map<String, Object> localMap = new HashMap<>();
-
-            // since v5.6.4
-            localMap.put(ATAdConst.KEY.AD_WIDTH, adViewWidth);
-            localMap.put(ATAdConst.KEY.AD_HEIGHT, adViewHeight);
-
-            // since v5.6.2
-//            localMap.put(ATNative.KEY_WIDTH, adViewWidth);
-//            localMap.put(ATNative.KEY_HEIGHT, adViewHeight);
-//
-//            // before v5.6.2
-//            //Pangle
-//            localMap.put(TTATConst.NATIVE_AD_IMAGE_WIDTH, adViewWidth);
-//            localMap.put(TTATConst.NATIVE_AD_IMAGE_HEIGHT, adViewHeight);
-//            //Mintegral
-//            localMap.put(MintegralATConst.AUTO_RENDER_NATIVE_WIDTH, adViewWidth);
-//            localMap.put(MintegralATConst.AUTO_RENDER_NATIVE_HEIGHT, adViewHeight);
-            // before v5.6.2
-
-            atNatives[i].setLocalExtra(localMap);
 
             if (anyThinkNativeAdView == null) {
                 anyThinkNativeAdView = new ATNativeAdView(this);
@@ -153,9 +157,21 @@ public class NativeAdActivity extends Activity {
             @Override
             public void onClick(View view) {
 
-                if (anyThinkNativeAdView != null && anyThinkNativeAdView.getParent() == null) {
-                    ((FrameLayout) findViewById(R.id.ad_container)).addView(anyThinkNativeAdView, new FrameLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, containerHeight));
+                if (anyThinkNativeAdView != null) {
+                    anyThinkNativeAdView.removeAllViews();
+
+                    if (anyThinkNativeAdView.getParent() == null) {
+                        ((FrameLayout) findViewById(R.id.ad_container)).addView(anyThinkNativeAdView, new FrameLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, containerHeight));
+                    }
                 }
+
+                Map<String, Object> localMap = new HashMap<>();
+
+                // since v5.6.4
+                localMap.put(ATAdConst.KEY.AD_WIDTH, adViewWidth);
+                localMap.put(ATAdConst.KEY.AD_HEIGHT, adViewHeight);
+
+                atNatives[mCurrentSelectIndex].setLocalExtra(localMap);
 
                 atNatives[mCurrentSelectIndex].makeAdRequest();
             }
@@ -166,11 +182,26 @@ public class NativeAdActivity extends Activity {
             public void onClick(View view) {
                 NativeAd nativeAd = atNatives[mCurrentSelectIndex].getNativeAd();
                 if (nativeAd != null) {
+
+                    if (anyThinkNativeAdView != null) {
+                        anyThinkNativeAdView.removeAllViews();
+
+                        if (anyThinkNativeAdView.getParent() == null) {
+                            ((FrameLayout) findViewById(R.id.ad_container)).addView(anyThinkNativeAdView, new FrameLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, containerHeight));
+                        }
+                    }
+
                     if (mNativeAd != null) {
                         mNativeAd.destory();
                     }
                     mNativeAd = nativeAd;
-                    mNativeAd.setNativeEventListener(new ATNativeEventListener() {
+
+                    mNativeAd.setNativeEventListener(new ATNativeEventExListener() {
+                        @Override
+                        public void onDeeplinkCallback(ATNativeAdView view, ATAdInfo adInfo, boolean isSuccess) {
+                            Log.i(TAG, "onDeeplinkCallback:" + adInfo.toString() + "--status:" + isSuccess);
+                        }
+
                         @Override
                         public void onAdImpressed(ATNativeAdView view, ATAdInfo entity) {
                             Log.i(TAG, "native ad onAdImpressed:\n" + entity.toString());
@@ -178,6 +209,7 @@ public class NativeAdActivity extends Activity {
 
                         @Override
                         public void onAdClicked(ATNativeAdView view, ATAdInfo entity) {
+                            Log.i("ZSR", "onAdClicked....");
                             Log.i(TAG, "native ad onAdClicked:\n" + entity.toString());
                         }
 
@@ -202,14 +234,44 @@ public class NativeAdActivity extends Activity {
                             Log.i(TAG, "native ad onAdCloseButtonClick");
                             if (view.getParent() != null) {
                                 ((ViewGroup) view.getParent()).removeView(view);
+                                view.removeAllViews();
                             }
                         }
                     });
+
+                    if (mDownloadConfimCheckBox.isChecked()) {
+                        mNativeAd.setDownloadConfirmListener(new NativeAd.DownloadConfirmListener() {
+                            @Override
+                            public void onDownloadConfirm(Context context, ATAdInfo atAdInfo, View clickView, ATNetworkConfirmInfo networkConfirmInfo) {
+                                /**
+                                 * Only for GDT
+                                 */
+                                if (networkConfirmInfo instanceof GDTDownloadFirmInfo) {
+                                    if (clickView != null && anyThinkRender.getDownloadDirectViews().contains(clickView)) {
+                                        //You can try to get appinfo from  ((GDTDownloadFirmInfo) networkConfirmInfo).appInfoUrl
+                                        ((GDTDownloadFirmInfo) networkConfirmInfo).confirmCallBack.onConfirm();
+                                    } else {
+                                        //Open Dialog view
+                                        Log.i(TAG, "nonDownloadConfirm open confirm dialog");
+//                                    new DownloadApkConfirmDialog(context, DownloadConfirmHelper.getApkJsonInfoUrl(((GDTDownloadFirmInfo) networkConfirmInfo).appInfoUrl), ((GDTDownloadFirmInfo) networkConfirmInfo).confirmCallBack).show();
+                                        new DownloadApkConfirmDialogWebView(context, ((GDTDownloadFirmInfo) networkConfirmInfo).appInfoUrl, ((GDTDownloadFirmInfo) networkConfirmInfo).confirmCallBack).show();
+                                    }
+                                }
+                            }
+                        });
+                        anyThinkRender.setWhetherSettingDownloadConfirmListener(true);
+                    } else {
+                        anyThinkRender.setWhetherSettingDownloadConfirmListener(false);
+                    }
+
+
                     try {
                         mNativeAd.renderAdView(anyThinkNativeAdView, anyThinkRender);
                     } catch (Exception e) {
 
                     }
+
+                    anyThinkNativeAdView.addView(mCloseView);
 
                     anyThinkNativeAdView.setVisibility(View.VISIBLE);
                     mNativeAd.prepare(anyThinkNativeAdView, anyThinkRender.getClickView(), null);
@@ -222,8 +284,26 @@ public class NativeAdActivity extends Activity {
         });
         anyThinkNativeAdView.setPadding(padding, padding, padding, padding);
 
-        anyThinkNativeAdView.setVisibility(View.GONE);
-        ((FrameLayout) findViewById(R.id.ad_container)).addView(anyThinkNativeAdView, new FrameLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, containerHeight));
+    }
+
+    private void initCloseView() {
+        if (mCloseView == null) {
+            mCloseView = new ImageView(this);
+            mCloseView.setImageResource(R.drawable.ad_close);
+
+            int padding = CommonUtil.dip2px(this, 5);
+            mCloseView.setPadding(padding, padding, padding, padding);
+
+            int size = CommonUtil.dip2px(this, 30);
+            int margin = CommonUtil.dip2px(this, 2);
+
+            FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(size, size);
+            layoutParams.topMargin = margin;
+            layoutParams.rightMargin = margin;
+            layoutParams.gravity = Gravity.TOP | Gravity.RIGHT;
+
+            mCloseView.setLayoutParams(layoutParams);
+        }
     }
 
     @Override

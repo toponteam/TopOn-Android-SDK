@@ -10,6 +10,7 @@ package com.anythink.network.sigmob;
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
+import android.view.ViewGroup;
 
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 import com.sigmob.windad.Splash.WindSplashAD;
@@ -23,6 +24,7 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter {
 
     private static final String TAG = SigmobATSplashAdapter.class.getSimpleName();
     private String mPlacementId = "";
+    private WindSplashAD mWindSplashAD;
 
     @Override
     public String getNetworkName() {
@@ -30,7 +32,20 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter {
     }
 
     @Override
+    public boolean isAdReady() {
+        return mWindSplashAD != null && mWindSplashAD.isReady();
+    }
+
+    @Override
     public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Sigmob: context must be activity");
+            }
+            return;
+        }
+
         String appId = "";
         String appKey = "";
         if (serverExtra.containsKey("app_id")) {
@@ -53,25 +68,39 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter {
         SigmobATInitManager.getInstance().initSDK(context, serverExtra, new SigmobATInitManager.InitCallback() {
             @Override
             public void onFinish() {
+                startLoadAd((Activity) context);
+            }
+        });
+    }
+
+    private void startLoadAd(final Activity context) {
+        postOnMainThread(new Runnable() {
+            @Override
+            public void run() {
                 WindSplashAdRequest splashAdRequest = new WindSplashAdRequest(mPlacementId, "", null);
-                splashAdRequest.setFetchDelay(5);
+                splashAdRequest.setFetchDelay(mFetchAdTimeout / 1000);
                 splashAdRequest.setDisableAutoHideAd(true);
 
                 //show ad
-                new WindSplashAD((Activity) context, mContainer, splashAdRequest, new WindSplashADListener() {
+                mWindSplashAD = new WindSplashAD(context, splashAdRequest, new WindSplashADListener() {
+
                     @Override
-                    public void onSplashAdSuccessPresentScreen() {
-                        if (mLoadListener != null) {
-                            mLoadListener.onAdCacheLoaded();
-                        }
+                    public void onSplashAdSuccessPresent() {
                         if (mImpressionListener != null) {
                             mImpressionListener.onSplashAdShow();
+                        }
+                    }
+
+                    @Override
+                    public void onSplashAdSuccessLoad() {
+                        if (mLoadListener != null) {
+                            mLoadListener.onAdCacheLoaded();
                         }
 
                     }
 
                     @Override
-                    public void onSplashAdFailToPresent(WindAdError windAdError, String s) {
+                    public void onSplashAdFailToLoad(WindAdError windAdError, String s) {
                         if (mLoadListener != null) {
                             mLoadListener.onAdLoadError("" + windAdError.getErrorCode(), windAdError.toString());
                         }
@@ -91,13 +120,15 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter {
                         }
                     }
                 });
+
+                mWindSplashAD.loadAdOnly();
             }
         });
     }
 
     @Override
     public void destory() {
-
+        mWindSplashAD = null;
     }
 
     @Override
@@ -107,7 +138,13 @@ public class SigmobATSplashAdapter extends CustomSplashAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return SigmobATConst.getSDKVersion();
+        return SigmobATInitManager.getInstance().getNetworkVersion();
     }
 
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+        if (isAdReady()) {
+            mWindSplashAD.showAd(container);
+        }
+    }
 }

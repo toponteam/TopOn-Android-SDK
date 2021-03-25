@@ -1,9 +1,17 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.facebook;
 
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.api.MediationBidManager;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
@@ -12,9 +20,6 @@ import com.facebook.ads.InterstitialAdListener;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
 
 public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
 
@@ -144,7 +149,7 @@ public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return FacebookATConst.getNetworkVersion();
+        return FacebookATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -155,6 +160,11 @@ public class FacebookATInterstitialAdapter extends CustomInterstitialAdapter {
     @Override
     public String getNetworkPlacementId() {
         return mUnitid;
+    }
+
+    @Override
+    public MediationBidManager getBidManager() {
+        return FacebookBidkitManager.getInstance();
     }
 
 }

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.nend;
 
 import android.app.Activity;
@@ -10,7 +17,9 @@ import net.nend.android.NendAdFullBoardLoader;
 import net.nend.android.NendAdInterstitial;
 import net.nend.android.NendAdInterstitialVideo;
 import net.nend.android.NendAdVideo;
-import net.nend.android.NendAdVideoListener;
+import net.nend.android.NendAdVideoActionListener;
+import net.nend.android.NendAdVideoPlayingState;
+import net.nend.android.NendAdVideoPlayingStateListener;
 
 import java.util.Map;
 
@@ -22,9 +31,10 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
 
     NendAdFullBoardLoader mNendAdFullScreen;
     NendAdFullBoard mNendAdFullBoard;
-    NendAdInterstitialVideo mNendAdInterstitalVideo;
+    NendAdInterstitialVideo mNendAdInterstitialVideo;
 
     boolean mIsReady = false;
+    private NendAdFullBoardLoader.Callback mNendAdFullBoardListener;
 
     @Override
     public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
@@ -64,7 +74,7 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
 
     private void fullscreenAdLoad(Context context) {
         mNendAdFullScreen = new NendAdFullBoardLoader(context.getApplicationContext(), mSpotId, mApiKey);
-        mNendAdFullScreen.loadAd(new NendAdFullBoardLoader.Callback() {
+        mNendAdFullBoardListener = new NendAdFullBoardLoader.Callback() {
             @Override
             public void onSuccess(NendAdFullBoard nendAdFullBoard) {
                 mNendAdFullBoard = nendAdFullBoard;
@@ -91,14 +101,48 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
             public void onFailure(NendAdFullBoardLoader.FullBoardAdError fullBoardAdError) {
                 notifyLoadFail("", fullBoardAdError.name());
             }
-        });
+        };
+        mNendAdFullScreen.loadAd(mNendAdFullBoardListener);
     }
 
     private void videoAdLoad(Context context) {
-        mNendAdInterstitalVideo = new NendAdInterstitialVideo(context.getApplicationContext(), mSpotId, mApiKey);
-        mNendAdInterstitalVideo.setAdListener(new NendAdVideoListener() {
+        mNendAdInterstitialVideo = new NendAdInterstitialVideo(context.getApplicationContext(), mSpotId, mApiKey);
+        mNendAdInterstitialVideo.setActionListener(new NendAdVideoActionListener() {
             @Override
             public void onLoaded(NendAdVideo nendAdVideo) {
+
+                switch (mNendAdInterstitialVideo.getType()) {
+                    case NORMAL:
+                        NendAdVideoPlayingState state = mNendAdInterstitialVideo.playingState();
+                        if (state != null) {
+                            state.setPlayingStateListener(new NendAdVideoPlayingStateListener() {
+                                @Override
+                                public void onStarted(NendAdVideo nendAdVideo) {
+                                    if (mImpressListener != null) {
+                                        mImpressListener.onInterstitialAdVideoStart();
+                                    }
+                                }
+
+                                @Override
+                                public void onStopped(NendAdVideo nendAdVideo) {
+
+                                }
+
+                                @Override
+                                public void onCompleted(NendAdVideo nendAdVideo) {
+                                    // 视频已播放完
+                                    if (mImpressListener != null) {
+                                        mImpressListener.onInterstitialAdVideoEnd();
+                                    }
+                                }
+                            });
+                        }
+                        break;
+                    case PLAYABLE:
+                    default:
+                        break;
+                }
+
                 notifyLoaded();
             }
 
@@ -123,21 +167,6 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
             }
 
             @Override
-            public void onStarted(NendAdVideo nendAdVideo) {
-
-            }
-
-            @Override
-            public void onStopped(NendAdVideo nendAdVideo) {
-
-            }
-
-            @Override
-            public void onCompleted(NendAdVideo nendAdVideo) {
-
-            }
-
-            @Override
             public void onAdClicked(NendAdVideo nendAdVideo) {
                 notifyClick();
             }
@@ -147,7 +176,7 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
 
             }
         });
-        mNendAdInterstitalVideo.loadAd();
+        mNendAdInterstitialVideo.loadAd();
     }
 
     @Override
@@ -177,8 +206,8 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
         }
 
         if (mInterstitalType == 1 && activity != null) {
-            if (mNendAdInterstitalVideo != null) {
-                mNendAdInterstitalVideo.showAd(activity);
+            if (mNendAdInterstitialVideo != null) {
+                mNendAdInterstitialVideo.showAd(activity);
             }
         }
 
@@ -196,7 +225,7 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
         }
 
         if (mInterstitalType == 1) {
-            return mNendAdInterstitalVideo != null && mNendAdInterstitalVideo.isLoaded() && mIsReady;
+            return mNendAdInterstitialVideo != null && mNendAdInterstitialVideo.isLoaded() && mIsReady;
         }
 
         if (mInterstitalType == 2) {
@@ -218,12 +247,14 @@ public class NendATInterstitialAdapter extends CustomInterstitialAdapter {
             mNendAdFullBoard = null;
         }
 
-        if (mNendAdInterstitalVideo != null) {
-            mNendAdInterstitalVideo.setAdListener(null);
-            mNendAdInterstitalVideo = null;
+        if (mNendAdInterstitialVideo != null) {
+            mNendAdInterstitialVideo.setActionListener(null);
+            mNendAdInterstitialVideo.releaseAd();
+            mNendAdInterstitialVideo = null;
         }
 
         mNendAdFullScreen = null;
+        mNendAdFullBoardListener = null;
     }
 
 

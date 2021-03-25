@@ -20,6 +20,7 @@ import android.webkit.WebView;
 
 import com.anythink.basead.impression.Views;
 import com.anythink.basead.ui.util.WebViews;
+import com.anythink.core.common.utils.CommonSDKUtil;
 
 
 public class BaseWebView extends WebView {
@@ -35,6 +36,8 @@ public class BaseWebView extends WebView {
 
         restrictDeviceContentAccess();
         WebViews.setDisableJSChromeClient(this);
+
+        CommonSDKUtil.configSafeWebView(this);
 
         if (!sDeadlockCleared) {
             clearWebViewDeadlock(getContext());
@@ -99,7 +102,7 @@ public class BaseWebView extends WebView {
      * is added to the view hierarchy and restores the GL context. Since we need to use WebView
      * before adding it to the view hierarchy, this method clears the deadlock by adding a
      * separate invisible WebView.
-     *
+     * <p>
      * This potential deadlock must be cleared anytime you attempt to access a WebView that
      * is not added to the view hierarchy.
      */

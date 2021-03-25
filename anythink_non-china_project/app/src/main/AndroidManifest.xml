@@ -11,7 +11,6 @@
     package="com.test.ad.demo">
 
 
-
     <application
         android:name="com.test.ad.demo.DemoApplicaion"
         android:allowBackup="true"
@@ -21,17 +20,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault.Light"
-        android:usesCleartextTraffic="true" >
+        android:usesCleartextTraffic="true">
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-9488501426181082~6354662111"/>
+            android:value="ca-app-pub-9488501426181082~6354662111" />
 
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
 
-        <activity android:name="com.test.ad.demo.MainActivity" >
+        <activity android:name="com.test.ad.demo.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -40,19 +39,19 @@
         </activity>
         <activity
             android:name="com.test.ad.demo.NativeAdActivity"
-            android:label="AT Native"
+            android:label="Native"
             android:launchMode="singleTask" />
         <activity
             android:name="com.test.ad.demo.RewardVideoAdActivity"
-            android:label="AT RewardedVideo"
+            android:label="RewardedVideo"
             android:launchMode="singleTask" />
         <activity
             android:name="com.test.ad.demo.InterstitialAdActivity"
-            android:label="AT Interstitial"
+            android:label="Interstitial"
             android:launchMode="singleTask" />
         <activity
             android:name="com.test.ad.demo.BannerAdActivity"
-            android:label="AT Banner"
+            android:label="Banner"
             android:launchMode="singleTask" />
 
         <activity
@@ -60,6 +59,10 @@
             android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize|screenLayout" />
         <activity
             android:name="com.test.ad.demo.SplashAdShowActivity"
+            android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize|screenLayout"
+            android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen" />
+        <activity
+            android:name="com.test.ad.demo.SplashAdShowInCurrentActivity"
             android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize|screenLayout"
             android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen" />
 
@@ -71,7 +74,14 @@
             android:name="com.test.ad.demo.NativeSplashActivity"
             android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize|screenLayout"
             android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen" />
-        <activity android:name=".NativeListActivity"
+
+        <activity
+            android:name="com.test.ad.demo.NativeListActivity"
+            android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize|screenLayout"
+            android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen" />
+
+        <activity
+            android:name="com.test.ad.demo.MultipleFormatLoadActivity"
             android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize|screenLayout"
             android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen" />
 

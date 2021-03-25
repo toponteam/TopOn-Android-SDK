@@ -8,6 +8,7 @@
 package com.anythink.core.common.net;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.text.TextUtils;
 
 import com.anythink.core.api.AdError;
@@ -27,9 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by zhou on 2017/12/30.
- */
 
 public class PlaceStrategyLoader extends AbsHttpLoader {
     private static final String TAG = PlaceStrategyLoader.class.getSimpleName();
@@ -48,6 +46,7 @@ public class PlaceStrategyLoader extends AbsHttpLoader {
     private JSONObject customObject;
 
     long startTime;
+    long startElapsedRealtime;
 
     public PlaceStrategyLoader(Context mContext, String appId, String appKey, String placeId, String settingId, Map<String, Object> customMap) {
         this.appid = appId;
@@ -63,6 +62,7 @@ public class PlaceStrategyLoader extends AbsHttpLoader {
     @Override
     public void start(int reqCode, OnHttpLoaderListener listener) {
         startTime = System.currentTimeMillis();
+        startElapsedRealtime = SystemClock.elapsedRealtime();
         super.start(reqCode, listener);
     }
 
@@ -201,7 +201,7 @@ public class PlaceStrategyLoader extends AbsHttpLoader {
         } catch (Exception e) {
 
         }
-        AgentEventManager.sentHostCallbackTime("placement", placeId, startTime, System.currentTimeMillis());
+        AgentEventManager.sentHostCallbackTime("placement", placeId, startTime, System.currentTimeMillis(), SystemClock.elapsedRealtime() - startElapsedRealtime);
         return jsonString;
     }
 

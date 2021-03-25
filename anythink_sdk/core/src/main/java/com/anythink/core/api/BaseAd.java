@@ -9,6 +9,8 @@ package com.anythink.core.api;
 
 import com.anythink.core.common.entity.AdTrackingInfo;
 
+import java.util.Map;
+
 public abstract class BaseAd {
 
     /**
@@ -17,6 +19,11 @@ public abstract class BaseAd {
     public abstract void setTrackingInfo(AdTrackingInfo adTrackingInfo);
 
     public abstract AdTrackingInfo getDetail();
+
+    public abstract void setNetworkInfoMap(Map<String, Object> networkInfoMap);
+
+    public abstract Map<String, Object> getNetworkInfoMap();
+
     /**
      * Your {@link BaseAd} subclass should implement this method if the network requires the developer
      * to destroy or cleanup their native ad when they are permanently finished with it.

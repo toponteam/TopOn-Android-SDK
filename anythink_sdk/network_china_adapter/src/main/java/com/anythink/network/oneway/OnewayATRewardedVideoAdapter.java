@@ -169,6 +169,6 @@ public class OnewayATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return OnewayATConst.getNetworkVersion();
+        return OnewayATInitManager.getInstance().getNetworkVersion();
     }
 }

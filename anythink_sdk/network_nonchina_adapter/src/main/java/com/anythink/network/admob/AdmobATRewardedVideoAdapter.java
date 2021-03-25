@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 import android.app.Activity;
@@ -19,11 +26,6 @@ import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
 
 import java.util.Map;
 
-/**
- * RewardVideo adapter admob
- * https://developers.google.com/admob/android/rewarded-video
- * Created by zhou on 2018/6/27.
- */
 
 public class AdmobATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private static final String TAG = AdmobATRewardedVideoAdapter.class.getSimpleName();
@@ -196,7 +198,7 @@ public class AdmobATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
 
     @Override
-    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtra) {
 
 
         String appid = (String) serverExtras.get("app_id");
@@ -209,11 +211,13 @@ public class AdmobATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             return;
         }
 
-        AdMobATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras);
-        extras = AdMobATInitManager.getInstance().getRequestBundle(context.getApplicationContext());
-
-        init(context);
-
+        AdMobATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new AdMobATInitManager.InitListener() {
+            @Override
+            public void initSuccess() {
+                extras = AdMobATInitManager.getInstance().getRequestBundle(context.getApplicationContext());
+                init(context);
+            }
+        });
     }
 
     @Override
@@ -291,7 +295,7 @@ public class AdmobATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdmobATConst.getNetworkVersion();
+        return AdMobATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

@@ -24,6 +24,7 @@ public class BiddingResult extends BaseBiddingResult {
     public long outDateTime;
 
     public boolean hasSendWinUrl;
+    public String offerData;
 
     public BiddingResult(boolean isSuccess, double price, String token, String winUrl, String lossUrl, String errorMsg) {
         super(isSuccess, price, token, winUrl, lossUrl, errorMsg);
@@ -59,6 +60,7 @@ public class BiddingResult extends BaseBiddingResult {
             jsonObject.put("expire", expireTime);
             jsonObject.put("out_data_time", outDateTime);
             jsonObject.put("is_send_winurl", hasSendWinUrl);
+            jsonObject.put("offer_data", offerData);
         } catch (Throwable e) {
 
         }
@@ -85,6 +87,7 @@ public class BiddingResult extends BaseBiddingResult {
             response.expireTime = jsonObject.optLong("expire");
             response.outDateTime = jsonObject.optLong("out_data_time");
             response.hasSendWinUrl = jsonObject.optBoolean("is_send_winurl");
+            response.offerData = jsonObject.optString("offer_data");
             return response;
         } catch (Throwable e) {
             if (Const.DEBUG) {

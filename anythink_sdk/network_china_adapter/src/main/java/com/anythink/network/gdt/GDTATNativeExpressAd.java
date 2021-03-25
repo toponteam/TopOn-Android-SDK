@@ -7,6 +7,7 @@
 
 package com.anythink.network.gdt;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -16,6 +17,8 @@ import com.qq.e.ads.cfg.VideoOption;
 import com.qq.e.ads.nativ.ADSize;
 import com.qq.e.ads.nativ.NativeExpressAD;
 import com.qq.e.ads.nativ.NativeExpressADView;
+import com.qq.e.comm.compliance.DownloadConfirmCallBack;
+import com.qq.e.comm.compliance.DownloadConfirmListener;
 
 import java.util.List;
 
@@ -72,6 +75,7 @@ public class GDTATNativeExpressAd extends CustomNativeAd {
 
             @Override
             public void onADExposure(NativeExpressADView pNativeExpressADView) {
+                notifyAdImpression();
             }
 
             @Override
@@ -109,6 +113,7 @@ public class GDTATNativeExpressAd extends CustomNativeAd {
 
         VideoOption option = new VideoOption.Builder()
                 .setAutoPlayMuted(videoMuted == 1)
+                .setDetailPageMuted(videoMuted == 1)
                 .setAutoPlayPolicy(videoAutoPlay)
                 .build();
 
@@ -134,6 +139,22 @@ public class GDTATNativeExpressAd extends CustomNativeAd {
     @Override
     public View getAdMediaView(Object... object) {
         return mNativeExpressADView;
+    }
+
+    @Override
+    public void registerDownloadConfirmListener() {
+        if(mNativeExpressADView != null){
+            mNativeExpressADView.setDownloadConfirmListener(new DownloadConfirmListener() {
+                @Override
+                public void onDownloadConfirm(Activity activity, int i, String s, DownloadConfirmCallBack downloadConfirmCallBack) {
+                    GDTDownloadFirmInfo gdtDownloadFirmInfo = new GDTDownloadFirmInfo();
+                    gdtDownloadFirmInfo.appInfoUrl = s;
+                    gdtDownloadFirmInfo.scenes = i;
+                    gdtDownloadFirmInfo.confirmCallBack = downloadConfirmCallBack;
+                    notifyDownloadConfirm(activity, null, gdtDownloadFirmInfo);
+                }
+            });
+        }
     }
 
     @Override

@@ -20,14 +20,15 @@ import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.rewardvideo.api.ATRewardVideoAd;
-import com.anythink.rewardvideo.api.ATRewardVideoListener;
+import com.anythink.rewardvideo.api.ATRewardVideoExListener;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class RewardVideoAdActivity extends Activity {
 
-    private static String TAG = "RewardVideoAdActivity";
+    private static final String TAG = RewardVideoAdActivity.class.getSimpleName();
+
     String placementIds[] = new String[]{
             DemoApplicaion.mPlacementId_rewardvideo_all
             , DemoApplicaion.mPlacementId_rewardvideo_mintegral
@@ -36,6 +37,8 @@ public class RewardVideoAdActivity extends Activity {
             , DemoApplicaion.mPlacementId_rewardvideo_baidu
             , DemoApplicaion.mPlacementId_rewardvideo_ks
             , DemoApplicaion.mPlacementId_rewardvideo_sigmob
+            , DemoApplicaion.mPlacementId_rewardvideo_adx
+            , DemoApplicaion.mPlacementId_rewardvideo_online
             , DemoApplicaion.mPlacementId_rewardvideo_myoffer
     };
 
@@ -47,6 +50,8 @@ public class RewardVideoAdActivity extends Activity {
             "Baidu",
             "Kuaishou",
             "Sigmob",
+            "Adx",
+            "online",
             "Myoffer"
     };
 
@@ -83,7 +88,6 @@ public class RewardVideoAdActivity extends Activity {
             }
         });
 
-//        mCurrentSelectIndex = 9;
         init();
 
         findViewById(R.id.is_ad_ready_btn).setOnClickListener(new View.OnClickListener() {
@@ -105,8 +109,8 @@ public class RewardVideoAdActivity extends Activity {
         findViewById(R.id.show_ad_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                mRewardVideoAd.show(RewardVideoAdActivity.this);
-                mRewardVideoAd.show(RewardVideoAdActivity.this, "f5e5492eca9668");
+                mRewardVideoAd.show(RewardVideoAdActivity.this);
+//                mRewardVideoAd.show(RewardVideoAdActivity.this, "f5e5492eca9668");
             }
         });
 
@@ -117,12 +121,17 @@ public class RewardVideoAdActivity extends Activity {
         mRewardVideoAd = new ATRewardVideoAd(this, placementIds[mCurrentSelectIndex]);
         String userid = "test_userid_001";
         String userdata = "test_userdata_001";
-//        mRewardVideoAd.setUserData(userid, userdata);
         Map<String, Object> localMap = new HashMap<>();
         localMap.put(ATAdConst.KEY.USER_ID, userid);
         localMap.put(ATAdConst.KEY.USER_CUSTOM_DATA, userdata);
         mRewardVideoAd.setLocalExtra(localMap);
-        mRewardVideoAd.setAdListener(new ATRewardVideoListener() {
+        mRewardVideoAd.setAdListener(new ATRewardVideoExListener() {
+
+            @Override
+            public void onDeeplinkCallback(ATAdInfo adInfo, boolean isSuccess) {
+                Log.i(TAG, "onDeeplinkCallback:" + adInfo.toString() + "--status:" + isSuccess);
+            }
+
             @Override
             public void onRewardedVideoAdLoaded() {
                 Log.i(TAG, "onRewardedVideoAdLoaded");
@@ -131,8 +140,8 @@ public class RewardVideoAdActivity extends Activity {
 
             @Override
             public void onRewardedVideoAdFailed(AdError errorCode) {
-                Log.i(TAG, "onRewardedVideoAdFailed error:" + errorCode.printStackTrace());
-                Toast.makeText(RewardVideoAdActivity.this, "onRewardedVideoAdFailed:" + errorCode.printStackTrace(), Toast.LENGTH_SHORT).show();
+                Log.i(TAG, "onRewardedVideoAdFailed error:" + errorCode.getFullErrorInfo());
+                Toast.makeText(RewardVideoAdActivity.this, "onRewardedVideoAdFailed:" + errorCode.getFullErrorInfo(), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -149,8 +158,8 @@ public class RewardVideoAdActivity extends Activity {
 
             @Override
             public void onRewardedVideoAdPlayFailed(AdError errorCode, ATAdInfo entity) {
-                Log.i(TAG, "onRewardedVideoAdPlayFailed error:" + errorCode.printStackTrace());
-                Toast.makeText(RewardVideoAdActivity.this, "onRewardedVideoAdPlayFailed:" + errorCode.printStackTrace(), Toast.LENGTH_SHORT).show();
+                Log.i(TAG, "onRewardedVideoAdPlayFailed error:" + errorCode.getFullErrorInfo());
+                Toast.makeText(RewardVideoAdActivity.this, "onRewardedVideoAdPlayFailed:" + errorCode.getFullErrorInfo(), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -167,21 +176,11 @@ public class RewardVideoAdActivity extends Activity {
 
             @Override
             public void onReward(ATAdInfo entity) {
-                Log.e(TAG, "onReward:\n" + entity.toString() );
+                Log.e(TAG, "onReward:\n" + entity.toString());
                 Toast.makeText(RewardVideoAdActivity.this, "onReward", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
 }
 

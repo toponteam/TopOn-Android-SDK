@@ -3,11 +3,12 @@ apply plugin: 'com.android.application'
 
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "com.superapp.filemanager"
+//        applicationId "com.test.android"
         minSdkVersion 19
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -68,7 +69,7 @@ task initReleaseType {
         def properties = new Properties()
         properties.load(new FileReader(rootDir.absolutePath + '/../anythink_sdk/package.properties'))
         properties.setProperty("sdk_release_type", "1")
-        properties.setProperty("china_plugin_class", "com.anythink.china.api.ATChinaSDKHandler")
+        properties.setProperty("china_plugin_class", "com.anythink.pd.ExHandler")
         properties.store(new FileOutputStream(rootDir.absolutePath + '/../anythink_sdk/package.properties'), "Do NOT commit this file, just an build modification !")
     }
 }

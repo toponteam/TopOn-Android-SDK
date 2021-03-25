@@ -7,37 +7,40 @@
 
 package com.anythink.network.toutiao;
 
-import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
 import com.bytedance.sdk.openadsdk.TTAdConfig;
 import com.bytedance.sdk.openadsdk.TTAdConstant;
 import com.bytedance.sdk.openadsdk.TTAdSdk;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class TTATInitManager extends ATInitMediation {
     public static final String TAG = TTATInitManager.class.getSimpleName();
 
     private static TTATInitManager sInstance;
-    private String mAppId;
     private Handler mHandler;
     private boolean mIsOpenDirectDownload;
 
     private Map<String, Object> adObject = new ConcurrentHashMap<>();
 
+    private boolean mHasInit;
+    private AtomicBoolean mIsIniting;
+    private List<InitCallback> mListeners;
+    private final Object mLock = new Object();
+
     private TTATInitManager() {
         mHandler = new Handler(Looper.getMainLooper());
         mIsOpenDirectDownload = true;
+        mIsIniting = new AtomicBoolean(false);
     }
 
     public synchronized static TTATInitManager getInstance() {
@@ -56,112 +59,125 @@ public class TTATInitManager extends ATInitMediation {
     }
 
     @Override
-    public synchronized void initSDK(Context context, Map<String, Object> serviceExtras) {
+    public void initSDK(Context context, Map<String, Object> serviceExtras) {
         initSDK(context, serviceExtras, null);
     }
 
-    public synchronized void initSDK(final Context context, Map<String, Object> serviceExtras, final InitCallback callback) {
-        initSDK(context, serviceExtras, false, callback);
-    }
+    public void initSDK(final Context context, Map<String, Object> serviceExtras, final InitCallback callback) {
 
-    public void initSDK(final Context context, Map<String, Object> serviceExtras, final boolean isSplash, final InitCallback callback) {
+        if (TTAdSdk.isInitSuccess() || mHasInit) {
+            if (callback != null) {
+                callback.onSuccess();
+            }
+            return;
+        }
+
+        synchronized (mLock) {
+
+            if (mIsIniting.get()) {
+                if (callback != null) {
+                    mListeners.add(callback);
+                }
+                return;
+            }
+
+            if (mListeners == null) {
+                mListeners = new ArrayList<>();
+            }
+
+            mIsIniting.set(true);
+        }
+
         final String appId = (String) serviceExtras.get("app_id");
 
-        if (TextUtils.isEmpty(mAppId) || !TextUtils.equals(mAppId, appId)) {
+        if (callback != null) {
+            mListeners.add(callback);
+        }
 
-            final int[] download;
-            if (mIsOpenDirectDownload) {
-                download = new int[]{
-                        TTAdConstant.NETWORK_STATE_MOBILE, TTAdConstant.NETWORK_STATE_2G, TTAdConstant.NETWORK_STATE_3G,
-                        TTAdConstant.NETWORK_STATE_WIFI, TTAdConstant.NETWORK_STATE_4G
-                };
-            } else {
-                download = new int[]{
-                        TTAdConstant.NETWORK_STATE_2G
-                };
-            }
-
-
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        TTAdSdk.init(context.getApplicationContext(), new TTAdConfig.Builder()
-                                .appId(appId)
-                                .useTextureView(true) //Use the TextureView control to play the video. The default is SurfaceView. When there are conflicts in SurfaceView, you can use TextureView
-                                .appName(context.getPackageManager().getApplicationLabel(context.getApplicationInfo()).toString())
-                                .titleBarTheme(TTAdConstant.TITLE_BAR_THEME_DARK)
-                                .allowShowPageWhenScreenLock(true) //Whether to support display of landing pages in lock screen scenes
-                                .directDownloadNetworkType(download) //Allow all network downloads
-                                .supportMultiProcess(false) //Whether to support multiple processes, true support
-                                .build());
-
-                        doApplicationLifecycleStart(context);
-
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                mAppId = appId;
-                                if (callback != null) {
-                                    callback.onFinish();
-                                }
-                            }
-                        }, isSplash ? 0 : 1000);
-                    } catch (Throwable e) {
-                        if (callback != null) {
-                            callback.onFinish();
-                        }
-                    }
-                }
-            });
+        final int[] download;
+        if (mIsOpenDirectDownload) {
+            download = new int[]{
+                    TTAdConstant.NETWORK_STATE_MOBILE, TTAdConstant.NETWORK_STATE_2G, TTAdConstant.NETWORK_STATE_3G,
+                    TTAdConstant.NETWORK_STATE_WIFI, TTAdConstant.NETWORK_STATE_4G
+            };
         } else {
-            if (callback != null) {
-                callback.onFinish();
-            }
+            download = new int[]{
+                    TTAdConstant.NETWORK_STATE_2G
+            };
         }
-    }
 
-    private void doApplicationLifecycleStart(Context context) {
-        try {
-            if (!TTATConst.getNetworkVersion().startsWith("3.2")) {
-                return;
-            }
-
-            String verison = TTATConst.getNetworkVersion();
-            if (verison != null && Integer.parseInt(verison.replaceAll("\\.", "")) >= 3250) {
-                return;
-            }
-
-            Application application = (Application) context.getApplicationContext();
-            Method collectActivityLifecycleCallbacks = Application.class.getDeclaredMethod("collectActivityLifecycleCallbacks");
-            collectActivityLifecycleCallbacks.setAccessible(true);
-            Object[] objects = (Object[]) collectActivityLifecycleCallbacks.invoke(application);
-
-            for (Object object : objects) {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
                 try {
-                    String name = object.getClass().getName();
-                    if (name.startsWith("com.bytedance.sdk.openadsdk")) {
-                        ((Application.ActivityLifecycleCallbacks) object).onActivityStarted(null);
-                        return;
-                    }
+                    TTAdSdk.init(context.getApplicationContext(), new TTAdConfig.Builder()
+                            .appId(appId)
+                            .useTextureView(true) //Use the TextureView control to play the video. The default is SurfaceView. When there are conflicts in SurfaceView, you can use TextureView
+                            .appName(context.getPackageManager().getApplicationLabel(context.getApplicationInfo()).toString())
+                            .titleBarTheme(TTAdConstant.TITLE_BAR_THEME_DARK)
+                            .directDownloadNetworkType(download) //Allow all network downloads
+                            .supportMultiProcess(false) //Whether to support multiple processes, true support
+                            .build(), new TTAdSdk.InitCallback() {
+                        @Override
+                        public void success() {
+                            mHasInit = true;
+
+                            callbackResult(true, null, null);
+                        }
+
+                        @Override
+                        public void fail(int errorCode, String errorMsg) {
+                            callbackResult(false, errorCode + "", errorMsg);
+                        }
+                    });
+
                 } catch (Throwable e) {
+                    callbackResult(false, "", e.getMessage());
                 }
             }
-        } catch (Throwable e) {
+        });
+    }
+
+    private void callbackResult(boolean success, String errorCode, String errorMsg) {
+        synchronized (mLock) {
+            int size = mListeners.size();
+            InitCallback initListener;
+            for (int i = 0; i < size; i++) {
+                initListener = mListeners.get(i);
+                if (initListener != null) {
+                    if (success) {
+                        initListener.onSuccess();
+                    } else {
+                        initListener.onError(errorCode, errorMsg);
+                    }
+                }
+            }
+            mListeners.clear();
+
+            mIsIniting.set(false);
         }
     }
+
 
     public void setIsOpenDirectDownload(boolean download) {
         this.mIsOpenDirectDownload = download;
     }
 
     interface InitCallback {
-        void onFinish();
+        void onSuccess();
+
+        void onError(String errorCode, String errorMsg);
+
     }
 
     @Override
     public String getNetworkName() {
         return "Pangle(Tiktok)";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return TTATConst.getNetworkVersion();
     }
 
     @Override

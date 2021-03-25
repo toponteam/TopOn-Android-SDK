@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.appnext;
 
 import android.content.Context;
@@ -26,7 +33,6 @@ public class AppnextATAdapter extends CustomNativeAdapter {
             }
             return;
         }
-        final List<CustomNativeAd> adList = new ArrayList<>();
 
         AppnextATInitManager.getInstance().initSDK(context, serverExtras);
 

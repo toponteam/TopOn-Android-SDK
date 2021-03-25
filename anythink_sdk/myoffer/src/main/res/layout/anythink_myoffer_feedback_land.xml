@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/anythink_myoffer_bg_feedback_dialog"
+    android:paddingLeft="12dp"
+    android:paddingRight="12dp">
+
+    <ImageView
+        android:id="@+id/anythink_myoffer_feedback_iv_close"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="9dp"
+        android:src="@drawable/anythink_myoffer_feedback_dialog_close"/>
+
+    <!--  abnormal  -->
+    <TextView
+        android:id="@+id/anythink_myoffer_feedback_tv_abnormal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/anythink_myoffer_feedback_iv_close"
+        android:layout_marginTop="3dp"
+        android:text="@string/anythink_myoffer_feedback_abnormal"
+        android:textColor="#333333"
+        android:textSize="16sp" />
+
+    <LinearLayout
+        android:id="@+id/anythink_myoffer_feedback_ll_abnormal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/anythink_myoffer_feedback_tv_abnormal"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_1"
+            android:tag="1"
+            android:text="@string/anythink_myoffer_feedback_video_freeze"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_2"
+            android:tag="2"
+            android:layout_marginLeft="14dp"
+            android:layout_marginRight="14dp"
+            android:text="@string/anythink_myoffer_feedback_black_white_screen"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_3"
+            android:tag="3"
+            android:text="@string/anythink_myoffer_feedback_can_not_close"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+    </LinearLayout>
+
+    <!--  report ad  -->
+    <TextView
+        android:id="@+id/anythink_myoffer_feedback_tv_report_ad"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/anythink_myoffer_feedback_ll_abnormal"
+        android:layout_marginTop="12dp"
+        android:text="@string/anythink_myoffer_feedback_report"
+        android:textColor="#333333"
+        android:textSize="16sp" />
+
+    <LinearLayout
+        android:id="@+id/anythink_myoffer_feedback_ll_report_ad_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/anythink_myoffer_feedback_tv_report_ad"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_4"
+            android:tag="4"
+            android:text="@string/anythink_myoffer_feedback_induce_click"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_5"
+            android:tag="5"
+            android:layout_marginLeft="14dp"
+            android:layout_marginRight="14dp"
+            android:text="@string/anythink_myoffer_feedback_violation_of_laws"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_6"
+            android:tag="6"
+            android:text="@string/anythink_myoffer_feedback_fraud_ads"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/anythink_myoffer_feedback_ll_report_ad_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/anythink_myoffer_feedback_ll_report_ad_1"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_7"
+            android:tag="7"
+            android:text="@string/anythink_myoffer_feedback_plagiarism"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_8"
+            android:tag="8"
+            android:layout_marginLeft="14dp"
+            android:layout_marginRight="14dp"
+            android:text="@string/anythink_myoffer_feedback_vulgar_porn"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+        <com.anythink.basead.ui.FeedbackTextView
+            android:id="@+id/anythink_myoffer_feedback_tv_9"
+            android:tag="9"
+            android:text="@string/anythink_myoffer_feedback_not_interesting"
+            style="@style/anythink_myoffer_feedback_textview_style_land" />
+
+    </LinearLayout>
+
+    <!--  other suggestion  -->
+    <TextView
+        android:id="@+id/anythink_myoffer_feedback_tv_other_suggestion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/anythink_myoffer_feedback_ll_report_ad_2"
+        android:layout_marginTop="12dp"
+        android:text="@string/anythink_myoffer_feedback_suggestion"
+        android:textColor="#333333"
+        android:textSize="16sp" />
+
+    <!--  commit button  -->
+    <TextView
+        android:id="@+id/anythink_myoffer_feedback_tv_commit"
+        android:layout_width="167dp"
+        android:layout_height="30dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/anythink_myoffer_bg_feedback_submit"
+        android:gravity="center"
+        android:text="@string/anythink_myoffer_feedback_submit"
+        android:textColor="#ffffff"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/anythink_myoffer_feedback_et"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/anythink_myoffer_feedback_tv_commit"
+        android:layout_below="@id/anythink_myoffer_feedback_tv_other_suggestion"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/anythink_myoffer_bg_feedback_textview_normal"
+        android:gravity="left|top"
+        android:padding="4dp"
+        android:maxLength="100"
+        android:textSize="14sp" />
+
+
+</RelativeLayout>

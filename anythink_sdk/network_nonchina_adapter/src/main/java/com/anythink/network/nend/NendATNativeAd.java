@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.nend;
 
 import android.content.Context;
@@ -118,7 +125,7 @@ public class NendATNativeAd extends CustomNativeAd {
         nendAdNativeVideo.setListener(new NendAdNativeVideoListener() {
             @Override
             public void onImpression(NendAdNativeVideo nendAdNativeVideo) {
-
+                notifyAdImpression();
             }
 
             @Override

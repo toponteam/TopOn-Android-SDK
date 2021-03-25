@@ -25,13 +25,13 @@ android {
         buildConfigField("String", "SDK_VERSION_NAME", '"' + SDK_VERSION_NAME + '"')
         buildConfigField("boolean", "SDK_DEBUG", SDK_DEBUG) //DEBUG状态
 
-        
-        
 
-//        String releaseType = properties.getProperty("sdk_release_type")
 
+        def properties = new Properties()
+        properties.load(new FileReader(projectDir.absolutePath + '/../package.properties'))
+        String chinaPluginName = properties.getProperty("china_plugin_class")
         
-        buildConfigField("String", "CHINA_PLUGIN_NAME", '"com.anythink.china.api.ATChinaSDKHandler"')
+        buildConfigField("String", "PRIVATE_DATA_HANDLER_CLASS", '"' + chinaPluginName + '"')
 
 
     }

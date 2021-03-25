@@ -7,9 +7,11 @@
 
 package com.anythink.network.baidu;
 
+import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 import com.baidu.mobads.SplashAd;
@@ -22,7 +24,9 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
     String mAdPlaceId = "";
     SplashAd mSplashAd;
 
-    private void startLoadAd(final Context context, ViewGroup constainer) {
+    FrameLayout mContainer;
+
+    private void startLoadAd(final Context context, final FrameLayout constainer) {
         // the observer of AD
         SplashAdListener listener = new SplashAdListener() {
             @Override
@@ -34,7 +38,10 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
 
             @Override
             public void onADLoaded() {
-
+                mContainer = constainer;
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
+                }
             }
 
             @Override
@@ -46,9 +53,6 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
 
             @Override
             public void onAdPresent() {
-                if (mLoadListener != null) {
-                    mLoadListener.onAdCacheLoaded();
-                }
                 if (mImpressionListener != null) {
                     mImpressionListener.onSplashAdShow();
                 }
@@ -64,6 +68,7 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
         };
 
         mSplashAd = new SplashAd(context, constainer, listener, mAdPlaceId, true);
+        mSplashAd.load();
     }
 
     @Override
@@ -72,7 +77,20 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
     }
 
     @Override
+    public boolean isAdReady() {
+        return mContainer != null;
+    }
+
+    @Override
     public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
+
+        if (!(context instanceof Activity)) {
+            if (mLoadListener != null) {
+                mLoadListener.onAdLoadError("", "Baidu: context must be activity");
+            }
+            return;
+        }
+
         String mAppId = (String) serverExtra.get("app_id");
         mAdPlaceId = (String) serverExtra.get("ad_place_id");
         if (TextUtils.isEmpty(mAppId) || TextUtils.isEmpty(mAdPlaceId)) {
@@ -82,10 +100,11 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
             return;
         }
 
+        final FrameLayout container = new FrameLayout(context);
         BaiduATInitManager.getInstance().initSDK(context, serverExtra, new BaiduATInitManager.InitCallback() {
             @Override
             public void onSuccess() {
-                startLoadAd(context, mContainer);
+                startLoadAd(context, container);
             }
 
             @Override
@@ -103,6 +122,8 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
             mSplashAd.destroy();
             mSplashAd = null;
         }
+
+        mContainer = null;
     }
 
     @Override
@@ -112,6 +133,14 @@ public class BaiduATSplashAdapter extends CustomSplashAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return BaiduATConst.getNetworkVersion();
+        return BaiduATInitManager.getInstance().getNetworkVersion();
+    }
+
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+        if (mContainer != null) {
+            container.addView(mContainer, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            mSplashAd.show();
+        }
     }
 }

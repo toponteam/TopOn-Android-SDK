@@ -8,8 +8,10 @@
 package com.anythink.china.api;
 
 
+import com.anythink.pd.ExHandler;
+
 public class ChinaDeviceDataInfo {
-    public final static String MAC = ATChinaSDKHandler.JSON_REQUEST_MAC;
-    public final static String IMEI = ATChinaSDKHandler.JSON_REQUEST_IMEI;
-    public final static String OAID = ATChinaSDKHandler.JSON_REQUEST_OAID;
+    public final static String MAC = ExHandler.JSON_REQUEST_MAC;
+    public final static String IMEI = ExHandler.JSON_REQUEST_IMEI;
+    public final static String OAID = ExHandler.JSON_REQUEST_OAID;
 }

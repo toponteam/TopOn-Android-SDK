@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mopub;
 
 import android.app.Activity;
@@ -15,9 +22,6 @@ import com.mopub.mobileads.MoPubRewardedVideos;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by zhou on 2018/6/27.
- */
 
 public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private final String TAG = MopubATRewardedVideoAdapter.class.getSimpleName();
@@ -162,7 +166,7 @@ public class MopubATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MopubATConst.getNetworkVersion();
+        return MopubATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

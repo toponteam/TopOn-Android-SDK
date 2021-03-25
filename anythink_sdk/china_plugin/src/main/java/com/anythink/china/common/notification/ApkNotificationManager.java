@@ -30,7 +30,8 @@ public class ApkNotificationManager implements IApkNotification {
 
     public static final String ACTION_NOTIFICATION_CLICK = "action_notification_click";
     public static final String ACTION_NOTIFICATION_CANNEL = "action_notification_cannel";
-    public static final String BROADCAST_RECEIVER_EXTRA = "broadcast_receiver_extra";
+    public static final String BROADCAST_RECEIVER_EXTRA_URL = "broadcast_receiver_extra_url";
+    public static final String BROADCAST_RECEIVER_EXTRA_UNIQUE_ID = "broadcast_receiver_extra_unique_id";
 
     private NotificationManager mNotificationManager;
 
@@ -167,12 +168,14 @@ public class ApkNotificationManager implements IApkNotification {
 
         //click and cancel
         Intent clickIntent = new Intent(ACTION_NOTIFICATION_CLICK);
-        clickIntent.putExtra(BROADCAST_RECEIVER_EXTRA, apkRequest.url);
+        clickIntent.putExtra(BROADCAST_RECEIVER_EXTRA_UNIQUE_ID, apkRequest.uniqueID);
+        clickIntent.putExtra(BROADCAST_RECEIVER_EXTRA_URL, apkRequest.url);
         clickIntent.setClass(mContext, NotificationBroadcaseReceiver.class);
         PendingIntent clickPendingIntent = PendingIntent.getBroadcast(mContext, id, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent cancelIntent = new Intent(ACTION_NOTIFICATION_CANNEL);
-        cancelIntent.putExtra(BROADCAST_RECEIVER_EXTRA, apkRequest.url);
+        cancelIntent.putExtra(BROADCAST_RECEIVER_EXTRA_UNIQUE_ID, apkRequest.uniqueID);
+        cancelIntent.putExtra(BROADCAST_RECEIVER_EXTRA_URL, apkRequest.url);
         cancelIntent.setClass(mContext, NotificationBroadcaseReceiver.class);
         PendingIntent cancelPendingIntent = PendingIntent.getBroadcast(mContext, id, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -214,7 +217,7 @@ public class ApkNotificationManager implements IApkNotification {
 
     @Override
     public String getChannelId(ApkRequest apkRequest) {
-        return apkRequest.url;
+        return apkRequest.uniqueID;
     }
 
     public void cancelNotification(ApkRequest apkRequest) {

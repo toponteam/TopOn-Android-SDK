@@ -7,14 +7,14 @@
 
 package com.anythink.network.baidu;
 
-import com.baidu.mobads.utils.XAdSDKFoundationFacade;
+import com.baidu.mobads.AdSettings;
 
 public class BaiduATConst {
     public static final int NETWORK_FIRM_ID = 22;
 
     public static String getNetworkVersion() {
         try {
-            return XAdSDKFoundationFacade.getInstance().getProxyVer();
+            return AdSettings.getSDKVersion() + "";
         } catch (Throwable e) {
 
         }

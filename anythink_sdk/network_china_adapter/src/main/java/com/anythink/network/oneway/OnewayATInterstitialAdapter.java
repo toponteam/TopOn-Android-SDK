@@ -252,6 +252,6 @@ public class OnewayATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return OnewayATConst.getNetworkVersion();
+        return OnewayATInitManager.getInstance().getNetworkVersion();
     }
 }

@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.content.Context;
@@ -5,27 +12,25 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
-import com.mintegral.msdk.base.entity.CampaignEx;
-import com.mintegral.msdk.nativex.view.MTGMediaView;
-import com.mintegral.msdk.out.Campaign;
-import com.mintegral.msdk.out.Frame;
-import com.mintegral.msdk.out.MtgBidNativeHandler;
-import com.mintegral.msdk.out.MtgNativeHandler;
-import com.mintegral.msdk.out.NativeListener;
-import com.mintegral.msdk.out.OnMTGMediaViewListener;
+import com.mbridge.msdk.foundation.entity.CampaignEx;
+import com.mbridge.msdk.nativex.view.MBMediaView;
+import com.mbridge.msdk.out.Campaign;
+import com.mbridge.msdk.out.Frame;
+import com.mbridge.msdk.out.MBBidNativeHandler;
+import com.mbridge.msdk.out.MBNativeHandler;
+import com.mbridge.msdk.out.NativeListener;
+import com.mbridge.msdk.out.OnMBMediaViewListener;
+import com.mbridge.msdk.out.OnMBMediaViewListenerPlus;
 
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/1/17.
- */
 
 public class MintegralATNativeAd extends CustomNativeAd {
     private final String TAG = MintegralATNativeAd.class.getSimpleName();
     Context mContext;
-    MtgNativeHandler mvNativeHandler;
-    MtgBidNativeHandler mvBidNativeHandler;
+    MBNativeHandler mvNativeHandler;
+    MBBidNativeHandler mvBidNativeHandler;
 
     Campaign mCampaign;
 
@@ -33,13 +38,12 @@ public class MintegralATNativeAd extends CustomNativeAd {
             , String unitId
             , Campaign campaign, boolean isHB) {
         mContext = context.getApplicationContext();
-        Map<String, Object> properties = MtgNativeHandler
-                .getNativeProperties(placementId, unitId);
+        Map<String, Object> properties = MBNativeHandler.getNativeProperties(placementId, unitId);
 
         mCampaign = campaign;
 
         if (isHB) {
-            mvBidNativeHandler = new MtgBidNativeHandler(properties, context);
+            mvBidNativeHandler = new MBBidNativeHandler(properties, context);
             mvBidNativeHandler.setAdListener(new NativeListener.NativeAdListener() {
                 @Override
                 public void onAdLoaded(List<Campaign> list, int i) {
@@ -62,11 +66,11 @@ public class MintegralATNativeAd extends CustomNativeAd {
 
                 @Override
                 public void onLoggingImpression(int i) {
-
+                    notifyAdImpression();
                 }
             });
         } else {
-            mvNativeHandler = new MtgNativeHandler(properties, context);
+            mvNativeHandler = new MBNativeHandler(properties, context);
             mvNativeHandler.setAdListener(new NativeListener.NativeAdListener() {
                 @Override
                 public void onAdLoaded(List<Campaign> list, int i) {
@@ -89,7 +93,7 @@ public class MintegralATNativeAd extends CustomNativeAd {
 
                 @Override
                 public void onLoggingImpression(int i) {
-
+                    notifyAdImpression();
                 }
             });
         }
@@ -152,15 +156,15 @@ public class MintegralATNativeAd extends CustomNativeAd {
     }
 
 
-    MTGMediaView mMVMediaView;
+    MBMediaView mMVMediaView;
 
     @Override
     public View getAdMediaView(Object... object) {
         try {
-            mMVMediaView = new MTGMediaView(mContext);
+            mMVMediaView = new MBMediaView(mContext);
             mMVMediaView.setIsAllowFullScreen(true);
             mMVMediaView.setNativeAd(mCampaign);
-            mMVMediaView.setOnMediaViewListener(new OnMTGMediaViewListener() {
+            mMVMediaView.setOnMediaViewListener(new OnMBMediaViewListenerPlus() {
                 @Override
                 public void onEnterFullscreen() {
 
@@ -193,7 +197,12 @@ public class MintegralATNativeAd extends CustomNativeAd {
 
                 @Override
                 public void onVideoStart() {
+                    notifyAdVideoStart();
+                }
 
+                @Override
+                public void onVideoComplete() {
+                    notifyAdVideoEnd();
                 }
             });
 

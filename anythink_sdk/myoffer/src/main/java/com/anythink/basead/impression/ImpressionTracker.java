@@ -54,6 +54,14 @@ public class ImpressionTracker {
                 new Handler(Looper.getMainLooper()));
     }
 
+    public ImpressionTracker( final Context context, int delayTime) {
+        this(new WeakHashMap<View, ImpressionInterface>(),
+                new WeakHashMap<View, TimestampWrapper<ImpressionInterface>>(),
+                new VisibilityTracker.VisibilityChecker(),
+                new VisibilityTracker(context, delayTime),
+                new Handler(Looper.getMainLooper()));
+    }
+
     ImpressionTracker( final Map<View, ImpressionInterface> trackedViews,
              final Map<View, TimestampWrapper<ImpressionInterface>> pollingViews,
              final VisibilityTracker.VisibilityChecker visibilityChecker,

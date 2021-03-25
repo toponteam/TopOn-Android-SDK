@@ -10,16 +10,14 @@ package com.anythink.basead.myoffer;
 import android.content.Context;
 
 import com.anythink.basead.entity.AdActivityStartParams;
-import com.anythink.basead.myoffer.manager.MyOfferAdManager;
-import com.anythink.basead.listeners.AdEventMessager;
-import com.anythink.basead.listeners.VideoAdListener;
-import com.anythink.core.common.entity.MyOfferSetting;
-import com.anythink.core.common.utils.CommonLogUtil;
-import com.anythink.basead.myoffer.manager.MyOfferImpressionRecordManager;
-import com.anythink.basead.buiness.resource.OfferResourceLoader;
-import com.anythink.basead.ui.BaseAdActivity;
 import com.anythink.basead.entity.OfferError;
 import com.anythink.basead.entity.OfferErrorCode;
+import com.anythink.basead.listeners.AdEventMessager;
+import com.anythink.basead.listeners.VideoAdEventListener;
+import com.anythink.basead.ui.BaseAdActivity;
+import com.anythink.basead.ui.FullScreenAdView;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
+import com.anythink.core.common.utils.CommonLogUtil;
 
 import java.util.Map;
 
@@ -28,50 +26,15 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
 
     public static final String TAG = MyOfferRewardVideoAd.class.getSimpleName();
 
-    private VideoAdListener mListener;
+    private VideoAdEventListener mListener;
 
-    public MyOfferRewardVideoAd(Context context, String placementId, String offerId, MyOfferSetting myoffer_setting, boolean isDefault) {
-        super(context, placementId, offerId, myoffer_setting, isDefault);
+    public MyOfferRewardVideoAd(Context context, BaseAdRequestInfo baseAdRequestInfo, String offerId, boolean isDefault) {
+        super(context, baseAdRequestInfo, offerId, isDefault);
     }
 
 
-    public void setListener(VideoAdListener listener) {
+    public void setListener(VideoAdEventListener listener) {
         this.mListener = listener;
-    }
-
-    @Override
-    public void load() {
-        try {
-            OfferError myOfferError = checkLoadParams();
-            if (myOfferError != null) {
-                if (mListener != null) {
-                    mListener.onAdLoadFailed(myOfferError);
-                }
-                return;
-            }
-
-            MyOfferAdManager.getInstance(mContext).load(mPlacementId, mMyOfferAd, mMyOfferSetting, new OfferResourceLoader.ResourceLoaderListener() {
-                @Override
-                public void onSuccess() {
-                    if (mListener != null) {
-                        mListener.onAdCacheLoaded();
-                    }
-                }
-
-                @Override
-                public void onFailed(OfferError error) {
-                    if (mListener != null) {
-                        mListener.onAdLoadFailed(error);
-                    }
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (mListener != null) {
-                mListener.onAdLoadFailed(OfferErrorCode.get(OfferErrorCode.unknow, e.getMessage()));
-            }
-        }
-
     }
 
     @Override
@@ -88,7 +51,7 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
             final String requestId = extra.get(MyOfferBaseAd.EXTRA_REQUEST_ID).toString();
             final String scenario = extra.get(MyOfferBaseAd.EXTRA_SCENARIO).toString();
             final int orientation = (int) extra.get(MyOfferBaseAd.EXTRA_ORIENTATION);
-            final String eventId = mPlacementId + mOfferId + System.currentTimeMillis();
+            final String eventId = mRequestInfo.placementId + mOfferId + System.currentTimeMillis();
 
             AdEventMessager.getInstance().setListener(eventId, new AdEventMessager.OnEventListener() {
                 @Override
@@ -97,7 +60,6 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
                     if (mListener != null) {
                         mListener.onAdShow();
                     }
-                    MyOfferImpressionRecordManager.getInstance(mContext).recordImpression(mMyOfferAd);
                 }
 
                 @Override
@@ -148,16 +110,22 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
                         mListener.onAdClick();
                     }
                 }
+
+                @Override
+                public void onDeeplinkCallback(boolean isSuccess) {
+                    CommonLogUtil.d(TAG, "onDeeplinkCallback.......:" + isSuccess);
+                    if (mListener != null) {
+                        mListener.onDeeplinkCallback(isSuccess);
+                    }
+                }
             });
 
             AdActivityStartParams adActivityStartParams = new AdActivityStartParams();
             adActivityStartParams.baseAdContent = mMyOfferAd;
             adActivityStartParams.eventId = eventId;
-            adActivityStartParams.format = BaseAdActivity.FORMAT_REWARD_VIDEO;
-            adActivityStartParams.baseAdSetting = mMyOfferSetting;
+            adActivityStartParams.format = FullScreenAdView.FORMAT_REWARD_VIDEO;
+            adActivityStartParams.baseAdRequestInfo = mRequestInfo;
             adActivityStartParams.orientation = orientation;
-            adActivityStartParams.placementId = mPlacementId;
-            adActivityStartParams.requestId = requestId;
             adActivityStartParams.scenario = scenario;
 
             BaseAdActivity.start(mContext, adActivityStartParams);
@@ -168,19 +136,6 @@ public class MyOfferRewardVideoAd extends MyOfferBaseAd {
             }
         }
 
-    }
-
-    @Override
-    public boolean isReady() {
-
-        try {
-            if (checkIsReadyParams()) {
-                return MyOfferAdManager.getInstance(mContext).isReady(mMyOfferAd, mMyOfferSetting, mIsDefault);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
 }

@@ -19,7 +19,9 @@ public class ATHeadBiddingRequest {
     public String placementId;
     public int format;
     public long hbBidMaxTimeOut;
+    public long fbInHouseTimeOut;
     public List<PlaceStrategy.UnitGroupInfo> hbList;
+    public List<PlaceStrategy.UnitGroupInfo> normalList; //Only for Facebook In House
 
     public long hbWaitingToReqeustTime;//c2s
     public String s2sBidUrl;//s2s
@@ -30,6 +32,8 @@ public class ATHeadBiddingRequest {
         atHeadBiddingRequest.requestId = this.requestId;
         atHeadBiddingRequest.placementId = this.placementId;
         atHeadBiddingRequest.format = this.format;
+        atHeadBiddingRequest.fbInHouseTimeOut = this.fbInHouseTimeOut;
+        atHeadBiddingRequest.normalList = this.normalList;
         if (hbBidMaxTimeOut < 0) {
             atHeadBiddingRequest.hbBidMaxTimeOut = 10000;
         } else {

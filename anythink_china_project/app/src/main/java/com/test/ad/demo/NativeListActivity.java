@@ -214,7 +214,7 @@ public class NativeListActivity extends Activity {
                 @Override
                 public void onNativeAdLoadFail(AdError adError) {
                     isLoadingAd = false;
-                    Log.e(TAG, "native ad onNativeAdLoadFail------------- " + adError.printStackTrace());
+                    Log.e(TAG, "native ad onNativeAdLoadFail------------- " + adError.getFullErrorInfo());
                 }
             });
         }

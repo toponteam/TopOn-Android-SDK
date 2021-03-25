@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.app.Activity;
@@ -5,29 +12,25 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
-import com.mintegral.msdk.MIntegralConstans;
-import com.mintegral.msdk.interstitialvideo.out.InterstitialVideoListener;
-import com.mintegral.msdk.interstitialvideo.out.MTGBidInterstitialVideoHandler;
-import com.mintegral.msdk.interstitialvideo.out.MTGInterstitialVideoHandler;
-import com.mintegral.msdk.mtgbid.out.BidManager;
-import com.mintegral.msdk.out.CustomInfoManager;
-import com.mintegral.msdk.out.InterstitialListener;
-import com.mintegral.msdk.out.MTGInterstitialHandler;
+import com.mbridge.msdk.MBridgeConstans;
+import com.mbridge.msdk.interstitialvideo.out.InterstitialVideoListener;
+import com.mbridge.msdk.interstitialvideo.out.MBBidInterstitialVideoHandler;
+import com.mbridge.msdk.interstitialvideo.out.MBInterstitialVideoHandler;
+import com.mbridge.msdk.mbbid.out.BidManager;
+import com.mbridge.msdk.out.CustomInfoManager;
+import com.mbridge.msdk.out.InterstitialListener;
+import com.mbridge.msdk.out.MBInterstitialHandler;
 
 import java.util.HashMap;
 import java.util.Map;
-
-/**
- * Created by Z on 2018/6/27.
- */
 
 
 public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
     private final String TAG = MintegralATInterstitialAdapter.class.getSimpleName();
 
-    MTGBidInterstitialVideoHandler mMvBidIntersititialVideoHandler;
-    MTGInterstitialHandler mMvInterstitialHandler;
-    MTGInterstitialVideoHandler mMvInterstitialVideoHandler;
+    MBBidInterstitialVideoHandler mMvBidIntersititialVideoHandler;
+    MBInterstitialHandler mMvInterstitialHandler;
+    MBInterstitialVideoHandler mMvInterstitialVideoHandler;
     String placementId = "";
     String unitId = "";
     boolean isVideo;
@@ -114,20 +117,20 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
             };
 
             if (TextUtils.isEmpty(mPayload)) {
-                mMvInterstitialVideoHandler = new MTGInterstitialVideoHandler(context.getApplicationContext(), placementId, unitId);
+                mMvInterstitialVideoHandler = new MBInterstitialVideoHandler(context.getApplicationContext(), placementId, unitId);
                 // Please use this method"mMtgInterstitalVideoHandler.setRewardVideoListener()" ,if the SDK version is below 9.0.2
                 mMvInterstitialVideoHandler.setInterstitialVideoListener(videoListener);
             } else {
-                mMvBidIntersititialVideoHandler = new MTGBidInterstitialVideoHandler(context.getApplicationContext(), placementId, unitId);
+                mMvBidIntersititialVideoHandler = new MBBidInterstitialVideoHandler(context.getApplicationContext(), placementId, unitId);
                 mMvBidIntersititialVideoHandler.setInterstitialVideoListener(videoListener);
             }
 
 
         } else {
             HashMap<String, Object> hashMap = new HashMap<String, Object>();
-            hashMap.put(MIntegralConstans.PROPERTIES_UNIT_ID, unitId);
-            hashMap.put(MIntegralConstans.PLACEMENT_ID, placementId);
-            mMvInterstitialHandler = new MTGInterstitialHandler(context.getApplicationContext(), hashMap);
+            hashMap.put(MBridgeConstans.PROPERTIES_UNIT_ID, unitId);
+            hashMap.put(MBridgeConstans.PLACEMENT_ID, placementId);
+            mMvInterstitialHandler = new MBInterstitialHandler(context.getApplicationContext(), hashMap);
             mMvInterstitialHandler.setInterstitialListener(new InterstitialListener() {
 
                 @Override
@@ -309,7 +312,7 @@ public class MintegralATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

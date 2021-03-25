@@ -21,10 +21,6 @@ import com.facebook.ads.RewardedVideoAdListener;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
-
 public class FacebookRewardVideoAdapter extends CustomRewardVideoAdapter {
 
     RewardedVideoAd rewardedVideoAd;

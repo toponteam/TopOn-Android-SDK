@@ -13,6 +13,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.anythink.core.api.ATAdConst;
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.mintegral.msdk.MIntegralConstans;
@@ -32,11 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
-/**
- * @author zhou
- * @date 2018/1/17
- */
 
 public class MintegralATAdapter extends CustomNativeAdapter {
 
@@ -378,7 +374,7 @@ public class MintegralATAdapter extends CustomNativeAdapter {
             int requestNum = 1;
             try {
                 if (serverExtra != null) {
-                    requestNum = Integer.parseInt(serverExtra.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+                    requestNum = Integer.parseInt(serverExtra.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
                 }
             } catch (Exception e) {
             }
@@ -393,19 +389,10 @@ public class MintegralATAdapter extends CustomNativeAdapter {
             }
 
             try {
-                expressWidth = Integer.parseInt(localExtra.get(MintegralATConst.AUTO_RENDER_NATIVE_WIDTH).toString());
-                expressHeight = Integer.parseInt(localExtra.get(MintegralATConst.AUTO_RENDER_NATIVE_HEIGHT).toString());
+                expressWidth = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_WIDTH).toString());
+                expressHeight = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_HEIGHT).toString());
             } catch (Throwable e) {
-            }
-
-            if (expressWidth <= 0 && expressHeight <= 0) {
-                try {
-                    expressWidth = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_WIDTH).toString());
-                    expressHeight = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_HEIGHT).toString());
-                } catch (Throwable e) {
-                    Log.e(TAG, "Mintegral AdvancedNative size is empty.");
-                }
-
+                Log.e(TAG, "Mintegral AdvancedNative size is empty.");
             }
 
             mUnitId = unitId;
@@ -446,7 +433,7 @@ public class MintegralATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

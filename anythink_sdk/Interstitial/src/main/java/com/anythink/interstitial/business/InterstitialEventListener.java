@@ -7,6 +7,8 @@
 
 package com.anythink.interstitial.business;
 
+import android.os.SystemClock;
+
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
@@ -17,6 +19,7 @@ import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonSDKUtil;
+import com.anythink.interstitial.api.ATInterstitialExListener;
 import com.anythink.interstitial.api.ATInterstitialListener;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialEventListener;
@@ -26,6 +29,7 @@ public class InterstitialEventListener implements CustomInterstitialEventListene
     ATInterstitialListener mListener;
     CustomInterstitialAdapter mAdapter;
     long impressionTime;
+    long impressionRealTime;
 
     public InterstitialEventListener(CustomInterstitialAdapter adapter, ATInterstitialListener listener) {
         mListener = listener;
@@ -75,7 +79,7 @@ public class InterstitialEventListener implements CustomInterstitialEventListene
             CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
 
             if (impressionTime != 0) {
-                AgentEventManager.onAdImpressionTimeAgent(adTrackingInfo, false, impressionTime, System.currentTimeMillis());
+                AgentEventManager.onAdImpressionTimeAgent(adTrackingInfo, false, impressionTime, System.currentTimeMillis(), SystemClock.elapsedRealtime() - impressionRealTime);
             }
 
             AgentEventManager.onAdCloseAgent(adTrackingInfo, false);
@@ -113,6 +117,7 @@ public class InterstitialEventListener implements CustomInterstitialEventListene
     public void onInterstitialAdShow() {
 
         impressionTime = System.currentTimeMillis();
+        impressionRealTime = SystemClock.elapsedRealtime();
         if (mAdapter != null) {
             AdTrackingInfo adTrackingInfo = mAdapter.getTrackingInfo();
             CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
@@ -122,6 +127,13 @@ public class InterstitialEventListener implements CustomInterstitialEventListene
         }
         if (mListener != null) {
             mListener.onInterstitialAdShow(ATAdInfo.fromAdapter(mAdapter));
+        }
+    }
+
+    @Override
+    public void onDeeplinkCallback(boolean isSuccess) {
+        if (mListener != null && mListener instanceof ATInterstitialExListener) {
+            ((ATInterstitialExListener) mListener).onDeeplinkCallback(ATAdInfo.fromAdapter(mAdapter), isSuccess);
         }
     }
 }

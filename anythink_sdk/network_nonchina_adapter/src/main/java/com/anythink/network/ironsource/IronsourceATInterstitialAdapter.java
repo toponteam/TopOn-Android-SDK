@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.ironsource;
 
 import android.app.Activity;
@@ -12,9 +19,6 @@ import com.ironsource.mediationsdk.logger.IronSourceError;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
 public class IronsourceATInterstitialAdapter extends CustomInterstitialAdapter {
     private final String TAG = IronsourceATInterstitialAdapter.class.getSimpleName();
 
@@ -81,7 +85,7 @@ public class IronsourceATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return IronsourceATConst.getNetworkVersion();
+        return IronsourceATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

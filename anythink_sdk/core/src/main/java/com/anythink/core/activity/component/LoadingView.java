@@ -7,9 +7,6 @@
 
 package com.anythink.core.activity.component;
 
-/**
- * Created by Z on 2018/5/7.
- */
 
 
 import android.content.Context;

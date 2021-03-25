@@ -8,6 +8,7 @@
 package com.anythink.core.common.net;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.TextUtils;
 
@@ -32,28 +33,31 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/**
- * Created by zhou on 2017/12/30.
- */
 
 public class AppStrategyLoader extends AbsHttpLoader {
     private static final String TAG = AppStrategyLoader.class.getSimpleName();
 
+    public static final String CUSTOM_KEY = "custom";
     private String appid;
     private String appKey;
     private Context mContext;
 
     long startTime;
+    long startElapsedRealtime;
+
+    Map<String,Object> appCustomMap;
 
     public AppStrategyLoader(Context mContext, String appId, String appKey) {
         this.appid = appId;
         this.appKey = appKey;
         this.mContext = mContext;
+        this.appCustomMap = SDKContext.getInstance().getCustomMap();;
     }
 
     @Override
     public void start(int reqCode, OnHttpLoaderListener listener) {
         startTime = System.currentTimeMillis();
+        startElapsedRealtime = SystemClock.elapsedRealtime();
         super.start(reqCode, listener);
     }
 
@@ -138,6 +142,19 @@ public class AppStrategyLoader extends AbsHttpLoader {
                 temp.put("bk_id", SDKContext.getInstance().getUpId());
             }
 
+            //Add Custom Rule
+            Map<String,Object> appCustomMap = SDKContext.getInstance().getCustomMap();
+            if (appCustomMap != null) {
+                JSONObject customObject = new JSONObject();
+                for (String key : appCustomMap.keySet()) {
+                    Object itemObject = appCustomMap.get(key);
+                    if (itemObject != null) {
+                        customObject.put(key, itemObject.toString());
+                    }
+                }
+                temp.put("custom", customObject);
+            }
+
         } catch (JSONException e) {
             if (Const.DEBUG) {
                 e.printStackTrace();
@@ -156,7 +173,16 @@ public class AppStrategyLoader extends AbsHttpLoader {
     @Override
     protected Object onParseResponse(Map<String, List<String>> headers, String jsonString) throws IOException {
         jsonString = jsonString.trim();
-        AgentEventManager.sentHostCallbackTime("app", null, startTime, System.currentTimeMillis());
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            if (appCustomMap != null) {
+                jsonObject.put("custom", new JSONObject(appCustomMap));
+            }
+            jsonString = jsonObject.toString();
+        } catch (Exception e) {
+
+        }
+        AgentEventManager.sentHostCallbackTime("app", null, startTime, System.currentTimeMillis(), SystemClock.elapsedRealtime() - startElapsedRealtime);
         return jsonString;
     }
 

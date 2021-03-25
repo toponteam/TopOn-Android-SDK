@@ -10,6 +10,7 @@ package com.anythink.network.baidu;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.baidu.mobad.feeds.BaiduNative;
@@ -84,8 +85,8 @@ public class BaiduATAdapter extends CustomNativeAdapter {
 
         int requestNum = 1;
         try {
-            if (serverExtra.containsKey(CustomNativeAd.AD_REQUEST_NUM)) {
-                requestNum = Integer.parseInt(serverExtra.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+            if (serverExtra.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM)) {
+                requestNum = Integer.parseInt(serverExtra.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
             }
         } catch (Exception e) {
         }
@@ -127,6 +128,11 @@ public class BaiduATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return BaiduATConst.getNetworkVersion();
+        return BaiduATInitManager.getInstance().getNetworkVersion();
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 }

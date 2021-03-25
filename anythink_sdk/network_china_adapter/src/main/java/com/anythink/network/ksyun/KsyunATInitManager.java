@@ -12,6 +12,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.network.ks.KSATConst;
 import com.ksc.ad.sdk.IKsyunAdInitResultListener;
 import com.ksc.ad.sdk.KsyunAdSdk;
 import com.ksc.ad.sdk.KsyunAdSdkConfig;
@@ -83,6 +84,11 @@ public class KsyunATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Ksyun";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return KsyunATConst.getNetworkVersion();
     }
 
     @Override

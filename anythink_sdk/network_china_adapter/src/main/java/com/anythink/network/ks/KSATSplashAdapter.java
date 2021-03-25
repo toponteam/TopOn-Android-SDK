@@ -7,12 +7,13 @@
 
 package com.anythink.network.ks;
 
+import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 import com.kwad.sdk.api.KsAdSDK;
@@ -23,23 +24,12 @@ import com.kwad.sdk.api.KsSplashScreenAd;
 import java.util.Map;
 
 public class KSATSplashAdapter extends CustomSplashAdapter {
-
+    private final String TAG = getClass().getSimpleName();
     long posId;
+    KsSplashScreenAd mKsSplashScreenAd;
 
     @Override
     public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
-
-        if (!(context instanceof FragmentActivity)) {
-            if (mLoadListener != null) {
-                mLoadListener.onAdLoadError("", "kuaishou context must be FragmentActivity.");
-            }
-            return;
-        } else if (View.NO_ID == mContainer.getId()) {
-            if (mLoadListener != null) {
-                mLoadListener.onAdLoadError("", "kuaishou must set ID for container.");
-            }
-            return;
-        }
 
         String appId = (String) serverExtra.get("app_id");
         String position_id = (String) serverExtra.get("position_id");
@@ -52,7 +42,15 @@ public class KSATSplashAdapter extends CustomSplashAdapter {
         }
         posId = Long.parseLong(position_id);
 
-        KSATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtra);
+        KSATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtra, new KSATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                startLoadAd();
+            }
+        });
+    }
+
+    private void startLoadAd() {
         KsScene adScene = new KsScene.Builder(posId)
                 .adNum(1)
                 .build();
@@ -66,73 +64,78 @@ public class KSATSplashAdapter extends CustomSplashAdapter {
             }
 
             @Override
+            public void onRequestResult(int i) {
+
+            }
+
+            @Override
             public void onSplashScreenAdLoad(@Nullable KsSplashScreenAd ksSplashScreenAd) {
-                if (ksSplashScreenAd != null) {
-                    Fragment fragment = ksSplashScreenAd.getFragment(new KsSplashScreenAd.SplashScreenAdInteractionListener() {
-                        @Override
-                        public void onAdClicked() {
-                            if (mImpressionListener != null) {
-                                mImpressionListener.onSplashAdClicked();
-                            }
-                        }
-
-                        @Override
-                        public void onAdShowError(int i, String s) {
-
-                        }
-
-                        @Override
-                        public void onAdShowEnd() {
-                            if (mImpressionListener != null) {
-                                mImpressionListener.onSplashAdDismiss();
-                            }
-                        }
-
-                        @Override
-                        public void onAdShowStart() {
-                            if (mImpressionListener != null) {
-                                mImpressionListener.onSplashAdShow();
-                            }
-                        }
-
-                        @Override
-                        public void onSkippedAd() {
-                            if (mImpressionListener != null) {
-                                mImpressionListener.onSplashAdDismiss();
-                            }
-                        }
-                    });
-
-                    if (fragment != null && mContainer != null) {
-                        try {
-                            ((FragmentActivity) context).getSupportFragmentManager().beginTransaction()
-                                    .replace(mContainer.getId(), fragment)
-                                    .commitAllowingStateLoss();
-
-                            if (mLoadListener != null) {
-                                mLoadListener.onAdCacheLoaded();
-                            }
-                        } catch (Throwable e) {
-                            if (mLoadListener != null) {
-                                mLoadListener.onAdLoadError("", e.getMessage());
-                            }
-                        }
-
-                        return;
-                    }
-                }
+                mKsSplashScreenAd = ksSplashScreenAd;
 
                 if (mLoadListener != null) {
-                    mLoadListener.onAdLoadError("", "kuaishou splash no fill.");
+                    mLoadListener.onAdCacheLoaded();
                 }
             }
         });
+    }
 
+    @Override
+    public boolean isAdReady() {
+        return mKsSplashScreenAd != null;
+    }
+
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+
+        if (mKsSplashScreenAd != null) {
+            View splashView = mKsSplashScreenAd.getView(activity, new KsSplashScreenAd.SplashScreenAdInteractionListener() {
+
+                @Override
+                public void onAdClicked() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onSplashAdClicked();
+                    }
+                }
+
+                @Override
+                public void onAdShowError(int code, String extra) {
+                    Log.e(TAG, "onAdShowError: " + code + ", " + extra);
+                }
+
+                @Override
+                public void onAdShowEnd() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onSplashAdDismiss();
+                    }
+                }
+
+                @Override
+                public void onAdShowStart() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onSplashAdShow();
+                    }
+                }
+
+                @Override
+                public void onSkippedAd() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onSplashAdDismiss();
+                    }
+                }
+            });
+
+            try {
+                container.addView(splashView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage());
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public void destory() {
-
+        mKsSplashScreenAd = null;
     }
 
     @Override
@@ -143,11 +146,12 @@ public class KSATSplashAdapter extends CustomSplashAdapter {
             e.printStackTrace();
             return "";
         }
+
     }
 
     @Override
     public String getNetworkSDKVersion() {
-        return KSATConst.getSDKVersion();
+        return KSATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

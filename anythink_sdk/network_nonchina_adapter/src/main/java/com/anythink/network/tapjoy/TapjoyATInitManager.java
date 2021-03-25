@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.tapjoy;
 
 import android.content.Context;
@@ -5,6 +12,7 @@ import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
 import com.anythink.core.api.ATSDK;
+import com.anythink.core.common.base.Const;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GoogleSignatureVerifier;
 import com.tapjoy.TJConnectListener;
@@ -48,6 +56,25 @@ public class TapjoyATInitManager extends ATInitMediation {
                 final Hashtable<String, Object> connectFlags = new Hashtable<>();
 //                connectFlags.put(TapjoyConnectFlag.ENABLE_LOGGING, ATSDK.isNetworkLogDebug());
 //                TapjoyLog.setDebugEnabled(ATSDK.isNetworkLogDebug());
+                try {
+                    boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                    if (ccpaSwitch) {
+                        TJPrivacyPolicy privacyPolicy = TJPrivacyPolicy.getInstance();
+                        privacyPolicy.setUSPrivacy("1YYY");
+                    }
+                } catch (Throwable e) {
+
+                }
+
+                try {
+                    boolean coppaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY);
+                    if (coppaSwitch) {
+                        TJPrivacyPolicy privacyPolicy = TJPrivacyPolicy.getInstance();
+                        privacyPolicy.setBelowConsentAge(true);
+                    }
+                } catch (Throwable e) {
+
+                }
 
                 Tapjoy.connect(context.getApplicationContext(), appkey, connectFlags, new TJConnectListener() {
                     @Override
@@ -90,6 +117,11 @@ public class TapjoyATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Tapjoy";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return TapjoyATConst.getNetworkVersion();
     }
 
     @Override

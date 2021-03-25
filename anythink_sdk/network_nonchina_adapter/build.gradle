@@ -40,4 +40,6 @@ dependencies {
     implementation project(project.path.replace(project.name,'') + ':Interstitial')
     implementation project(project.path.replace(project.name,'') + ':banner')
     implementation project(project.path.replace(project.name,'') + ':splashad')
+
+    compileOnly 'androidx.browser:browser:1.0.0'
 }

@@ -70,7 +70,6 @@ public class MonitoringPlatformManager {
                     }
                 }
 
-                //TODO Test AppsFlyer
                 JSONObject appsflyerObject = eventObject.optJSONObject(APPSFLYER_KEY);
                 if (appsflyerObject != null) {
                     int reportType = appsflyerObject.optInt("rtye");

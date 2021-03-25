@@ -11,6 +11,7 @@ import android.content.Context;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.kwad.sdk.api.KsAdSDK;
@@ -65,12 +66,23 @@ public class KSATAdapter extends CustomNativeAdapter {
 
         int requestNum = 1;
         try {
-            requestNum = Integer.parseInt(serverExtra.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+            requestNum = Integer.parseInt(serverExtra.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
         } catch (Exception e) {
         }
 
-        KSATInitManager.getInstance().initSDK(context, serverExtra);
+        final String finalLayout_type = layout_type;
+        final boolean finalIsVideoSoundEnable = isVideoSoundEnable;
+        final String finalUnit_type = unit_type;
+        final int finalRequestNum = requestNum;
+        KSATInitManager.getInstance().initSDK(context, serverExtra, new KSATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                startLoadAd(context, finalLayout_type, finalIsVideoSoundEnable, finalUnit_type, finalRequestNum);
+            }
+        });
+    }
 
+    private void startLoadAd(final Context context, String layout_type, boolean isVideoSoundEnable, String unit_type, int requestNum) {
         KsScene adScene = new KsScene.Builder(posId)
                 .adNum(requestNum)
                 .build();
@@ -110,7 +122,7 @@ public class KSATAdapter extends CustomNativeAdapter {
 
         final boolean finalIsVideoSoundEnable = isVideoSoundEnable;
         if (TextUtils.equals("1", layout_type)) {//native express
-            KsAdSDK.getLoadManager().loadFeedAd(adScene, new KsLoadManager.FeedAdListener() {
+            KsAdSDK.getLoadManager().loadConfigFeedAd(adScene, new KsLoadManager.FeedAdListener() {
                 @Override
                 public void onError(int i, String s) {
                     if (mLoadListener != null) {
@@ -189,6 +201,6 @@ public class KSATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return KSATConst.getSDKVersion();
+        return KSATInitManager.getInstance().getNetworkVersion();
     }
 }

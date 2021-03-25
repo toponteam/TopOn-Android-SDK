@@ -20,10 +20,6 @@ import com.facebook.ads.InterstitialAdListener;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
-
 public class FacebookInterstitialAdapter extends CustomInterstitialAdapter {
 
     InterstitialAd mInterstitialAd;

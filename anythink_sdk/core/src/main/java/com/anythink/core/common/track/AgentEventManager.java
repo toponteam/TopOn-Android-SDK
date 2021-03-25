@@ -13,12 +13,20 @@ import com.anythink.core.api.AdError;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdTrackingInfo;
+import com.anythink.core.common.entity.AdxOffer;
 import com.anythink.core.common.entity.AgentInfoBean;
+import com.anythink.core.common.entity.BaseAdContent;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
+import com.anythink.core.common.entity.MyOfferAd;
+import com.anythink.core.common.entity.OnlineApiOffer;
+import com.anythink.core.common.entity.OwnBaseAdContent;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
+
+import org.json.JSONArray;
 
 import java.util.Map;
 
@@ -62,7 +70,7 @@ public class AgentEventManager {
         }
     }
 
-    private static void onAdsourceLoadFail(String requestId, String placementId, int groupId, int refresh, int networkType, String adSourceId, String format, int level, int reason, AdError adError, int bidType, double bidPrice, long failTime, int trafficGroupId) {
+    public static void onAdsourceLoadFail(String requestId, String placementId, int groupId, int refresh, int networkType, String adSourceId, String format, int level, int reason, AdError adError, int bidType, double bidPrice, long failTime, int trafficGroupId) {
 
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004631";
@@ -304,7 +312,7 @@ public class AgentEventManager {
         handleEventSend(agentInfoBean);
     }
 
-    public static void sentHostCallbackTime(String type, String placementId, long requestTime, long responseTime) {
+    public static void sentHostCallbackTime(String type, String placementId, long requestTime, long responseTime, long delayTime) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004635";
         if (!TextUtils.isEmpty(placementId)) {
@@ -313,7 +321,7 @@ public class AgentEventManager {
         agentInfoBean.msg = type;
         agentInfoBean.msg1 = String.valueOf(requestTime);
         agentInfoBean.msg2 = String.valueOf(responseTime);
-        agentInfoBean.msg3 = String.valueOf(responseTime - requestTime);
+        agentInfoBean.msg3 = String.valueOf(delayTime);
 
 
         handleEventSend(agentInfoBean);
@@ -333,7 +341,7 @@ public class AgentEventManager {
         handleEventSend(agentInfoBean);
     }
 
-    public static void offerVideoUrlDownloadEvent(String placementId, String offerId, String downloadUrl, String downloadResult, long fileSize, String failMsg, long downloadStartTime, long downloadEndTime, int offerType) {
+    public static void offerVideoUrlDownloadEvent(String placementId, String offerId, String downloadUrl, String downloadResult, long fileSize, String failMsg, long downloadStartTime, long downloadEndTime, int offerType, long downloadTime) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004638";
         agentInfoBean.unitId = placementId;
@@ -344,7 +352,7 @@ public class AgentEventManager {
         agentInfoBean.msg4 = failMsg;
         agentInfoBean.msg5 = String.valueOf(downloadStartTime);
         agentInfoBean.msg6 = String.valueOf(downloadEndTime);
-        agentInfoBean.msg7 = "1".equals(downloadResult) ? String.valueOf(downloadEndTime - downloadStartTime) : null;
+        agentInfoBean.msg7 = "1".equals(downloadResult) ? String.valueOf(downloadTime) : null;
         agentInfoBean.msg8 = String.valueOf(offerType);
 
         handleEventSend(agentInfoBean);
@@ -451,7 +459,18 @@ public class AgentEventManager {
         handleEventSend(agentInfoBean);
     }
 
-    public static void onAdImpressionTimeAgent(AdTrackingInfo adTrackingInfo, boolean isReward, long startTime, long endTime) {
+    public static void sendApplicationPlayTimeV2(int existScenario, long startTime, long endTime, String psid, String launcherId) {
+        AgentInfoBean agentInfoBean = new AgentInfoBean();
+        agentInfoBean.key = "1004651";
+        agentInfoBean.psid = psid;
+        agentInfoBean.msg = String.valueOf(existScenario);
+        agentInfoBean.msg1 = String.valueOf(endTime - startTime);
+        agentInfoBean.msg2 = launcherId;
+
+        handleEventSend(agentInfoBean);
+    }
+
+    public static void onAdImpressionTimeAgent(AdTrackingInfo adTrackingInfo, boolean isReward, long startTime, long endTime, long delayTime) {
         try {
             AgentInfoBean agentInfoBean = new AgentInfoBean();
             agentInfoBean.key = "1004643";
@@ -465,7 +484,7 @@ public class AgentEventManager {
             agentInfoBean.msg = adTrackingInfo.getmAdType();
             agentInfoBean.msg1 = String.valueOf(startTime);
             agentInfoBean.msg2 = String.valueOf(endTime);
-            agentInfoBean.msg3 = String.valueOf(endTime - startTime);
+            agentInfoBean.msg3 = String.valueOf(delayTime);
             agentInfoBean.msg4 = String.valueOf(adTrackingInfo.getmNetworkType());
             agentInfoBean.msg5 = adTrackingInfo.getmUnitGroupUnitId();
             agentInfoBean.msg6 = String.valueOf(adTrackingInfo.getImpressionLevel());
@@ -574,7 +593,7 @@ public class AgentEventManager {
     /**
      * DeepLink Agent
      */
-    public static void sendDeepLinkAgent(String placementId, String offerId, int offerType, String deepLinkUrl, String result) {
+    public static void sendDeepLinkAgent(String placementId, String offerId, int offerType, String deepLinkUrl, String result, int jumpType) {
         AgentInfoBean agentInfoBean = new AgentInfoBean();
         agentInfoBean.key = "1004650";
         agentInfoBean.unitId = placementId;
@@ -582,12 +601,71 @@ public class AgentEventManager {
         agentInfoBean.msg1 = String.valueOf(offerType);
         agentInfoBean.msg2 = deepLinkUrl;
         agentInfoBean.msg3 = result;
+        agentInfoBean.msg4 = String.valueOf(jumpType); // 0: Deeplink 1:JumpUrl
+
+        handleEventSend(agentInfoBean);
+    }
+
+    public static void feedbackAgent(BaseAdContent baseAdContent, BaseAdRequestInfo baseAdRequestInfo, String feedbackType, String submitMsg) {
+        AgentInfoBean agentInfoBean = new AgentInfoBean();
+        agentInfoBean.key = "1004652";
+        agentInfoBean.unitId = baseAdRequestInfo.placementId;
+        agentInfoBean.msg = String.valueOf(baseAdRequestInfo.networkFirmId);
+        agentInfoBean.msg1 = baseAdRequestInfo.adsourceId;
+
+        if (baseAdContent instanceof MyOfferAd) {
+            agentInfoBean.msg2 = "1";
+        } else if (baseAdContent instanceof AdxOffer) {
+            agentInfoBean.msg2 = "2";
+        } else if (baseAdContent instanceof OnlineApiOffer) {
+            agentInfoBean.msg2 = "3";
+        }
+
+        agentInfoBean.msg3 = feedbackType;
+        if (TextUtils.equals("0", feedbackType)) {
+            agentInfoBean.msg4 = submitMsg;
+        }
+
+        agentInfoBean.msg5 = baseAdContent.getOfferId();
+        agentInfoBean.msg6 = baseAdContent.getCreativeId();
+        agentInfoBean.msg7 = baseAdContent.getPkgName();
+        agentInfoBean.msg8 = baseAdContent.getTitle();
+        agentInfoBean.msg9 = baseAdContent.getDesc();
+        agentInfoBean.msg10 = baseAdContent.getIconUrl();
+        agentInfoBean.msg11 = baseAdContent.getEndCardImageUrl();
+        agentInfoBean.msg12 = baseAdContent.getVideoUrl();
+
+        try {
+            if (baseAdContent instanceof OwnBaseAdContent) {
+                StringBuilder sb = new StringBuilder();
+                String imageUrlList = ((OwnBaseAdContent) baseAdContent).getImageUrlList();
+                if (!TextUtils.isEmpty(imageUrlList)) {
+                    JSONArray jsonArray = new JSONArray(imageUrlList);
+                    int length = jsonArray.length();
+
+                    for (int j = 0; j < length; j++) {
+                        sb.append(jsonArray.optString(j));
+                        sb.append(",");
+                    }
+
+                    if (sb.length() > 1) {
+                        sb.deleteCharAt(sb.length() - 1);
+                    }
+
+                    agentInfoBean.msg13 = sb.toString();
+                }
+            }
+        } catch (Throwable e) {
+            if (Const.DEBUG) {
+                e.printStackTrace();
+            }
+        }
 
         handleEventSend(agentInfoBean);
     }
 
 
-    private static void handleEventSend(final AgentInfoBean agentInfoBean) {
+    protected static void handleEventSend(final AgentInfoBean agentInfoBean) {
         TaskManager.getInstance().run_proxy(new Runnable() {
             @Override
             public void run() {
@@ -602,6 +680,15 @@ public class AgentEventManager {
                 agentInfoBean.timestamp = String.valueOf(System.currentTimeMillis());
                 AppStrategy appStrategy = AppStrategyManager.getInstance(SDKContext.getInstance().getContext()).getAppStrategyByAppId(SDKContext.getInstance().getAppId());
                 if (appStrategy != null) {
+
+                    //check network firm id
+                    String daNoTrackingNetworkFirmId = appStrategy.getDaNoTrackingNetworkFirmId();
+                    if (!TextUtils.isEmpty(daNoTrackingNetworkFirmId)) {
+                        if (isDontSendAgentForNetworkFirmId(agentInfoBean, daNoTrackingNetworkFirmId)) {
+                            //do not upload tracking
+                            return;
+                        }
+                    }
 
                     Map<String, String> daNotKeyFtMap = appStrategy.getDaNotKeyFtMap();
                     if (daNotKeyFtMap != null) {
@@ -646,6 +733,39 @@ public class AgentEventManager {
                 Agent.getInstance().onEvent(agentInfoBean);
             }
         });
+    }
+
+    private static boolean isDontSendAgentForNetworkFirmId(AgentInfoBean agentInfoBean, String daNoTrackingNetworkFirmId) {
+        String networkFirmId = null;
+        switch (agentInfoBean.key) {
+            case "1004631":
+            case "1004634":
+            case "1004636":
+            case "1004639":
+            case "1004640":
+            case "1004646":
+                networkFirmId = agentInfoBean.msg;
+                break;
+            case "1004643":
+                networkFirmId = agentInfoBean.msg4;
+                break;
+        }
+
+        if (!TextUtils.isEmpty(networkFirmId)) {
+            try {
+                JSONArray jsonArray = new JSONArray(daNoTrackingNetworkFirmId);
+                int length = jsonArray.length();
+                for (int i = 0; i < length; i++) {
+                    if (TextUtils.equals(networkFirmId, jsonArray.optString(i))) {
+                        return true;
+                    }
+                }
+            } catch (Throwable e) {
+
+            }
+        }
+
+        return false;
     }
 
 }

@@ -11,11 +11,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
 import android.view.ViewGroup;
 
 import com.anythink.core.api.ATAdInfo;
+import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.ATMediationRequestInfo;
+import com.anythink.core.api.ATNetworkConfirmInfo;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
@@ -25,97 +26,237 @@ import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.AppStrategyManager;
+import com.anythink.splashad.bussiness.AdEventListener;
+import com.anythink.splashad.bussiness.AdLoadListener;
 import com.anythink.splashad.bussiness.AdLoadManager;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
 
 public class ATSplashAd {
 
     final String TAG = getClass().getSimpleName();
     String mPlacementId;
-//    long mFetchDelay;
 
     AdLoadManager mAdLoadManager;
 
     ATSplashAdListener mListener;
 
-    boolean mHasDismiss;
+    ATMediationRequestInfo mDefaultRequestInfo;
 
-    boolean mHasReturn;
+    Context mContext;
 
-    ATSplashAdListener mSelfListener = new ATSplashAdListener() {
-        @Override
-        public void onAdLoaded() {
-            SDKContext.getInstance().removeMainThreadRunnable(loadOverTimeRunnable);
-            SDKContext.getInstance().runOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (!mHasReturn) {
-                        mHasReturn = true;
-                        if (mListener != null) {
-                            mListener.onAdLoaded();
+    WeakReference<Activity> mActivityWeakRef;
+
+    int mFetchAdTimeout;
+
+    public ATSplashAd(Context context, String placementId, ATSplashAdListener listener) {
+        this(context, placementId, null, listener, 0);
+    }
+
+    public ATSplashAd(Context context, String placementId, ATMediationRequestInfo defaultRequestInfo, ATSplashAdListener listener) {
+        this(context, placementId, defaultRequestInfo, listener, 0);
+    }
+
+    public ATSplashAd(Context context, String placementId, ATMediationRequestInfo defaultRequestInfo, ATSplashAdListener listener, int fetchAdTimeout) {
+        mContext = context.getApplicationContext();
+        mPlacementId = placementId;
+        mListener = listener;
+        mDefaultRequestInfo = defaultRequestInfo;
+
+        mFetchAdTimeout = fetchAdTimeout;
+
+        if (context instanceof Activity) {
+            mActivityWeakRef = new WeakReference<>((Activity) context);
+        }
+
+
+        if (mDefaultRequestInfo != null) {
+            mDefaultRequestInfo.setFormat(Const.FORMAT.SPLASH_FORMAT);
+        }
+
+        mAdLoadManager = AdLoadManager.getInstance(context, placementId); //new AdLoadManager(activity, container, skipView, placementId, mFetchDelay);
+
+    }
+
+
+    /**
+     * Mediation Setting Map
+     *
+     * @param map
+     */
+    public void setLocalExtra(Map<String, Object> map) {
+        PlacementAdManager.getInstance().putPlacementLocalSettingMap(mPlacementId, map);
+    }
+
+    public void loadAd() {
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_SPLASH, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
+
+        /**
+         * Timeout Control
+         */
+        TaskManager.getInstance().run_proxy(new Runnable() {
+            @Override
+            public void run() {
+                /**Check Developer having set Timeout**/
+                int timeout = mFetchAdTimeout;
+                if (timeout <= 0) {
+                    //Use Strategy or Default
+                    AppStrategy strategy = AppStrategyManager.getInstance(mContext).getAppStrategyByAppId(SDKContext.getInstance().getAppId());
+                    timeout = strategy.getPlacementTimeOut() == 0 ? 5000 : (int) strategy.getPlacementTimeOut();
+                }
+
+                Activity activity = mActivityWeakRef != null ? mActivityWeakRef.get() : null;
+
+                AdLoadListener mAdLoadListener = new AdLoadListener() {
+                    @Override
+                    public void onAdLoaded(String requestId) {
+                        SDKContext.getInstance().runOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mListener != null) {
+                                    mListener.onAdLoaded();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onNoAdError(String requestId, final AdError adError) {
+                        if (mAdLoadManager != null) {
+                            mAdLoadManager.setLoadFail(adError);
+                        }
+
+                        SDKContext.getInstance().runOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mListener != null) {
+                                    mListener.onNoAdError(adError);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onTimeout(final String requestId) {
+                        SDKContext.getInstance().runOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mAdLoadManager != null) {
+                                    mAdLoadManager.sendRequestTimeoutAgent(requestId);
+                                }
+
+                                if (mListener != null) {
+                                    mListener.onNoAdError(ErrorCode.getErrorCode(ErrorCode.timeOutError, "", ""));
+                                }
+                            }
+                        });
+                    }
+                };
+
+                mAdLoadListener.startCountDown(timeout);
+                mAdLoadManager.startLoadAd(activity != null ? activity : mContext, mDefaultRequestInfo, mAdLoadListener, timeout);
+            }
+        });
+    }
+
+    public boolean isAdReady() {
+        if (SDKContext.getInstance().getContext() == null
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
+            Log.e(TAG, "SDK init error!");
+            return false;
+        }
+
+        boolean isAdReady = mAdLoadManager.isAdReady(mContext);
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_SPLASH, Const.LOGKEY.API_ISREADY, String.valueOf(isAdReady), "");
+        return isAdReady;
+    }
+
+    public ATAdStatusInfo checkAdStatus() {
+        if (SDKContext.getInstance().getContext() == null
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
+            Log.e(TAG, "SDK init error!");
+            return new ATAdStatusInfo(false, false, null);
+        }
+
+        ATAdStatusInfo adStatusInfo = mAdLoadManager.checkAdStatus(mContext);
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_AD_STATUS, adStatusInfo.toString(), "");
+
+        return adStatusInfo;
+    }
+
+    public void show(Activity activity, final ViewGroup container) {
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
+        if (SDKContext.getInstance().getContext() == null
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
+            Log.e(TAG, "SDK init error!");
+            return;
+        }
+
+        if (activity == null) {
+            Log.e(TAG, "Splash Activity is null.");
+        }
+
+        if (container == null) {
+            Log.e(TAG, "Splash Container is null.");
+            return;
+        }
+
+
+        AdEventListener adEventListener = new AdEventListener() {
+            @Override
+            public void onDeeplinkCallback(final ATAdInfo entity, final boolean isSuccess) {
+                SDKContext.getInstance().runOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mListener != null && mListener instanceof ATSplashExListener) {
+                            ((ATSplashExListener) mListener).onDeeplinkCallback(entity, isSuccess);
                         }
                     }
-                }
-            });
-
-        }
-
-        @Override
-        public void onNoAdError(final AdError adError) {
-            if (mAdLoadManager != null) {
-                mAdLoadManager.setLoadFail(adError);
+                });
             }
 
-            if (mAdLoadManager != null) {
-                mAdLoadManager.releaseMediationManager();
-            }
-
-            SDKContext.getInstance().removeMainThreadRunnable(loadOverTimeRunnable);
-            SDKContext.getInstance().runOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (!mHasReturn) {
-                        mHasReturn = true;
-                        if (mListener != null) {
-                            mListener.onNoAdError(adError);
+            @Override
+            public void onDownloadConfirm(final Context context, final ATAdInfo adInfo, final ATNetworkConfirmInfo networkConfirmInfo) {
+                SDKContext.getInstance().runOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mListener != null && mListener instanceof ATSplashExListenerWithConfirmInfo) {
+                            ((ATSplashExListenerWithConfirmInfo) mListener).onDownloadConfirm(context == null ? mContext : context, adInfo, networkConfirmInfo);
                         }
                     }
-                }
-            });
-        }
-
-        @Override
-        public void onAdShow(final ATAdInfo entity) {
-            SDKContext.getInstance().runOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (mListener != null) {
-                        mListener.onAdShow(entity);
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void onAdClick(final ATAdInfo entity) {
-            SDKContext.getInstance().runOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (mListener != null) {
-                        mListener.onAdClick(entity);
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void onAdDismiss(final ATAdInfo entity) {
-            if (mAdLoadManager != null) {
-                mAdLoadManager.releaseMediationManager();
+                });
             }
-            if (!mHasDismiss) {
-                mHasDismiss = true;
+
+            @Override
+            public void onAdShow(final ATAdInfo entity) {
+                SDKContext.getInstance().runOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mListener != null) {
+                            mListener.onAdShow(entity);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onAdClick(final ATAdInfo entity) {
+                SDKContext.getInstance().runOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mListener != null) {
+                            mListener.onAdClick(entity);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onAdDismiss(final ATAdInfo entity) {
                 SDKContext.getInstance().runOnMainThread(new Runnable() {
                     @Override
                     public void run() {
@@ -125,130 +266,13 @@ public class ATSplashAd {
                     }
                 });
             }
-        }
+        };
 
-        @Override
-        public void onAdTick(final long millisUtilFinished) {
-            SDKContext.getInstance().runOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (mListener != null) {
-                        mListener.onAdTick(millisUtilFinished);
-                    }
-                }
-            });
-        }
-    };
-
-    Runnable loadOverTimeRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (mContainer != null) {
-                mContainer.setVisibility(View.GONE);
-            }
-
-            if (mAdLoadManager != null) {
-                mAdLoadManager.releaseMediationManager();
-            }
-
-            if (!mHasReturn) {
-                mHasReturn = true;
-                if (mListener != null) {
-                    mListener.onNoAdError(ErrorCode.getErrorCode(ErrorCode.timeOutError, "", ""));
-                }
-            }
-        }
-    };
-
-    ViewGroup mContainer;
-
-    @Deprecated
-    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener, Map<String, String> customMap) {
-        this(activity, container, skipView, placementId, listener, 5000L);
+        mAdLoadManager.show(activity, container, adEventListener);
     }
 
     @Deprecated
-    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener, Map<String, String> customMap, long fetchDelay) {
-        this(activity, container, skipView, placementId, listener, fetchDelay);
-    }
-
-    @Deprecated
-    public ATSplashAd(Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener) {
-        this(activity, container, placementId, listener);
-    }
-
-    @Deprecated
-    public ATSplashAd(final Activity activity, ViewGroup container, View skipView, String placementId, ATSplashAdListener listener, long fetchDelay) {
-        this(activity, container, placementId, listener);
-    }
-
-
-    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, ATSplashAdListener listener) {
-        this(activity, container, placementId, null, null, listener);
-    }
-
-    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, Map<String, Object> localMap, ATSplashAdListener listener) {
-        this(activity, container, placementId, localMap, null, listener);
-    }
-
-    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, ATMediationRequestInfo defaultRequestInfo, ATSplashAdListener listener) {
-        this(activity, container, placementId, null, defaultRequestInfo, listener);
-    }
-
-    public ATSplashAd(final Activity activity, ViewGroup container, String placementId, Map<String, Object> localMap, ATMediationRequestInfo defaultRequestInfo, ATSplashAdListener listener) {
-        if (activity == null || container == null) {
-            if (listener != null) {
-                listener.onNoAdError(ErrorCode.getErrorCode(ErrorCode.exception, "", "Activity, Constainer could not be null!"));
-            }
-            Log.i(TAG, "Activity, Constainer could not be null!");
-            return;
-        }
-
-        if (TextUtils.isEmpty(placementId)) {
-            if (listener != null) {
-                listener.onNoAdError(ErrorCode.getErrorCode(ErrorCode.exception, "", "PlacementId could not be empty."));
-            }
-            Log.i(TAG, "PlacementId could not be empty.");
-            return;
-        }
-
-        mContainer = container;
-        mHasDismiss = false;
-        mPlacementId = placementId;
-        mListener = listener;
-
-        if (defaultRequestInfo != null) {
-            defaultRequestInfo.setFormat(Const.FORMAT.SPLASH_FORMAT);
-        }
-
-        if (localMap != null) {
-            PlacementAdManager.getInstance().putPlacementLocalSettingMap(placementId, localMap);
-        }
-
-        mAdLoadManager = AdLoadManager.getInstance(activity, placementId); //new AdLoadManager(activity, container, skipView, placementId, mFetchDelay);
-        mAdLoadManager.startLoadAd(activity, mContainer, null, defaultRequestInfo, mSelfListener);
-
-        mHasReturn = false;
-        /**
-         * Timeout Control
-         */
-        TaskManager.getInstance().run_proxy(new Runnable() {
-            @Override
-            public void run() {
-                AppStrategy strategy = AppStrategyManager.getInstance(activity).getAppStrategyByAppId(SDKContext.getInstance().getAppId());
-                SDKContext.getInstance().runOnMainThreadDelayed(loadOverTimeRunnable, strategy.getPlacementTimeOut() == 0 ? 5000L : strategy.getPlacementTimeOut());
-            }
-        });
-
-
-        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_SPLASH, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
-    }
-
-
     public void onDestory() {
-        if (mAdLoadManager != null) {
-            mAdLoadManager.releaseMediationManager();
-        }
 
     }
 

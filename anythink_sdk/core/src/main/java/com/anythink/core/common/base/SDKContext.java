@@ -12,11 +12,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -25,7 +27,7 @@ import com.anythink.core.api.ATCustomRuleKeys;
 import com.anythink.core.api.ATInitMediation;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
-import com.anythink.core.api.IATChinaSDKHandler;
+import com.anythink.core.api.IExHandler;
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.common.MsgManager;
 import com.anythink.core.common.OffLineTkManager;
@@ -36,6 +38,7 @@ import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.utils.CommonDeviceUtil;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.CommonMD5;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.CommonUtil;
 import com.anythink.core.common.utils.SPUtil;
 import com.anythink.core.common.utils.task.TaskManager;
@@ -62,13 +65,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import dalvik.system.DexFile;
 
-/**
- * Created by Z on 2017-1-20.
- */
 
 public class SDKContext {
+    public final static int TOPON_INIT_TYPE = 0;
+    public final static int OFM_INIT_TYPE = 1;
+
+    private int mInitType;
+
     private final String TAG = "SDK.init";
-    private final String CHINA_HANDLER_CLASS = BuildConfig.CHINA_PLUGIN_NAME;
+    private final String PRIVATE_DATA_HANDLER_CLASS = BuildConfig.PRIVATE_DATA_HANDLER_CLASS;
     private boolean isCheckChinaPlugin = false;
 
     private static SDKContext instance;
@@ -93,7 +98,7 @@ public class SDKContext {
     private String mSysId;
     private String mBkId;
 
-    private IATChinaSDKHandler mChinaHandler;
+    private IExHandler mChinaHandler;
     private final String mLogPath;
     private boolean NETWORK_LOG_FILE_EXIST = false;
     private boolean DEVELOPER_NETWORK_LOG_DEBUG = false;
@@ -102,6 +107,14 @@ public class SDKContext {
     private long initDays = 0;
 
     private List<String> mPackageList;
+
+    private String mChannel;
+    private String mSubChannel;
+
+    private boolean mAdLogoVisible;
+
+    private boolean mHasInit;
+
 
     public synchronized static SDKContext getInstance() {
         if (instance == null) {
@@ -112,17 +125,17 @@ public class SDKContext {
         return instance;
     }
 
-    public synchronized IATChinaSDKHandler getChinaHandler() {
+    public synchronized IExHandler getExHandler() {
         if (isCheckChinaPlugin) {
             return mChinaHandler;
         }
 
         try {
-            Class<? extends IATChinaSDKHandler> chinaHandlerClass = Class.forName(CHINA_HANDLER_CLASS)
-                    .asSubclass(IATChinaSDKHandler.class);
+            Class<? extends IExHandler> chinaHandlerClass = Class.forName(PRIVATE_DATA_HANDLER_CLASS)
+                    .asSubclass(IExHandler.class);
             final Constructor<?> chinaHandlerConstructor = chinaHandlerClass.getDeclaredConstructor((Class[]) null);
             chinaHandlerConstructor.setAccessible(true);
-            mChinaHandler = (IATChinaSDKHandler) chinaHandlerConstructor.newInstance();
+            mChinaHandler = (IExHandler) chinaHandlerConstructor.newInstance();
         } catch (Exception e) {
 
         }
@@ -137,6 +150,8 @@ public class SDKContext {
         mCustomMap = new ConcurrentHashMap<>();
 
         mLogPath = File.separator + "anythink.test";
+
+        mAdLogoVisible = true;
     }
 
     public synchronized void deniedUploadDeviceInfo(String... deviceInfos) {
@@ -174,16 +189,49 @@ public class SDKContext {
         return initDays;
     }
 
+    public int getInitType() {
+        return mInitType;
+    }
+
 
     public void setAppCustomMap(Map<String, Object> customMap) {
+        if (customMap != null && customMap.containsKey(ATCustomRuleKeys.CHANNEL)) {
+            Object channelObject = customMap.get(ATCustomRuleKeys.CHANNEL);
+            mChannel = channelObject != null ? channelObject.toString() : "";
+
+            if (!CommonSDKUtil.isChannelValid(mChannel)) {
+                mChannel = null;
+                customMap.remove(ATCustomRuleKeys.CHANNEL);
+            }
+        }
+
+        if (customMap != null && customMap.containsKey(ATCustomRuleKeys.SUB_CHANNEL)) {
+            Object subChannelObject = customMap.get(ATCustomRuleKeys.SUB_CHANNEL);
+            mSubChannel = subChannelObject != null ? subChannelObject.toString() : "";
+
+            if (!CommonSDKUtil.isSubChannelValid(mSubChannel)) {
+                mSubChannel = null;
+                customMap.remove(ATCustomRuleKeys.SUB_CHANNEL);
+            }
+        }
+
         mCustomMap.clear();
         if (customMap != null) {
             mCustomMap.putAll(customMap);
         }
+
+        if (!TextUtils.isEmpty(mChannel)) {
+            mCustomMap.put(ATCustomRuleKeys.CHANNEL, mChannel);
+        }
+        if (!TextUtils.isEmpty(mSubChannel)) {
+            mCustomMap.put(ATCustomRuleKeys.SUB_CHANNEL, mSubChannel);
+        }
     }
 
     public void setPlacementCustomMap(String placementId, Map<String, Object> customMap) {
-        mPlacementCustomMap.put(placementId, customMap);
+        if (customMap != null) {
+            mPlacementCustomMap.put(placementId, customMap);
+        }
     }
 
     public void setExcludeMyOfferPkgList(List<String> packageList) {
@@ -232,7 +280,8 @@ public class SDKContext {
     }
 
     public void setChannel(String channel) {
-        mCustomMap.put(ATCustomRuleKeys.CHANNEL, channel);
+        mChannel = channel;
+        mCustomMap.put(ATCustomRuleKeys.CHANNEL, mChannel);
     }
 
     public String getSubChannel() {
@@ -241,7 +290,8 @@ public class SDKContext {
     }
 
     public void setSubChannel(String subChannel) {
-        mCustomMap.put(ATCustomRuleKeys.SUB_CHANNEL, subChannel);
+        mSubChannel = subChannel;
+        mCustomMap.put(ATCustomRuleKeys.SUB_CHANNEL, mSubChannel);
     }
 
     public String getAppId() {
@@ -314,6 +364,7 @@ public class SDKContext {
 
                 try {
                     CommonDeviceUtil.initCommonDeviceInfo(mContext);// Init Device info
+                    CommonDeviceUtil.initUpId(mContext);
 //                    try {
 //                        //Get gaid
 //                        Class clz = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
@@ -359,6 +410,18 @@ public class SDKContext {
             return;
         }
 
+        mContext = context.getApplicationContext();
+
+        if (TextUtils.isEmpty(appId) || TextUtils.isEmpty(appKey)) {
+            return;
+        }
+
+        if (mHasInit) {
+            return;
+        }
+
+        mHasInit = true;
+
         try {
             long currentTime = System.currentTimeMillis();
             firstInitTime = SPUtil.getLong(context, Const.SPU_NAME, Const.SPUKEY.SPU_FIRST_INIT_TIME, 0L);
@@ -385,7 +448,6 @@ public class SDKContext {
 
             registerNetworkChange();
 
-
             TaskManager.getInstance().run_proxy(new Runnable() {
                 @Override
                 public void run() {
@@ -393,6 +455,7 @@ public class SDKContext {
                         Agent.getInstance().init(applicationContext);
                         createPsid(applicationContext, appId, ApplicationLifecycleListener.COLD_LAUNCH_MODE);
                         registerApplicationLifecycle(context);
+                        registerApplicationLifecycle_V2(applicationContext);
 
                         CrashUtil.getInstance(applicationContext).init();//init Crash Util
                     } catch (Exception e) {
@@ -418,7 +481,7 @@ public class SDKContext {
             TaskManager.getInstance().run_proxy(new Runnable() {
                 @Override
                 public void run() {
-                    getChinaHandler();
+                    getExHandler();
                     /**If china-plugin exist, init the china-plugin info**/
                     if (mChinaHandler != null) {
                         mChinaHandler.initDeviceInfo(context);
@@ -432,6 +495,10 @@ public class SDKContext {
         } catch (Exception e) {
 
         }
+    }
+
+    public void updateInitType(int initType) {
+        mInitType = initType;
     }
 
     /**
@@ -476,6 +543,49 @@ public class SDKContext {
         /**Register the application lifecycle**/
         ((Application) context.getApplicationContext())
                 .registerActivityLifecycleCallbacks(new ApplicationLifecycleListener(ApplicationLifecycleListener.COLD_LAUNCH_MODE, startTime));
+    }
+
+
+    /**
+     * register activity lifecycle（v2）
+     *
+     * @param context
+     */
+    private void registerApplicationLifecycle_V2(Context context) {
+        long startTime = 0;
+        String launcherId = "";
+        try {
+            AppStrategy appStrategy = AppStrategyManager.getInstance(context).getAppStrategyByAppId(mAppId);
+            String recordJSON = SPUtil.getString(SDKContext.getInstance().getContext(), Const.SPU_NAME, ApplicationLifecycleListenerV2.SPU_RECORD_NAME, "");
+
+            if (!TextUtils.isEmpty(recordJSON)) {
+                JSONObject jsonObject = new JSONObject(recordJSON);
+                startTime = jsonObject.optLong(ApplicationLifecycleListenerV2.JSON_START_TIME_KEY);
+                long endTime = jsonObject.optLong(ApplicationLifecycleListenerV2.JSON_END_TIME_KEY);
+                String psid = jsonObject.optString(ApplicationLifecycleListenerV2.JSON_PSID_KEY);
+                int launchMode = jsonObject.optInt(ApplicationLifecycleListenerV2.JSON_LAUNCH_MODE_KEY);
+                launcherId = jsonObject.optString(ApplicationLifecycleListenerV2.JSON_LAUNCHER_ID_KEY);
+
+                CommonLogUtil.e(ApplicationLifecycleListenerV2.class.getSimpleName(), "before leave time :" + (SystemClock.elapsedRealtime() - endTime) / 1000);
+
+                if (SystemClock.elapsedRealtime() - endTime >= appStrategy.getPsidTimeOut() || SystemClock.elapsedRealtime() - endTime < 0 || launchMode == ApplicationLifecycleListenerV2.HOT_LAUNCH_MODE) { //Psid create time is not 0, send the lastest playtime
+                    AgentEventManager.sendApplicationPlayTimeV2(launchMode == ApplicationLifecycleListenerV2.HOT_LAUNCH_MODE ? 4 : 2, startTime, endTime, psid, launcherId);
+                    CommonLogUtil.e(ApplicationLifecycleListenerV2.class.getSimpleName(), "SDKContext.init to send playTime:" + (endTime - startTime) / 1000);
+                    SPUtil.putString(SDKContext.getInstance().getContext(), Const.SPU_NAME, ApplicationLifecycleListenerV2.SPU_RECORD_NAME, "");
+                    launcherId = "";
+                    startTime = 0;
+                } else {
+                    CommonLogUtil.e(ApplicationLifecycleListenerV2.class.getSimpleName(), "use pervioud statime，close before:" + (endTime - startTime) / 1000);
+                }
+            }
+
+        } catch (Exception e) {
+        }
+
+
+        /**Register the application lifecycle**/
+        ((Application) context.getApplicationContext())
+                .registerActivityLifecycleCallbacks(new ApplicationLifecycleListenerV2(mContext, startTime, ApplicationLifecycleListenerV2.COLD_LAUNCH_MODE, launcherId));
     }
 
     /**
@@ -528,7 +638,7 @@ public class SDKContext {
         long time = SPUtil.getLong(context, Const.SPU_NAME, Const.SPUKEY.SPU_INIT_TIME_KEY, 0L);
 
         long currentTime = System.currentTimeMillis();
-        //做层保护，如果开发者调整过时间会导致时间间隔<0,则将init的更新时间设置为0
+        //protect the delay time < 0
         if (currentTime - time < 0) {
             time = 0;
         }
@@ -666,14 +776,21 @@ public class SDKContext {
                                 if (TextUtils.isEmpty(networkName)) {
                                     continue;
                                 }
-                                Log.i(Const.RESOURCE_HEAD, "NetworkName: " + networkName);
+
+                                String networkVersion = networkSDKInitManager.getNetworkVersion();
+                                if (!TextUtils.isEmpty(networkVersion)) {
+                                    Log.i(Const.RESOURCE_HEAD, "NetworkName: " + networkName + "  (v" + networkVersion + ")");
+                                } else {
+                                    Log.i(Const.RESOURCE_HEAD, "NetworkName: " + networkName);
+                                }
                                 boolean isNetworkClassExist = isNetworkClassExist(networkSDKInitManager.getNetworkSDKClass());
                                 boolean isPluginClassExist = isPluginClassExist(networkSDKInitManager.getPluginClassStatus());
                                 boolean isActivityExist = isActivityVertify(context, networkSDKInitManager.getActivityStatus());
                                 boolean isServiceExist = isServicesValid(context, networkSDKInitManager.getServiceStatus());
                                 boolean isProviderExist = isProviderValid(context, networkSDKInitManager.getProviderStatus());
+                                boolean isMetaDataExist = isMetaDataValid(context, networkSDKInitManager.getMetaValutStatus());
 
-                                boolean status = isNetworkClassExist && isPluginClassExist && isActivityExist && isServiceExist && isProviderExist;
+                                boolean status = isNetworkClassExist && isPluginClassExist && isActivityExist && isServiceExist && isProviderExist && isMetaDataExist;
 
                                 if (status) {
                                     Log.i(Const.RESOURCE_HEAD, "Status: Success");
@@ -811,7 +928,7 @@ public class SDKContext {
                 }
             } catch (Throwable e) {
                 isVertify = false;
-                reason.append("error: ").append(e.getMessage());
+                reason.append(", error: ").append(e.getMessage());
             }
         }
         if (reason.length() > 2) {
@@ -844,7 +961,7 @@ public class SDKContext {
                 }
             } catch (Throwable e) {
                 isVertify = false;
-                reason.append("error: ").append(e.getMessage());
+                reason.append(", error: ").append(e.getMessage());
             }
         }
         if (reason.length() > 2) {
@@ -875,7 +992,7 @@ public class SDKContext {
                     PackageManager.GET_PROVIDERS);
         } catch (Throwable e) {
             isVertify = false;
-            reason.append("error: ").append(e.getMessage());
+            reason.append(", error: ").append(e.getMessage());
         }
 
         if (info == null) {
@@ -905,6 +1022,57 @@ public class SDKContext {
             Log.i(Const.RESOURCE_HEAD, "Providers : VERIFIED");
         } else {
             Log.e(Const.RESOURCE_HEAD, "Providers : Missing " + reason.toString() + " declare in AndroidManifest");
+        }
+
+        return isVertify;
+    }
+
+    boolean isMetaDataValid(Context context, List<String> metaDataList) {
+
+        if (metaDataList == null || metaDataList.size() == 0) {
+            return true;
+        }
+
+        boolean isVertify = true;
+
+        StringBuilder missTips = new StringBuilder();
+
+
+        ApplicationInfo appInfo = null;
+        try {
+            appInfo = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), PackageManager.GET_META_DATA);
+
+            int size = metaDataList.size();
+            String metaDataKey;
+            for (int i = 0; i < size; i++) {
+
+                metaDataKey = metaDataList.get(i);
+                String msg = appInfo.metaData.getString(metaDataKey);
+
+                if (TextUtils.isEmpty(msg)) {
+                    isVertify = false;
+
+                    missTips.append(", ")
+                            .append("\"")
+                            .append(metaDataKey)
+                            .append("\"");
+                }
+            }
+
+            if (missTips.length() > 2) {
+                missTips.delete(0, 2);
+            }
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+            isVertify = false;
+        }
+
+        if (isVertify) {
+            Log.i(Const.RESOURCE_HEAD, "meta-data: VERIFIED");
+        } else {
+            Log.e(Const.RESOURCE_HEAD, "meta-data: Missing " + missTips.toString() + " declare in AndroidManifest");
         }
 
         return isVertify;
@@ -1045,7 +1213,7 @@ public class SDKContext {
         String jsonPrint = "";
         jsonPrint = "╔═══════════════════════════════════════════════════════════════════════════════════════";
 
-        message = LINE_SEPARATOR + message;
+//        message = LINE_SEPARATOR + message;
         String[] lines = message.split(LINE_SEPARATOR);
         for (String line : lines) {
             jsonPrint = jsonPrint + "\n";
@@ -1063,4 +1231,11 @@ public class SDKContext {
     }
 
 
+    public void setAdLogoVisible(boolean adLogoVisible) {
+        this.mAdLogoVisible = adLogoVisible;
+    }
+
+    public boolean isAdLogoVisible() {
+        return this.mAdLogoVisible;
+    }
 }

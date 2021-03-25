@@ -10,6 +10,7 @@ package com.anythink.core.hb;
 
 import android.text.TextUtils;
 
+import com.anythink.core.api.MediationBidManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.BiddingResult;
@@ -19,10 +20,11 @@ import com.anythink.core.common.utils.SPUtil;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BiddingCacheManager {
-    private final String HB_CACHE_FILE = "hb_cache_file";
     private static BiddingCacheManager sInstahce;
     //Key: AdsourceId
     ConcurrentHashMap<String, BiddingResult> cacheMap;
+
+    private MediationBidManager mMediationBidManager;
 
     private BiddingCacheManager() {
         cacheMap = new ConcurrentHashMap<>();
@@ -41,7 +43,7 @@ public class BiddingCacheManager {
          * Adx Network will save in xml
          */
         if (hiBidCache.networkFirmId == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
-            SPUtil.putString(SDKContext.getInstance().getContext(), HB_CACHE_FILE, adsourceId, hiBidCache.toFileCacheString());
+            SPUtil.putString(SDKContext.getInstance().getContext(), Const.HB_CACHE_FILE, adsourceId, hiBidCache.toFileCacheString());
         }
     }
 
@@ -51,7 +53,7 @@ public class BiddingCacheManager {
          * Adx Network will remove in xml
          */
         if (networkFirmId == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
-            SPUtil.remove(SDKContext.getInstance().getContext(), HB_CACHE_FILE, adsourceId);
+            SPUtil.remove(SDKContext.getInstance().getContext(), Const.HB_CACHE_FILE, adsourceId);
         }
     }
 
@@ -62,7 +64,7 @@ public class BiddingCacheManager {
          * Adx Network will remove in xml
          */
         if (s2sHbCache == null && networkFirmId == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
-            String hbCache = SPUtil.getString(SDKContext.getInstance().getContext(), HB_CACHE_FILE, adsourceId, "");
+            String hbCache = SPUtil.getString(SDKContext.getInstance().getContext(), Const.HB_CACHE_FILE, adsourceId, "");
             if (!TextUtils.isEmpty(hbCache)) {
                 s2sHbCache = BiddingResult.parseJSONString(hbCache);
             }
@@ -71,5 +73,14 @@ public class BiddingCacheManager {
             }
         }
         return s2sHbCache;
+    }
+
+
+    public void setMediationBidManager(MediationBidManager mediationBidManager) {
+        mMediationBidManager = mediationBidManager;
+    }
+
+    public MediationBidManager getMediationBidManager() {
+        return mMediationBidManager;
     }
 }

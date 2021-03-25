@@ -36,12 +36,9 @@ import android.widget.TextView;
 
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.base.Const;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.CommonUtil;
 
-/**
- * Created by Z on 2018/5/3.
- * GDPR view
- */
 
 public class PrivacyPolicyView extends RelativeLayout implements View.OnClickListener {
     private static String TAG = PrivacyPolicyView.class.getSimpleName();
@@ -114,6 +111,7 @@ public class PrivacyPolicyView extends RelativeLayout implements View.OnClickLis
 
 
         mPolicyWebView = new WebView(getContext());
+        CommonSDKUtil.configSafeWebView(mPolicyWebView);
         mWebviewArea.addView(mPolicyWebView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         initPolicyWebView();
 

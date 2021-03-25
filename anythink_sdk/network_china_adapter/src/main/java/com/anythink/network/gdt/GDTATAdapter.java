@@ -11,6 +11,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATAdConst;
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.qq.e.ads.nativ.ADSize;
@@ -22,9 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/1/16.
- */
 
 public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoadListener {
 
@@ -33,9 +31,8 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
 
     private int mAdWidth = ADSize.FULL_WIDTH, mAdHeight = ADSize.AUTO_HEIGHT;
 
-    int ADTYPE = 3;
-
     int mUnitVersion = 2;
+    int mUnitType;
 
     int mVideoMuted;
     int mVideoAutoPlay;
@@ -43,17 +40,25 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
 
     private void startLoadAd(Context context) {
         try {
-            switch (ADTYPE) {
-                case 1:
+            switch (mUnitType) {
                 case 2:
                     //Self Rendering 2.0
                     loadUnifiedAd(context);
                     break;
+
+                case 1: //Native Express
                 default:
-                    //Picture + video template
-                    GDTATNativeExpressAd gdtatNativeExpressAd = new GDTATNativeExpressAd(context, mUnitId, mAdWidth, mAdHeight,
-                            mVideoMuted, mVideoAutoPlay, mVideoDuration);
-                    gdtatNativeExpressAd.loadAD(this);
+                    if (mUnitVersion != 2) {
+                        //Picture + video template
+                        GDTATNativeExpressAd gdtatNativeExpressAd = new GDTATNativeExpressAd(context, mUnitId, mAdWidth, mAdHeight,
+                                mVideoMuted, mVideoAutoPlay, mVideoDuration);
+                        gdtatNativeExpressAd.loadAD(this);
+                    } else {
+                        //Picture + video template 2.0
+                        loadExpressAd2(context);
+                    }
+                    break;
+
             }
         } catch (Throwable e) {
             if (mLoadListener != null) {
@@ -106,6 +111,11 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
 
     }
 
+    private void loadExpressAd2(final Context context) {
+        GDTATNativeExpressAd2 gdtatNativeExpressAd2 = new GDTATNativeExpressAd2(context, mUnitId, mAdWidth, mAdHeight, mVideoMuted, mVideoAutoPlay, mVideoDuration);
+        gdtatNativeExpressAd2.loadAD(this);
+    }
+
     @Override
     public String getNetworkName() {
         return GDTATInitManager.getInstance().getNetworkName();
@@ -127,15 +137,8 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
             mUnitVersion = Integer.parseInt(serverExtra.get("unit_version").toString());
         }
 
-        boolean adTypeServiceCallback = false;
         if (serverExtra.containsKey("unit_type")) {
-            int unitType = Integer.parseInt(serverExtra.get("unit_type").toString());
-            if (unitType == 1) { //Native Express
-                ADTYPE = 3;
-            } else if (unitType == 2) { //Self-rendering
-                ADTYPE = 1;
-            }
-            adTypeServiceCallback = true;
+            mUnitType = Integer.parseInt(serverExtra.get("unit_type").toString());
         }
 
         if (TextUtils.isEmpty(appid) || TextUtils.isEmpty(unitId)) {
@@ -148,8 +151,8 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
 
         int requestNum = 1;
         try {
-            if (serverExtra.containsKey(CustomNativeAd.AD_REQUEST_NUM)) {
-                requestNum = Integer.parseInt(serverExtra.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+            if (serverExtra.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM)) {
+                requestNum = Integer.parseInt(serverExtra.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
             }
         } catch (Exception e) {
         }
@@ -161,15 +164,8 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
 
         //location story
         try {
-            if (!adTypeServiceCallback) {
-                if (localExtra.containsKey(GDTATConst.ADTYPE)) {
-                    ADTYPE = Integer.parseInt(localExtra.get(GDTATConst.ADTYPE).toString());
-                }
-            }
 
-            if (localExtra.containsKey(GDTATConst.AD_WIDTH)) {
-                mAdWidth = Integer.parseInt(localExtra.get(GDTATConst.AD_WIDTH).toString());
-            } else if (localExtra.containsKey(ATAdConst.KEY.AD_WIDTH)) {
+            if (localExtra.containsKey(ATAdConst.KEY.AD_WIDTH)) {
                 mAdWidth = Integer.parseInt(localExtra.get(ATAdConst.KEY.AD_WIDTH).toString());
             }
 
@@ -182,7 +178,7 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
             e.printStackTrace();
         }
 
-        int isVideoMuted = 1;
+        int isVideoMuted = 0;
         int isVideoAutoPlay = 1;
         int videoDuration = -1;
         if (serverExtra.containsKey("video_muted")) {
@@ -225,7 +221,7 @@ public class GDTATAdapter extends CustomNativeAdapter implements GDTATNativeLoad
 
     @Override
     public String getNetworkSDKVersion() {
-        return GDTATConst.getNetworkVersion();
+        return GDTATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

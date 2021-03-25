@@ -89,7 +89,7 @@ public class OfferResourceManager {
     /**
      * Check if resource ready
      */
-    public boolean isExist(MyOfferAd myOfferAd, MyOfferSetting myOfferSetting) {
+    public boolean isExist(MyOfferAd myOfferAd, BaseAdSetting myOfferSetting) {
         return OfferResourceState.isExist(myOfferAd, myOfferSetting);
     }
 

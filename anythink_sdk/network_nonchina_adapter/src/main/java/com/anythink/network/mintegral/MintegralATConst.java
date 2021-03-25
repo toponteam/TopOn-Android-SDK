@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.mintegral;
 
 import android.text.TextUtils;
@@ -5,9 +12,6 @@ import android.text.TextUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-/**
- * Created by zhou on 2018/7/4.
- */
 
 public class MintegralATConst {
     public static final int NETWORK_FIRM_ID = 6;
@@ -16,7 +20,7 @@ public class MintegralATConst {
 
     public static String getNetworkVersion() {
         try {
-            Class mtgConfiguration = Class.forName("com.mintegral.msdk.out.MTGConfiguration");
+            Class mtgConfiguration = Class.forName("com.mbridge.msdk.out.MBConfiguration");
             for (Field field : mtgConfiguration.getFields()) {
                 field.setAccessible(true);
                 if (field.getType().toString().endsWith("java.lang.String") && Modifier.isStatic(field.getModifiers())) {
@@ -33,7 +37,7 @@ public class MintegralATConst {
         return "";
     }
 
-    public static boolean isChinaSdk() {
+    public static boolean isCnSdk() {
         String networkVersion = getNetworkVersion();
         return !TextUtils.isEmpty(networkVersion) && networkVersion.endsWith("2");
     }

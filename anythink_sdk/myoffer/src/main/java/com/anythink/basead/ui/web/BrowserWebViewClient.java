@@ -8,6 +8,7 @@
 package com.anythink.basead.ui.web;
 
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
@@ -20,7 +21,6 @@ import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import com.anythink.basead.buiness.OfferAdFunctionUtil;
 import com.anythink.basead.buiness.OfferUrlHandler;
 
 
@@ -40,7 +40,7 @@ class BrowserWebViewClient extends WebViewClient {
 
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        if (TextUtils.isEmpty(url)) {
+        if (TextUtils.isEmpty(url) || "about:blank".equals(url)) {
             return false;
         }
         boolean isSuccess = OfferUrlHandler.handleInAppOpenUrl(view.getContext(), url, false);
@@ -49,13 +49,31 @@ class BrowserWebViewClient extends WebViewClient {
             return true;
         }
 
-        if (!url.startsWith("http")) {
-            Log.i("", "The App does not exist.");
-            return true;
-        }
+        try {
+            Uri uri = Uri.parse(url);
+            if (uri.getScheme().equals("intent")) {
+                try {
+                    Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+                    String fallbackUrl = intent.getStringExtra("browser_fallback_url");
+                    if (!TextUtils.isEmpty(fallbackUrl) && fallbackUrl.startsWith("http")) {
+                        view.loadUrl(fallbackUrl);
+                        return true;
+                    }
+                } catch (Throwable e) {
 
-        //TODO Handle url
+                }
+            }
+
+            if (!uri.getScheme().equals("http") && !uri.getScheme().equals("https")) {
+                Log.i("", "The App does not exist.");
+                return true;
+            }
+            return false;
+        } catch (Throwable e) {
+
+        }
         return false;
+
     }
 
     @Override
@@ -63,7 +81,7 @@ class BrowserWebViewClient extends WebViewClient {
         super.onPageStarted(view, url, favicon);
 
         WebProgressBarView webProgressBarView = mWebBrowerActivity.getWebProgressBarView();
-        if(webProgressBarView != null){
+        if (webProgressBarView != null) {
             webProgressBarView.setVisibility(View.VISIBLE);
             webProgressBarView.setProgress(0);
         }

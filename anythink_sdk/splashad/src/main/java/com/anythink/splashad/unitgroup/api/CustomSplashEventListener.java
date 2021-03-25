@@ -8,11 +8,19 @@
 package com.anythink.splashad.unitgroup.api;
 
 
+import android.content.Context;
+
+import com.anythink.core.api.ATNetworkConfirmInfo;
+
 public interface CustomSplashEventListener {
     void onSplashAdShow();//Ad show
 
     void onSplashAdClicked(); //Ad Click
 
     void onSplashAdDismiss(); //Ad Dismiss
+
+    void onDeeplinkCallback(boolean isSuccess);
+
+    void onDownloadConfirm(Context context, ATNetworkConfirmInfo networkConfirmInfo);
 
 }

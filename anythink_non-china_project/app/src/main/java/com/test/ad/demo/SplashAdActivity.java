@@ -3,7 +3,6 @@
  * https://www.toponad.com
  * Licensed under the TopOn SDK License Agreement
  * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
- *
  */
 
 package com.test.ad.demo;
@@ -22,11 +21,16 @@ public class SplashAdActivity extends Activity {
             DemoApplicaion.mPlacementId_splash_admob,
             DemoApplicaion.mPlacementId_splash_mintegral,
             DemoApplicaion.mPlacementId_splash_myoffer,
-            DemoApplicaion.mPlacementId_splash_huawei
+            DemoApplicaion.mPlacementId_splash_adx,
+            DemoApplicaion.mPlacementId_splash_online
+//            ,
+//            DemoApplicaion.mPlacementId_splash_huawei
     };
 
     String unitGroupName[] = new String[]{
-            "Admob", "Mintegral", "MyOffer", "Huawei"};
+            "Admob", "Mintegral", "MyOffer","Adx","OnlineApi"
+//            , "Huawei"
+    };
 
     int mCurrentSelectIndex;
     Spinner spinner;
@@ -61,7 +65,17 @@ public class SplashAdActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(SplashAdActivity.this, SplashAdShowActivity.class);
-                intent.putExtra("unitId", placementIds[mCurrentSelectIndex]);
+                intent.putExtra("placementId", placementIds[mCurrentSelectIndex]);
+                startActivity(intent);
+            }
+        });
+
+
+        findViewById(R.id.show_in_current_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(SplashAdActivity.this, SplashAdShowInCurrentActivity.class);
+                intent.putExtra("placementId", placementIds[mCurrentSelectIndex]);
                 startActivity(intent);
             }
         });

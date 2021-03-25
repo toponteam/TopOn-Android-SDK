@@ -30,6 +30,7 @@ public class NetworkLogUtil {
                 jsonObject.put("reason", reason);
                 jsonObject.put("placementId", placementId);
                 jsonObject.put("adtype", adTrackingInfo.getAdTypeString());
+                jsonObject.put("adsourceId", unitGroupInfo.unitId);
                 jsonObject.put("networkFirmId", unitGroupInfo.networkType);
                 jsonObject.put("content", adTrackingInfo.getmNetworkContent());
                 jsonObject.put("hourly_frequency", hourlyFrequency);
@@ -55,6 +56,7 @@ public class NetworkLogUtil {
                 jsonObject.put("result", result);
                 jsonObject.put("placementId", placementId);
                 jsonObject.put("adtype", formatStr);
+                jsonObject.put("adsourceId", unitGroupInfo.unitId);
                 jsonObject.put("networkFirmId", unitGroupInfo.networkType);
                 jsonObject.put("content", unitGroupInfo.content);
                 jsonObject.put("bidPrice", unitGroupInfo.ecpm);

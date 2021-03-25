@@ -1,9 +1,18 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.inmobi;
 
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.api.ATBiddingListener;
+import com.anythink.core.api.ATBiddingResult;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.inmobi.ads.AdMetaInfo;
 import com.inmobi.ads.InMobiAdRequestStatus;
@@ -12,16 +21,12 @@ import com.inmobi.ads.listeners.InterstitialAdEventListener;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
 
 public class InmobiATInterstitialAdapter extends CustomInterstitialAdapter {
     private static final String TAG = InmobiATInterstitialAdapter.class.getSimpleName();
 
     InMobiInterstitial interstitialAd;
     Long placeId;
-    int mClickCallbackType;
 
     /***
      * init and load
@@ -62,8 +67,14 @@ public class InmobiATInterstitialAdapter extends CustomInterstitialAdapter {
             return;
         }
         placeId = Long.parseLong(unitId);
-        mClickCallbackType = 0;
-        initAndLoad(context, serverExtras);
+
+        String payload = (String) serverExtras.get("payload");
+
+        if (!TextUtils.isEmpty(payload)) {
+            startLoadBidAd(payload);
+        } else {
+            initAndLoad(context, serverExtras);
+        }
     }
 
     @Override
@@ -101,7 +112,7 @@ public class InmobiATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return InmobiATConst.getNetworkVersion();
+        return InmobiATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -120,7 +131,13 @@ public class InmobiATInterstitialAdapter extends CustomInterstitialAdapter {
     }
 
     private void startLoadAd(Context context) {
-        interstitialAd = new InMobiInterstitial(context.getApplicationContext(), placeId, new InterstitialAdEventListener() {
+        interstitialAd = new InMobiInterstitial(context.getApplicationContext(), placeId, this.getInterstitialAdEventListener());
+        InmobiATInitManager.getInstance().addInmobiAd(interstitialAd);
+        interstitialAd.load();
+    }
+
+    private InterstitialAdEventListener getInterstitialAdEventListener() {
+        return new InterstitialAdEventListener() {
             @Override
             public void onAdLoadFailed(InMobiInterstitial inMobiInterstitial, InMobiAdRequestStatus inMobiAdRequestStatus) {
                 InmobiATInitManager.getInstance().removeInmobiAd(interstitialAd);
@@ -173,8 +190,73 @@ public class InmobiATInterstitialAdapter extends CustomInterstitialAdapter {
                     mImpressListener.onInterstitialAdClicked();
                 }
             }
-        });
-        InmobiATInitManager.getInstance().addInmobiAd(interstitialAd);
-        interstitialAd.load();
+        };
     }
+
+    private void startLoadBidAd(String payload) {
+        Object object = InmobiATInitManager.getInstance().getBidAdObject(payload);
+        if (object instanceof InMobiInterstitial) {
+            interstitialAd = (InMobiInterstitial) object;
+        }
+        InmobiATInitManager.getInstance().removeBidAdObject(payload);
+
+
+        interstitialAd.setListener(this.getInterstitialAdEventListener());
+
+        InmobiATInitManager.getInstance().addInmobiAd(interstitialAd);
+        interstitialAd.getPreloadManager().load();
+    }
+
+    @Override
+    public boolean startBiddingRequest(final Context applicationContext, Map<String, Object> serverExtras, final ATBiddingListener biddingListener) {
+        String unitId = (String) serverExtras.get("unit_id");
+        placeId = Long.parseLong(unitId);
+
+        InmobiATInitManager.getInstance().initSDK(applicationContext, serverExtras, new InmobiATInitManager.OnInitCallback() {
+            @Override
+            public void onSuccess() {
+                try {
+                    startBid(applicationContext, biddingListener);
+                } catch (Throwable e) {
+                    if (biddingListener != null) {
+                        biddingListener.onC2SBidResult(ATBiddingResult.fail(e.getMessage()));
+                    }
+                }
+            }
+
+            @Override
+            public void onError(String errorMsg) {
+                if (biddingListener != null) {
+                    biddingListener.onC2SBidResult(ATBiddingResult.fail(errorMsg));
+                }
+            }
+        });
+
+        return true;
+    }
+
+    private void startBid(Context context, final ATBiddingListener biddingListener) {
+        final InMobiInterstitial interstitialAd = new InMobiInterstitial(context.getApplicationContext(), placeId, new InterstitialAdEventListener() {
+
+            @Override
+            public void onAdFetchSuccessful(InMobiInterstitial inMobiInterstitial, AdMetaInfo adMetaInfo) {
+                InmobiATInitManager.getInstance().putBidAdObject(adMetaInfo.getCreativeID(), inMobiInterstitial);
+
+                if (biddingListener != null) {
+                    biddingListener.onC2SBidResult(ATBiddingResult.success(adMetaInfo.getBid(), adMetaInfo.getCreativeID(), null, null));
+                }
+            }
+
+            @Override
+            public void onAdFetchFailed(InMobiInterstitial inMobiInterstitial, InMobiAdRequestStatus status) {
+                if (biddingListener != null) {
+                    biddingListener.onC2SBidResult(ATBiddingResult.fail(status.getMessage()));
+                }
+            }
+        });
+
+        InmobiATInitManager.getInstance().addInmobiAd(interstitialAd);
+        interstitialAd.getPreloadManager().preload();
+    }
+
 }

@@ -8,6 +8,7 @@
 package com.anythink.core.common.utils;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.cap.AdCapV2Manager;
@@ -36,12 +37,11 @@ public class TrackingInfoUtil {
      * @param mIsRefresh
      * @return
      */
-    public static AdTrackingInfo initTrackingInfo(String mCurrentReqeustId, String mCurrentPlacementId, String mUserId, PlaceStrategy mCurrentStrategy, String unitGroupList, int requestCount, boolean mIsRefresh) {
+    public static AdTrackingInfo initTrackingInfo(String mCurrentReqeustId, String mCurrentPlacementId, String mUserId, PlaceStrategy mCurrentStrategy, String unitGroupList, int requestCount, boolean mIsRefresh, int tid) {
         AdTrackingInfo adTrackingInfo = new AdTrackingInfo();
         adTrackingInfo.setmPlacementId(mCurrentPlacementId);
         adTrackingInfo.setmRequestId(mCurrentReqeustId);
         adTrackingInfo.setmGroupId(mCurrentStrategy.getGroupId());
-
 
         if (mCurrentStrategy.getFormat() == Integer.parseInt(Const.FORMAT.REWARDEDVIDEO_FORMAT)) {
             adTrackingInfo.setmSourceType("1");
@@ -65,6 +65,9 @@ public class TrackingInfoUtil {
 
         adTrackingInfo.setmCountry(mCurrentStrategy.getCountry());
         adTrackingInfo.setmCurrency(mCurrentStrategy.getCurrency());
+        adTrackingInfo.setmAccountExchangeRate(mCurrentStrategy.getAccountExchageRate());
+        adTrackingInfo.setmAccountCurrency(mCurrentStrategy.getAccountCurrency());
+
         adTrackingInfo.setmScenarioRewardMap(mCurrentStrategy.getScenarioRewardMap());
         adTrackingInfo.setmPlacementRewardInfo(mCurrentStrategy.getPlacementRewardInfo());
         adTrackingInfo.setmCustomRule(mCurrentStrategy.getSdkCustomMap());
@@ -72,6 +75,10 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmHBWaitingToRequestTime(mCurrentStrategy.getHbWaitingToRequestTime());
         adTrackingInfo.setmHBBidTimeout(mCurrentStrategy.getHbBidTimeout());
 
+        adTrackingInfo.setSystemId(1); // TopOn
+        adTrackingInfo.setIsOfm(SDKContext.getInstance().getInitType());
+
+        adTrackingInfo.setTid(tid);
         return adTrackingInfo;
     }
 
@@ -97,6 +104,7 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmHourlyFrequency(adSourceImpressionInfo != null ? adSourceImpressionInfo.hourShowCount : 0);
         adTrackingInfo.setmDailyFrequency(adSourceImpressionInfo != null ? adSourceImpressionInfo.dayShowCount : 0);
         adTrackingInfo.setmBidPrice(unitGroupInfo.getEcpm());
+        adTrackingInfo.setmAccountEcpm(unitGroupInfo.getAccountCurrencyEcpm()); //Add by v5.7.9
         adTrackingInfo.setmBidType(unitGroupInfo.bidType);
         adTrackingInfo.setmBidId(unitGroupInfo.payload); //Add by v5.7.0
         adTrackingInfo.setmClickTkUrl(unitGroupInfo.getClickTkUrl());
@@ -105,13 +113,14 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmEcpmLevel(unitGroupInfo.getEcpmLayLevel());
         adTrackingInfo.setmEcpmPrecision(unitGroupInfo.getEcpmPrecision());
 
+
         try {
             adTrackingInfo.setmNetworkVersion(baseAdapter.getNetworkSDKVersion());
         } catch (Throwable e) {
 
         }
 
-        adTrackingInfo.setNetworkName(baseAdapter.getNetworkName());
+        adTrackingInfo.setNetworkName(TextUtils.isEmpty(unitGroupInfo.networkName) ? baseAdapter.getNetworkName() : unitGroupInfo.networkName);
         adTrackingInfo.setmHandlClassName(baseAdapter.getClass().getName());
 
         baseAdapter.setmUnitgroupInfo(unitGroupInfo);
@@ -133,6 +142,15 @@ public class TrackingInfoUtil {
         adTrackingInfo.setmGroupId(placeStrategy != null ? placeStrategy.getGroupId() : 0);
         adTrackingInfo.setAsid(placeStrategy != null ? placeStrategy.getAsid() : "");
         return adTrackingInfo;
+    }
+
+    public static void updateTrackingInfoWithStrategy(AdTrackingInfo adTrackingInfo, PlaceStrategy placeStrategy) {
+        if (adTrackingInfo != null) {
+            adTrackingInfo.setmTrafficGroupId(placeStrategy != null ? placeStrategy.getTracfficGroupId() : 0);
+            adTrackingInfo.setmGroupId(placeStrategy != null ? placeStrategy.getGroupId() : 0);
+            adTrackingInfo.setAsid(placeStrategy != null ? placeStrategy.getAsid() : "");
+        }
+
     }
 
 

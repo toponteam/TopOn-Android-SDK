@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.applovin;
 
 import android.content.Context;
@@ -15,9 +22,6 @@ import com.applovin.sdk.AppLovinSdk;
 
 import java.util.List;
 
-/**
- * Created by Z on 2018/1/11.
- */
 
 public class ApplovinATNativeAd extends CustomNativeAd {
 

@@ -14,6 +14,7 @@ import android.text.TextUtils;
 import com.anythink.interstitial.unitgroup.api.CustomInterstitialAdapter;
 import com.baidu.mobads.InterstitialAd;
 import com.baidu.mobads.InterstitialAdListener;
+import com.baidu.mobads.rewardvideo.FullScreenVideoAd;
 
 import java.util.Map;
 
@@ -22,11 +23,86 @@ public class BaiduATInterstitialAdapter extends CustomInterstitialAdapter {
     private static final String TAG = BaiduATInterstitialAdapter.class.getSimpleName();
 
     InterstitialAd mInterstitialAd;
+    FullScreenVideoAd mFullScreenVideoAd;
     private String mAdPlaceId = "";
+    private boolean mIsVideo;
+
+    FullScreenVideoAd.FullScreenVideoAdListener mFullScreenVideoAdListener;
 
     private void startLoadAd(Context context) {
+        if (mIsVideo) {
+            loadFullScreenVideo(context);
+        } else {
+            loadInterstitial(context);
+        }
+    }
+
+    private void loadFullScreenVideo(Context context) {
+        mFullScreenVideoAdListener = new FullScreenVideoAd.FullScreenVideoAdListener() {
+            @Override
+            public void onAdShow() {
+                if (mImpressListener != null) {
+                    mImpressListener.onInterstitialAdShow();
+                    mImpressListener.onInterstitialAdVideoStart();
+                }
+            }
+
+            @Override
+            public void onAdClick() {
+                if (mImpressListener != null) {
+                    mImpressListener.onInterstitialAdClicked();
+                }
+            }
+
+            @Override
+            public void onAdClose(float v) {
+                if (mImpressListener != null) {
+                    mImpressListener.onInterstitialAdClose();
+                }
+            }
+
+            @Override
+            public void onAdFailed(String s) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "Baidu: " + s);
+                }
+            }
+
+            @Override
+            public void onVideoDownloadSuccess() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdCacheLoaded();
+                }
+            }
+
+            @Override
+            public void onVideoDownloadFailed() {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError("", "Baidu: onVideoDownloadFailed()");
+                }
+            }
+
+            @Override
+            public void playCompletion() {
+                if (mImpressListener != null) {
+                    mImpressListener.onInterstitialAdVideoEnd();
+                }
+            }
+
+            @Override
+            public void onAdSkip(float v) {
+
+            }
+        };
+
+        mFullScreenVideoAd = new FullScreenVideoAd(context, mAdPlaceId, mFullScreenVideoAdListener, false);
+        mFullScreenVideoAd.load();
+    }
+
+    private void loadInterstitial(Context context) {
         mInterstitialAd = new InterstitialAd(context, mAdPlaceId);
         mInterstitialAd.setListener(new InterstitialAdListener() {
+
             @Override
             public void onAdReady() {
                 if (mLoadListener != null) {
@@ -71,8 +147,14 @@ public class BaiduATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public boolean isAdReady() {
-        if (mInterstitialAd != null) {
-            return mInterstitialAd.isAdReady();
+        if (mIsVideo) {
+            if (mFullScreenVideoAd != null) {
+                return mFullScreenVideoAd.isReady();
+            }
+        } else {
+            if (mInterstitialAd != null) {
+                return mInterstitialAd.isAdReady();
+            }
         }
         return false;
     }
@@ -80,8 +162,14 @@ public class BaiduATInterstitialAdapter extends CustomInterstitialAdapter {
     @Override
     public void show(Activity activity) {
         try {
-            if (mInterstitialAd != null) {
-                mInterstitialAd.showAd(activity);
+            if (mIsVideo) {
+                if (mFullScreenVideoAd != null) {
+                    mFullScreenVideoAd.show();
+                }
+            } else {
+                if (mInterstitialAd != null) {
+                    mInterstitialAd.showAd(activity);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -113,6 +201,11 @@ public class BaiduATInterstitialAdapter extends CustomInterstitialAdapter {
             return;
         }
 
+        Object unit_type = serverExtra.get("unit_type");
+        if (unit_type != null) {
+            mIsVideo = TextUtils.equals("1", unit_type.toString());
+        }
+
         BaiduATInitManager.getInstance().initSDK(context, serverExtra, new BaiduATInitManager.InitCallback() {
             @Override
             public void onSuccess() {
@@ -131,6 +224,10 @@ public class BaiduATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public void destory() {
+        if (mFullScreenVideoAd != null) {
+            mFullScreenVideoAd = null;
+            mFullScreenVideoAdListener = null;
+        }
         if (mInterstitialAd != null) {
             mInterstitialAd.setListener(null);
             mInterstitialAd.destroy();
@@ -145,6 +242,6 @@ public class BaiduATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return BaiduATConst.getNetworkVersion();
+        return BaiduATInitManager.getInstance().getNetworkVersion();
     }
 }

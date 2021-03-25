@@ -52,5 +52,6 @@ public class AdEventMessager {
         void onReward();
         void onClose();
         void onClick();
+        void onDeeplinkCallback(boolean isSuccess);
     }
 }

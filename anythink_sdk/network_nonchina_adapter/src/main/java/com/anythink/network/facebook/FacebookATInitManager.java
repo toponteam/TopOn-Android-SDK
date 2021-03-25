@@ -1,8 +1,19 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.facebook;
 
 import android.content.Context;
 
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.core.common.base.Const;
+import com.facebook.ads.AdSettings;
 import com.facebook.ads.AudienceNetworkAds;
 
 import java.util.HashMap;
@@ -31,6 +42,23 @@ public class FacebookATInitManager extends ATInitMediation {
         try {
             if (!mIsInit) {
                 AudienceNetworkAds.initialize(context.getApplicationContext());
+                try {
+                    boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                    if (ccpaSwitch) {
+                        AdSettings.setDataProcessingOptions(new String[] {"LDU"}, 1, 1000);
+                    }
+                } catch (Throwable e) {
+
+                }
+
+                try {
+                    boolean coppaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY);
+                    if (coppaSwitch) {
+                        AdSettings.setMixedAudience(true);
+                    }
+                } catch (Throwable e) {
+
+                }
                 mIsInit = true;
             }
         } catch (Throwable e) {
@@ -41,6 +69,11 @@ public class FacebookATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Facebook";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return FacebookATConst.getNetworkVersion();
     }
 
     @Override
@@ -55,7 +88,7 @@ public class FacebookATInitManager extends ATInitMediation {
 
         Class clazz;
         try {
-            clazz = Class.forName("android.support.v7.widget.RecyclerView");
+            clazz = RecyclerView.class;
             pluginMap.put("recyclerview-*.aar", true);
         } catch (Throwable e) {
         }

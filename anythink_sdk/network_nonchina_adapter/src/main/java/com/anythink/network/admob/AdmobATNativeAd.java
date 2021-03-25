@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 
@@ -26,10 +33,6 @@ import com.google.android.gms.ads.formats.UnifiedNativeAdView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-/**
- * Created by zhou on 2018/1/16.
- */
 
 public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.OnUnifiedNativeAdLoadedListener {
 
@@ -118,6 +121,7 @@ public class AdmobATNativeAd extends CustomNativeAd implements UnifiedNativeAd.O
 
                     @Override
                     public void onAdImpression() {
+                        notifyAdImpression();
                     }
 
                     @Override

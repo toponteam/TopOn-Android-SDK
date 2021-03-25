@@ -14,7 +14,6 @@ import android.text.TextUtils;
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.cap.AdPacingManager;
-import com.anythink.core.common.adx.AdxCacheController;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.AdCacheInfo;
@@ -29,6 +28,7 @@ import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.CustomAdapterFactory;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.api.MediationBidManager;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 
@@ -47,7 +47,7 @@ public class AdCacheManager {
 
 
     private ConcurrentHashMap<String, ConcurrentHashMap<String, UnitgroupCacheInfo>> cacheMap;
-    private final HashMap<Integer, Boolean> canInitReadyNetworkMap = new HashMap<>();
+//    private final HashMap<Integer, Boolean> canInitReadyNetworkMap = new HashMap<>();
 
     public synchronized static AdCacheManager getInstance() {
         if (sIntance == null) {
@@ -58,11 +58,10 @@ public class AdCacheManager {
 
     private AdCacheManager() {
         cacheMap = new ConcurrentHashMap<>();
-        canInitReadyNetworkMap.put(6, true); //Mintegral
-//        canInitReadyNetworkMap.put(12, true); //UnityAds
-        canInitReadyNetworkMap.put(17, true); //Oneway
-        canInitReadyNetworkMap.put(35, true); //MyOffer
-        canInitReadyNetworkMap.put(Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID, true);// Adx
+//        canInitReadyNetworkMap.put(6, true); //Mintegral
+////        canInitReadyNetworkMap.put(12, true); //UnityAds
+//        canInitReadyNetworkMap.put(17, true); //Oneway
+//        canInitReadyNetworkMap.put(35, true); //MyOffer
     }
 
 
@@ -221,18 +220,26 @@ public class AdCacheManager {
 
                     boolean isAdReady = false;
 
+                    /**Check Adx HB Status**/
+                    if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
+                        BiddingResult cacheResponse = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
+                        if (cacheResponse == null || cacheResponse.isExpire()) {
+                            addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_ADX_BID_EXPIRE_REASON);
+                            continue;
+                        }
+                    }
+
                     UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap != null ?
                             unitGroupCacheInfoMap.get(unitGroupInfo.unitId) : null;
 
                     AdCacheInfo adCacheInfo = unitgroupCacheInfo != null ? unitgroupCacheInfo.getAdCacheInfo() : null;
-                    /**Check the isReady status of Adapter**/
+                    /**Check the isReady status of Adapter (Auto Filled)**/
                     if (unitgroupCacheInfo == null || adCacheInfo == null) {
-
 
                         ATBaseAdAdapter baseAdapter = null;
 
-                        Boolean canReady = canInitReadyNetworkMap.get(unitGroupInfo.networkType);
-                        if (canReady != null && canReady) {
+                        boolean canReady = unitGroupInfo.getAutoReadySwitch() == 2;
+                        if (canReady) {
                             baseAdapter = CustomAdapterFactory.createAdapter(unitGroupInfo);
                         }
 
@@ -261,14 +268,14 @@ public class AdCacheManager {
 
                             if (isAdReady) {
 
-                                /**Check Adx HB Status**/
-                                if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
-                                    BiddingResult cacheResponse = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
-                                    if (cacheResponse == null || cacheResponse.isExpire()) {
-                                        addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_ADX_BID_EXPIRE_REASON);
-                                        continue;
-                                    }
-                                }
+//                                /**Check Adx HB Status**/
+//                                if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
+//                                    BiddingResult cacheResponse = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
+//                                    if (cacheResponse == null || cacheResponse.isExpire()) {
+//                                        addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_ADX_BID_EXPIRE_REASON);
+//                                        continue;
+//                                    }
+//                                }
 
                                 List<BaseAd> baseAdList = null;
                                 if (baseAdObject != null) {
@@ -309,14 +316,6 @@ public class AdCacheManager {
                     }
 
                     if (isAdReady) {
-                        /**Check Adx HB Status**/
-                        if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
-                            BiddingResult cacheResponse = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
-                            if (cacheResponse == null || cacheResponse.isExpire()) {
-                                addCheckObjectInfo(checkArray, level, unitGroupInfo.unitId, unitGroupInfo.networkType, "", false, TrackerInfo.AD_SOURCE_ADX_BID_EXPIRE_REASON);
-                                continue;
-                            }
-                        }
 
                         if (adCacheInfo.getUpdateTime() + adCacheInfo.getCacheTime() > System.currentTimeMillis()) {
                             //AdCache is available
@@ -454,7 +453,17 @@ public class AdCacheManager {
 
 
     private void initReadyCacheTrackingInfo(ATBaseAdAdapter adapter, String requestId, String placementId, PlaceStrategy placeStrategy, PlaceStrategy.UnitGroupInfo unitGroupInfo, int requestLevel) {
-        AdTrackingInfo adTrackingInfo = TrackingInfoUtil.initTrackingInfo(requestId, placementId, "", placeStrategy, unitGroupInfo.networkType + "", 1, false);
+        Map<String, Object> localMap = PlacementAdManager.getInstance().getPlacementLocalSettingMap(placementId);
+        final int[] ofmTid = new int[1];
+        ofmTid[0] = 0;
+        if (localMap != null && localMap.containsKey(AdTrackingInfo.OFM_TID_KEY)) {
+            try {
+                ofmTid[0] = (int) localMap.get(AdTrackingInfo.OFM_TID_KEY);
+            } catch (Throwable e) {
+
+            }
+        }
+        AdTrackingInfo adTrackingInfo = TrackingInfoUtil.initTrackingInfo(requestId, placementId, "", placeStrategy, unitGroupInfo.networkType + "", 1, false, ofmTid[0]);
         TrackingInfoUtil.initPlacementUnitGroupTrackingInfo(adapter, adTrackingInfo, unitGroupInfo, requestLevel);
         adTrackingInfo.setRequestType(AdTrackingInfo.READY_CHECK);
         //set placement id for network
@@ -507,9 +516,10 @@ public class AdCacheManager {
 //            return null;
 //        }
 //    }
-    @Deprecated
-    public void cleanNoShowOffer(String placementId) {
-    }
+
+//    @Deprecated
+//    public void cleanNoShowOffer(String placementId) {
+//    }
 
     /***
      * Clear UnitGroup's AdCache
@@ -523,6 +533,32 @@ public class AdCacheManager {
                 UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap.remove(unitgroupId);
                 if (unitgroupCacheInfo != null) {
                     unitgroupCacheInfo.destoryCache();
+                }
+            }
+        }
+    }
+
+    /**
+     * Force to remove AdCache
+     *
+     * @param placementId
+     * @param unitgroupId
+     * @param adCacheInfo
+     */
+    public void removeAdCache(String placementId, String unitgroupId, AdCacheInfo adCacheInfo) {
+        synchronized (this) {
+            if (adCacheInfo == null) {
+                return;
+            }
+            ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
+            if (unitGroupCacheInfoMap != null && unitGroupCacheInfoMap.size() > 0) {
+                UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap.get(unitgroupId);
+                if (unitgroupCacheInfo != null) {
+                    unitgroupCacheInfo.removeAdCache(adCacheInfo);
+                    //If no exist cache, it would remove the AdSourceId Info
+                    if (!unitgroupCacheInfo.isExistCache()) {
+                        unitGroupCacheInfoMap.remove(unitgroupId);
+                    }
                 }
             }
         }
@@ -549,8 +585,9 @@ public class AdCacheManager {
      *
      * @param context
      */
-    public void saveShowTimeToDisk(final Context context, final ATBaseAdAdapter baseAdAdapter, final boolean isLasCache) {
+    public void saveShowTimeToDisk(final Context context, final AdCacheInfo adCacheInfo) {
         synchronized (AdCacheManager.this) {
+            final ATBaseAdAdapter baseAdAdapter = adCacheInfo.getBaseAdapter();
             final AdTrackingInfo adTrackingInfo = baseAdAdapter != null ? baseAdAdapter.getTrackingInfo() : null;
 
             if (adTrackingInfo != null) {
@@ -560,24 +597,25 @@ public class AdCacheManager {
                     @Override
                     public void run() {
                         synchronized (AdCacheManager.this) {
-                            if (adTrackingInfo.getmNetworkType() == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
-                                BiddingCacheManager.getInstance().removeCache(adTrackingInfo.getmUnitGroupUnitId(), Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID);
-                                AdxCacheController.getInstance().removeAdxOfferInfo(context, adTrackingInfo.getmBidId());
-                            }
 
                             CommonAdManager commonAdManager = PlacementAdManager.getInstance().getAdManager(adTrackingInfo.getmPlacementId());
-                            commonAdManager.notifyMediationManagerImpression(adTrackingInfo.getmRequestId(), baseAdAdapter.getmUnitgroupInfo().ecpm);
+                            commonAdManager.notifyMediationManagerImpression(adTrackingInfo.getmRequestId(), adTrackingInfo.getmBidPrice());
                             //Save cap
                             AdCapV2Manager.getInstance(context).saveOneCap(adTrackingInfo.getmAdType(), adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
                             //Recore time
                             AdPacingManager.getInstance().savePlacementShowTime(adTrackingInfo.getmPlacementId());
                             AdPacingManager.getInstance().saveUnitGropuShowTime(adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
 
-                            if (isLasCache) {
-                                //If the last offer of AdSource had been showed, it would be removed from caches.
-                                forceCleanCache(adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId());
-                            }
+                            //Remove single cache
+                            removeAdCache(adTrackingInfo.getmPlacementId(), adTrackingInfo.getmUnitGroupUnitId(), adCacheInfo);
 
+                            /**
+                             * In-House Bidding notifyWinnerDisplay
+                             */
+                            MediationBidManager mediationBidManager = BiddingCacheManager.getInstance().getMediationBidManager();
+                            if (mediationBidManager != null) {
+                                mediationBidManager.notifyWinnerDisplay(adTrackingInfo.getmPlacementId(), baseAdAdapter.getmUnitgroupInfo());
+                            }
                         }
                     }
                 });
@@ -585,11 +623,19 @@ public class AdCacheManager {
         }
     }
 
-
-    public UnitgroupCacheInfo getUnitgroupCacheInfoByAdSourceId(String placementId, String adsourceId) {
+    /**
+     * Get Cache by AdSourceId (Need to optimization)
+     **/
+    public UnitgroupCacheInfo getUnitgroupCacheInfoByAdSourceId(String placementId, PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+        if (unitGroupInfo.networkType == Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID) {
+            BiddingResult cacheResponse = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
+            if (cacheResponse == null || cacheResponse.isExpire()) {
+                return null;
+            }
+        }
         ConcurrentHashMap<String, UnitgroupCacheInfo> unitGroupCacheInfoMap = cacheMap.get(placementId);
         if (unitGroupCacheInfoMap != null) {
-            UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap.get(adsourceId);
+            UnitgroupCacheInfo unitgroupCacheInfo = unitGroupCacheInfoMap.get(unitGroupInfo.unitId);
             AdCacheInfo adCacheInfo = unitgroupCacheInfo != null ? unitgroupCacheInfo.getAdCacheInfo() : null;
             if (adCacheInfo != null && adCacheInfo.getUpdateTime() + adCacheInfo.getCacheTime() > System.currentTimeMillis()) {
                 return unitgroupCacheInfo;
@@ -623,13 +669,15 @@ public class AdCacheManager {
                     }
 
                     if (adCacheInfo.isUpStatusAvaiable() && adCacheInfo.isNetworkAdReady()) {
+                        ATBaseAdAdapter baseAdAdapter = adCacheInfo.getBaseAdapter();
+                        AdTrackingInfo adTrackingInfo = baseAdAdapter.getTrackingInfo();
                         /**Refresh Adaper's Tracking Info**/
                         AdTrackingInfo ugAdTrackingInfo = TrackingInfoUtil.initTrackingInfo(mCurrentReqeustId, placementId
                                 , mUserId, placementStrategy, mUnitGroupList, placementStrategy.getRequestUnitGroupNumber()
-                                , mIsRefresh);
+                                , mIsRefresh, adTrackingInfo!=null?adTrackingInfo.getTid():0);
 
                         int requestLevel = unitGroupInfoList.indexOf(unitGroupInfo);
-                        TrackingInfoUtil.initPlacementUnitGroupTrackingInfo(adCacheInfo.getBaseAdapter(), ugAdTrackingInfo, unitGroupInfo, requestLevel);
+                        TrackingInfoUtil.initPlacementUnitGroupTrackingInfo(baseAdAdapter, ugAdTrackingInfo, unitGroupInfo, requestLevel);
                         ugAdTrackingInfo.setRequestType(AdTrackingInfo.UPSTATUS_REQUEST); //4:upstatus=1 and upstatus is available
 
                         //Send Agent

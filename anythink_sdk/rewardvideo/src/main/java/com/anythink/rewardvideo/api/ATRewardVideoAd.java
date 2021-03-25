@@ -15,7 +15,6 @@ import android.util.Log;
 import com.anythink.core.api.ATAdConst;
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATAdStatusInfo;
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
@@ -27,6 +26,7 @@ import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.rewardvideo.bussiness.AdLoadManager;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
 
 public class ATRewardVideoAd {
@@ -36,8 +36,21 @@ public class ATRewardVideoAd {
     AdLoadManager mAdLoadManager;
 
     Context mContext;
+    WeakReference<Activity> mActivityWef;
 
-    private ATRewardVideoListener mInterListener = new ATRewardVideoListener() {
+    private ATRewardVideoExListener mInterListener = new ATRewardVideoExListener() {
+        @Override
+        public void onDeeplinkCallback(final ATAdInfo adInfo, final boolean isSuccess) {
+            SDKContext.getInstance().runOnMainThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mListener != null && mListener instanceof ATRewardVideoExListener) {
+                        ((ATRewardVideoExListener) mListener).onDeeplinkCallback(adInfo, isSuccess);
+                    }
+                }
+            });
+        }
+
         @Override
         public void onRewardedVideoAdLoaded() {
             SDKContext.getInstance().runOnMainThread(new Runnable() {
@@ -118,7 +131,7 @@ public class ATRewardVideoAd {
             });
 
             if (isNeedAutoLoadAfterClose()) {
-                load(true);
+                load(getRequestContext(), true);
             }
         }
 
@@ -150,22 +163,32 @@ public class ATRewardVideoAd {
 
     public ATRewardVideoAd(Context context, String placementId) {
         mPlacementId = placementId;
-        mContext = context;
+        mContext = context.getApplicationContext();
+        if (context instanceof Activity) {
+            mActivityWef = new WeakReference<>((Activity) context);
+        }
         mAdLoadManager = AdLoadManager.getInstance(context, placementId);
     }
 
-    @Deprecated
-    public void setCustomExtra(Map<String, String> map) {
-    }
-
     public void load() {
-        load(false);
+        load(getRequestContext(), false);
     }
 
-    private void load(final boolean isAutoRefresh) {
+    public void load(Context context) {
+        load(context != null ? context : getRequestContext(), false);
+    }
+
+    private void load(Context context, final boolean isAutoRefresh) {
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_REWARD, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
-        mAdLoadManager.refreshContext(mContext);
-        mAdLoadManager.startLoadAd(mContext, isAutoRefresh, mInterListener);
+        mAdLoadManager.startLoadAd(context, isAutoRefresh, mInterListener);
+    }
+
+    private Context getRequestContext() {
+        Activity activity = null;
+        if (mActivityWef != null) {
+            activity = mActivityWef.get();
+        }
+        return activity != null ? activity : mContext;
     }
 
     private boolean isNeedAutoLoadAfterClose() {
@@ -174,10 +197,6 @@ public class ATRewardVideoAd {
             return placeStrategy.getAutoRefresh() == 1 && !mAdLoadManager.isLoading();
         }
         return false;
-    }
-
-    @Deprecated
-    public void addSetting(int networkType, ATMediationSetting setting) {
     }
 
     public void setLocalExtra(Map<String, Object> map) {
@@ -215,12 +234,6 @@ public class ATRewardVideoAd {
         return adStatusInfo;
     }
 
-    @Deprecated
-    public void setUserData(String userId, String customData) {
-        PlacementAdManager.getInstance().addExtraInfoToLocalMap(mPlacementId, ATAdConst.KEY.USER_ID, userId);
-        PlacementAdManager.getInstance().addExtraInfoToLocalMap(mPlacementId, ATAdConst.KEY.USER_CUSTOM_DATA, customData);
-    }
-
     public void show(Activity activity, String scenario) {
         String realScenario = "";
         if (CommonSDKUtil.isVailScenario(scenario)) {
@@ -232,21 +245,6 @@ public class ATRewardVideoAd {
     public void show(Activity activity) {
         controlShow(activity, "");
     }
-
-    @Deprecated
-    public void show(String scenario) {
-        String realScenario = "";
-        if (CommonSDKUtil.isVailScenario(scenario)) {
-            realScenario = scenario;
-        }
-        controlShow(null, realScenario);
-    }
-
-    @Deprecated
-    public void show() {
-        controlShow(null, "");
-    }
-
 
     private void controlShow(Activity activity, String scenario) {
 
@@ -272,23 +270,6 @@ public class ATRewardVideoAd {
         }
 
         mAdLoadManager.show(showActivity, scenario, mInterListener);
-    }
-
-    @Deprecated
-    public void clean() {
-//        mAdLoadManager.clean();
-    }
-
-    @Deprecated
-    public void onPause() {
-    }
-
-    @Deprecated
-    public void onResume() {
-    }
-
-    @Deprecated
-    public void onDestory() {
     }
 
 }

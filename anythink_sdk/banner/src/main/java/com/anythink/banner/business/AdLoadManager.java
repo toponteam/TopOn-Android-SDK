@@ -39,7 +39,6 @@ public class AdLoadManager extends CommonAdManager<BannerLoadParams> {
             adLoadManager = new AdLoadManager(context, placementId);
             PlacementAdManager.getInstance().addAdManager(placementId, adLoadManager);
         }
-        adLoadManager.refreshContext(context);
         return (AdLoadManager) adLoadManager;
     }
 
@@ -78,7 +77,7 @@ public class AdLoadManager extends CommonAdManager<BannerLoadParams> {
     }
 
     @Override
-    public void onCallbacInternalError(BannerLoadParams bannerLoadParams, String placementId, String requestId, AdError adError) {
+    public void onCallbackInternalError(BannerLoadParams bannerLoadParams, String placementId, String requestId, AdError adError) {
         if (bannerLoadParams.listener != null) {
             bannerLoadParams.listener.onBannerFailed(bannerLoadParams.isRefresh, adError);
         }

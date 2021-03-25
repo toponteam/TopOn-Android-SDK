@@ -8,35 +8,27 @@
 package com.anythink.basead.buiness;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
-import android.util.TypedValue;
 
-import com.anythink.basead.net.AdxNoticeUrlLoader;
-import com.anythink.basead.net.AdxOfferTkLoader;
+import com.anythink.basead.entity.OfferClickResult;
+import com.anythink.basead.entity.UserOperateRecord;
 import com.anythink.basead.net.MyOfferTkLoader;
 import com.anythink.basead.net.NoticeUrlLoader;
-import com.anythink.basead.ui.ApkConfirmDialogActivity;
-import com.anythink.china.common.ApkDownloadManager;
-import com.anythink.china.common.download.ApkRequest;
-import com.anythink.china.common.resource.ApkResource;
+import com.anythink.core.api.IExHandler;
 import com.anythink.core.common.base.SDKContext;
-import com.anythink.core.common.entity.AdxAdSetting;
 import com.anythink.core.common.entity.AdxOffer;
-import com.anythink.core.common.entity.AdxTrackObject;
 import com.anythink.core.common.entity.BaseAdContent;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.core.common.entity.BaseAdSetting;
 import com.anythink.core.common.entity.MyOfferAd;
-import com.anythink.core.common.res.ImageLoader;
-import com.anythink.core.common.res.ResourceEntry;
-import com.anythink.core.common.utils.CommonUtil;
+import com.anythink.core.common.entity.OwnBaseAdContent;
+import com.anythink.core.common.entity.OwnBaseAdSetting;
 import com.anythink.core.common.utils.task.TaskManager;
 
-import org.json.JSONObject;
-
-import java.util.Map;
 
 public class OfferAdFunctionUtil {
 
@@ -55,233 +47,89 @@ public class OfferAdFunctionUtil {
     public static final int VIDEO_MUTE_TYPE = 12;
     public static final int VIDEO_NO_MUTE_TYPE = 13;
     public static final int VIDEO_CLICK_TYPE = 14;
-    public static final int APK_DOWNLOAD_START_TYPE = 15;
-    public static final int APK_DOWNLOAD_END_TYPE = 16;
-    public static final int APK_INSTALL_TYPE = 17;
+    public static final int VIDEO_RESUME_TYPE = 15;
+    public static final int VIDEO_SKIP_TYPE = 16;
+    public static final int VIDEO_ERROR_TYPE = 17;
 
+    public static final int APK_DOWNLOAD_START_TYPE = 18;
+    public static final int APK_DOWNLOAD_END_TYPE = 19;
+    public static final int APK_INSTALL_START_TYPE = 20;
+    public static final int APK_INSTALL_FINISH_TYPE = 21;
+    public static final int APK_INSTALL_FINISH_AND_ACTIVE_TYPE = 22;
 
-    public static void startDownloadApp(final Context context, final String requestId, final BaseAdSetting myOfferSetting, final BaseAdContent myOfferAd, final String url) {
-        SDKContext.getInstance().runOnMainThread(new Runnable() {
-            @Override
-            public void run() {
-                if (SDKContext.getInstance().getChinaHandler() != null) {
-                    if (1 == myOfferSetting.getApkDownloadConfirm()) {
-                        ApkConfirmDialogActivity.start(context, requestId, myOfferSetting, myOfferAd, url);
-                    } else {
-                        realStartDownloadApp(context, requestId, myOfferSetting, myOfferAd, url);
+    public static final int APP_START_ACTIVE_TYPE = 23; //Only for Deeplink and Apk offer
+    public static final int APP_ACTIVE_SUCCESS_TYPE = 24;//Only for Deeplink and Apk offer
+    public static final int APP_HAS_INSTALL_TYPE = 25;
+    public static final int APP_NO_INSTALL_TYPE = 26;
+    public static final int APP_UNKOWN_TYPE = 27;
+
+    /**Add by v5.7.7**/
+    public static final int APP_DEEPLINK_INSTALLED_FAIL_TYPE = 28;
+    public static final int APP_DEEPLINK_UNINSTALLED_FAIL_TYPE = 29;
+
+    public static final int VIDEO_DOWNLOAD_SUCCESS_TYPE = 30;
+    public static final int VIDEO_REWARDED_TYPE = 31;
+    public static final int VIDEO_DIRECT_PROGRESS_TYPE = 32;
+
+    public static boolean startDownloadApp(final Context context, final BaseAdRequestInfo baseAdRequestInfo, final BaseAdContent baseAdContent, final OfferClickResult clickResult, final String url) {
+        try {
+            IExHandler iexHandler = SDKContext.getInstance().getExHandler();
+            String clickId = (clickResult != null && !TextUtils.isEmpty(clickResult.clickId)) ? clickResult.clickId : "";
+            if (iexHandler != null) {
+                iexHandler.handleOfferClick(context, baseAdRequestInfo, baseAdContent, url, clickId, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (baseAdContent instanceof OwnBaseAdContent) {
+                            OfferStatusManager.getInstance(context.getApplicationContext()).registerOfferStatusBroadcastReceiver();
+                            OfferStatusManager.getInstance(context.getApplicationContext()).register(baseAdContent.getOfferId(), baseAdContent);
+                        }
                     }
-                } else {
-                    OfferUrlHandler.openBrowserUrl(context, url);
-                }
-
+                });
+                return true;
             }
-        });
-
-    }
-
-    public static void realStartDownloadApp(final Context context, final String requestId, final BaseAdSetting myOfferSetting, final BaseAdContent myOfferAd, final String url) {
-        if (ApkResource.isApkInstalled(SDKContext.getInstance().getContext(), myOfferAd.getPkgName())) {
-            //App was installed， open it
-            ApkResource.openApp(SDKContext.getInstance().getContext(), myOfferAd.getPkgName());
-        } else {
-            //App not exist, download it
-            ApkRequest apkRequest = new ApkRequest();
-            apkRequest.requestId = requestId;
-            apkRequest.offerId = myOfferAd.getOfferId();
-            apkRequest.url = url;
-            apkRequest.pkgName = myOfferAd.getPkgName();
-            apkRequest.title = myOfferAd.getTitle();
-            int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50, SDKContext.getInstance().getContext().getResources().getDisplayMetrics());
-            apkRequest.icon = ImageLoader.getInstance(context).getBitmapFromDiskCache(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, myOfferAd.getIconUrl()), size, size);
-
-
-            ApkDownloadManager.getInstance(SDKContext.getInstance().getContext()).setOfferCacheTime(myOfferSetting.getOfferCacheTime());
-            ApkDownloadManager.getInstance(SDKContext.getInstance().getContext()).checkAndCleanApk();
-            ApkDownloadManager.getInstance(SDKContext.getInstance().getContext()).handleClick(apkRequest);
+        } catch (Throwable e) {
+            return false;
         }
+
+        return false;
     }
 
 
-    public static void sendAdTracking(final String requestId, final BaseAdContent baseAdContent, final int tkType, final String scenario) {
-        TaskManager.getInstance().run_proxy(new Runnable() {
+    /**
+     * UI Tracking API
+     *
+     * @param baseAdContent
+     * @param tkType
+     * @param userOperateRecord
+     */
+    public static void sendAdTracking(final int tkType, final BaseAdContent baseAdContent, @NonNull final UserOperateRecord userOperateRecord) {
+
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 if (baseAdContent instanceof MyOfferAd) {
                     MyOfferAd myOfferAd = (MyOfferAd) baseAdContent;
                     if (tkType == OfferAdFunctionUtil.IMPRESSION_TYPE) {
-                        new NoticeUrlLoader(myOfferAd.getNoticeUrl(), requestId).start(0, null);
+                        new NoticeUrlLoader(myOfferAd.getNoticeUrl(), userOperateRecord.requestId).start(0, null);
                     }
 
-                    MyOfferTkLoader myOfferTkLoader = new MyOfferTkLoader(tkType, myOfferAd, requestId);
-                    myOfferTkLoader.setScenario(scenario);
+                    MyOfferTkLoader myOfferTkLoader = new MyOfferTkLoader(tkType, myOfferAd, userOperateRecord.requestId);
+                    myOfferTkLoader.setScenario(userOperateRecord.scenario);
                     myOfferTkLoader.start(0, null);
                 } else {
-                    sendAdxAdTracking(tkType, baseAdContent, scenario);
+                    OwnOfferTracker.sendAdTracking(tkType, (OwnBaseAdContent) baseAdContent, userOperateRecord);
                 }
             }
-        });
-    }
+        };
 
-    public static void sendAdxAdTracking(final int tkType, final BaseAdContent baseAdContent) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
-            TaskManager.getInstance().run_proxy(new Runnable() {
-                @Override
-                public void run() {
-                    sendAdxAdTracking(tkType, baseAdContent, "");
-                }
-            });
+            runnable.run();
         } else {
-            sendAdxAdTracking(tkType, baseAdContent, "");
+            TaskManager.getInstance().run_proxy(runnable);
         }
+
     }
 
-    private static void sendAdxAdTracking(final int tkType, final BaseAdContent baseAdContent, final String scenario) {
-        if (baseAdContent instanceof AdxOffer) {
-            AdxOffer adxOffer = (AdxOffer) baseAdContent;
-            AdxTrackObject adxTrackObject = adxOffer.getAdxTrackObject();
-            String replaceJSONString = adxTrackObject.getReplaceJSONString();
-
-            Map<String, Object> replaceMap = CommonUtil.jsonObjectToMap(replaceJSONString);
-
-            sendAdxNoticeUrl(tkType, adxOffer, adxTrackObject, replaceMap);
-
-            sendAdxTopOnTracking(tkType, scenario, adxOffer, adxTrackObject, replaceMap);
-        }
-    }
-
-    private static void sendAdxNoticeUrl(int tkType, AdxOffer adxOffer, AdxTrackObject adxTrackObject, Map<String, Object> replaceMap) {
-
-        String[] urls = null;
-        try {
-            switch (tkType) {
-                case OfferAdFunctionUtil.VIDEO_START_TYPE:
-                    urls = adxTrackObject.getVideoStartUrls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_PROGRESS25_TYPE:
-                    urls = adxTrackObject.getVideoProgress25Urls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_PROGRESS50_TYPE:
-                    urls = adxTrackObject.getVideoProgress50Urls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_PROGRESS75_TYPE:
-                    urls = adxTrackObject.getVideoProgress75Urls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_FINISH_TYPE:
-                    urls = adxTrackObject.getVideoProgress100Urls();
-                    break;
-                case OfferAdFunctionUtil.ENDCARD_SHOW_TYPE:
-                    urls = adxTrackObject.getEndcardShowUrls();
-                    break;
-                case OfferAdFunctionUtil.ENDCARD_CLOSE_TYPE:
-                    urls = adxTrackObject.getEndcardCloseUrls();
-                    break;
-                case OfferAdFunctionUtil.IMPRESSION_TYPE:
-                    urls = adxTrackObject.getImpressionUrls();
-                    break;
-                case OfferAdFunctionUtil.CLICK_TYPE:
-                    urls = adxTrackObject.getClickUrls();
-                    break;
-                case OfferAdFunctionUtil.NOTICE_WIN_TYPE:
-                    urls = adxTrackObject.getNoticeWinUrls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_PAUSE_TYPE:
-                    urls = adxTrackObject.getVideoPauseUrls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_MUTE_TYPE:
-                    urls = adxTrackObject.getVideoMuteUrls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_NO_MUTE_TYPE:
-                    urls = adxTrackObject.getVideoVoiceUrls();
-                    break;
-                case OfferAdFunctionUtil.APK_DOWNLOAD_START_TYPE:
-                    urls = adxTrackObject.getApkDownloadStartUrls();
-                    break;
-                case OfferAdFunctionUtil.APK_DOWNLOAD_END_TYPE:
-                    urls = adxTrackObject.getApkDownloadEndUrls();
-                    break;
-                case OfferAdFunctionUtil.APK_INSTALL_TYPE:
-                    urls = adxTrackObject.getApkInstallUrls();
-                    break;
-                case OfferAdFunctionUtil.VIDEO_CLICK_TYPE:
-                    urls = adxTrackObject.getVideoClickUrls();
-                    break;
-            }
-
-            if (urls != null) {
-                for (String url : urls) {
-                    new AdxNoticeUrlLoader(tkType, url, adxOffer, replaceMap).start(0, null);
-                }
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private static void sendAdxTopOnTracking(int tkType, String scenario, AdxOffer adxOffer, AdxTrackObject adxTrackObject, Map<String, Object> replaceMap) {
-        String trackUrlJSONString = "";
-        switch (tkType) {
-            case OfferAdFunctionUtil.VIDEO_START_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoStartJSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_PROGRESS25_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoProgress25JSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_PROGRESS50_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoProgress50JSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_PROGRESS75_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoProgress75JSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_FINISH_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoProgress100JSONString();
-                break;
-            case OfferAdFunctionUtil.ENDCARD_SHOW_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpEndcardShowJSONString();
-                break;
-            case OfferAdFunctionUtil.ENDCARD_CLOSE_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpEndcardCloseJSONString();
-                break;
-            case OfferAdFunctionUtil.IMPRESSION_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpImpressionJSONString();
-                break;
-            case OfferAdFunctionUtil.CLICK_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpClickJSONString();
-                break;
-            case OfferAdFunctionUtil.NOTICE_WIN_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpNoticeWinJSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_PAUSE_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoPauseJSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_MUTE_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoMuteJSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_NO_MUTE_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoVoiceJSONStrings();
-                break;
-            case OfferAdFunctionUtil.APK_DOWNLOAD_START_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpApkDownloadStartJSONString();
-                break;
-            case OfferAdFunctionUtil.APK_DOWNLOAD_END_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpApkDownloadEndJSONString();
-                break;
-            case OfferAdFunctionUtil.APK_INSTALL_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpApkInstallJSONString();
-                break;
-            case OfferAdFunctionUtil.VIDEO_CLICK_TYPE:
-                trackUrlJSONString = adxTrackObject.getTpVideoClickJSONString();
-                break;
-        }
-
-        if (checkAdxTrackingIsEmpty(trackUrlJSONString)) {
-            return;
-        }
-
-        AdxOfferTkLoader adxOfferTkLoader = new AdxOfferTkLoader(tkType, adxOffer, trackUrlJSONString, replaceMap);
-        adxOfferTkLoader.setScenario(scenario);
-        adxOfferTkLoader.start(0, null);
-    }
 
     public static boolean isUploadUserAgent(int tkType, BaseAdSetting baseAdSetting) {
         boolean result = false;
@@ -293,14 +141,14 @@ public class OfferAdFunctionUtil {
             case OfferAdFunctionUtil.VIDEO_PROGRESS50_TYPE:
             case OfferAdFunctionUtil.VIDEO_PROGRESS75_TYPE:
             case OfferAdFunctionUtil.VIDEO_FINISH_TYPE:
-                if (baseAdSetting instanceof AdxAdSetting) {
-                    AdxAdSetting adxAdSetting = (AdxAdSetting) baseAdSetting;
+                if (baseAdSetting instanceof OwnBaseAdSetting) {
+                    OwnBaseAdSetting adxAdSetting = (OwnBaseAdSetting) baseAdSetting;
                     result = adxAdSetting.getIpua() == 1;
                 }
                 break;
             case OfferAdFunctionUtil.CLICK_TYPE:
-                if (baseAdSetting instanceof AdxAdSetting) {
-                    AdxAdSetting adxAdSetting = (AdxAdSetting) baseAdSetting;
+                if (baseAdSetting instanceof OwnBaseAdSetting) {
+                    OwnBaseAdSetting adxAdSetting = (OwnBaseAdSetting) baseAdSetting;
                     result = adxAdSetting.getClua() == 1;
                 }
                 break;
@@ -312,8 +160,8 @@ public class OfferAdFunctionUtil {
     public static boolean isClickAsync(BaseAdContent baseAdContent, BaseAdSetting baseAdSetting) {
         boolean isClickAsync = false;
         if (baseAdContent instanceof AdxOffer) {
-            if (baseAdSetting instanceof AdxAdSetting) {
-                isClickAsync = ((AdxAdSetting) baseAdSetting).getClickmode() == OfferClickController.ASYNC_MODE;
+            if (baseAdSetting instanceof OwnBaseAdSetting) {
+                isClickAsync = ((OwnBaseAdSetting) baseAdSetting).getClickmode() == OfferClickController.ASYNC_MODE;
             }
         } else if (baseAdContent instanceof MyOfferAd) {
             isClickAsync = ((MyOfferAd) baseAdContent).getClickMode() == OfferClickController.ASYNC_MODE;
@@ -321,19 +169,20 @@ public class OfferAdFunctionUtil {
         return isClickAsync;
     }
 
-    private static boolean checkAdxTrackingIsEmpty(String trackString) {
-        if (TextUtils.isEmpty(trackString)) {
-            return true;
+    public static boolean isApkInstalled(Context context, String pkgName) {
+        if (context == null || TextUtils.isEmpty(pkgName)) {
+            return false;
         }
         try {
-            JSONObject jsonObject = new JSONObject(trackString);
-            if (jsonObject.length() > 0) {
-                return false;
-            }
+            ApplicationInfo info = context.getPackageManager()
+                    .getApplicationInfo(pkgName, PackageManager.GET_UNINSTALLED_PACKAGES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
         } catch (Throwable e) {
-
+            return false;
         }
-        return true;
     }
+
 
 }

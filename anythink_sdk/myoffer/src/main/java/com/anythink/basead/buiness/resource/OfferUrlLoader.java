@@ -7,6 +7,11 @@
 
 package com.anythink.basead.buiness.resource;
 
+import android.text.TextUtils;
+
+import com.anythink.basead.buiness.OfferAdFunctionUtil;
+import com.anythink.basead.entity.UserOperateRecord;
+import com.anythink.core.common.entity.BaseAdContent;
 import com.anythink.core.common.track.AgentEventManager;
 import com.anythink.core.common.res.image.ResourceDownloadBaseUrlLoader;
 import com.anythink.core.common.utils.task.TaskManager;
@@ -27,14 +32,16 @@ class OfferUrlLoader extends ResourceDownloadBaseUrlLoader {
     private boolean mIsVideo;
     private String mOfferId;
     private int mOfferType;
+    private BaseAdContent baseAdContent;
 
-    public OfferUrlLoader(String placementId, boolean isPreLoad, String offerId, String url, boolean isVideo, int offerType) {
+    public OfferUrlLoader(String placementId, boolean isPreLoad, BaseAdContent baseAdContent, String url) {
         super(url);
+        this.baseAdContent = baseAdContent;
         this.mPlacementId = placementId;
         this.mIsPreLoad = isPreLoad;
-        this.mIsVideo = isVideo;
-        this.mOfferId = offerId;
-        this.mOfferType = offerType;
+        this.mIsVideo = TextUtils.equals(baseAdContent.getVideoUrl(), url);
+        this.mOfferId = baseAdContent.getOfferId();
+        this.mOfferType = baseAdContent.getOfferSourceType();
     }
 
     @Override
@@ -65,8 +72,9 @@ class OfferUrlLoader extends ResourceDownloadBaseUrlLoader {
     @Override
     protected void onLoadFinishCallback() {
         if (mIsVideo) {
+            OfferAdFunctionUtil.sendAdTracking(OfferAdFunctionUtil.VIDEO_DOWNLOAD_SUCCESS_TYPE, baseAdContent, new UserOperateRecord("", ""));
             AgentEventManager.offerVideoUrlDownloadEvent(mPlacementId, mOfferId, mURL, "1"
-                    , downloadSize, null, downloadStartTime, downloadEndTime, mOfferType);
+                    , downloadSize, null, downloadStartTime, downloadEndTime, mOfferType, downloadRealEndTime - downloadRealStartTime);
         }
         OfferUrlLoadManager.getInstance().notifyDownloadSuccess(mURL);
     }
@@ -75,7 +83,7 @@ class OfferUrlLoader extends ResourceDownloadBaseUrlLoader {
     protected void onLoadFailedCallback(String errorCode, String erroMsg) {
         if (mIsVideo) {
             AgentEventManager.offerVideoUrlDownloadEvent(mPlacementId, mOfferId, mURL, "0"
-                    , downloadSize, erroMsg, downloadStartTime, 0, mOfferType);
+                    , downloadSize, erroMsg, downloadStartTime, 0, mOfferType, downloadRealEndTime - downloadRealStartTime);
         }
         OfferUrlLoadManager.getInstance().notifyDownloadFailed(mURL, OfferErrorCode.get(errorCode, erroMsg));
     }

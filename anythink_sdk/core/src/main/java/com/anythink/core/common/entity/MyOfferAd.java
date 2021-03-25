@@ -327,7 +327,7 @@ public class MyOfferAd extends BaseAdContent<MyOfferSetting> {
                 isCompleteResource = false;
             }
 
-            if (resourceType == 1) {
+            if (unitType == BaseAdContent.UNIT_TYPE_VIDEO) {
                 if (!TextUtils.isEmpty(videoUrl)) {
                     urlLists.add(videoUrl);
                 } else {

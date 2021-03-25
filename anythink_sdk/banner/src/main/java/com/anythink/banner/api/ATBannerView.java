@@ -8,6 +8,7 @@
 package com.anythink.banner.api;
 
 import android.content.Context;
+import android.os.CountDownTimer;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -21,6 +22,7 @@ import com.anythink.banner.business.BannerEventListener;
 import com.anythink.banner.business.InnerBannerListener;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
 import com.anythink.core.api.ATAdInfo;
+import com.anythink.core.api.ATAdStatusInfo;
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
@@ -44,10 +46,17 @@ import com.anythink.core.strategy.PlaceStrategyManager;
 import java.util.Map;
 
 public class ATBannerView extends FrameLayout {
+    enum RefreshCountdownStatus {
+        NORMAL,
+        COUNTDOWN_ING,
+        COUNTDOWN_FINISH
+    }
+
     private final String TAG = ATBannerView.class.getSimpleName();
 
     private ATBannerListener mListener;
     private String mPlacementId;
+    private String mScenario = "";
 
     private AdLoadManager mAdLoadManager;
 
@@ -58,13 +67,21 @@ public class ATBannerView extends FrameLayout {
 
     CustomBannerAdapter mCustomBannerAd;
 
+    RefreshCountdownStatus mRefreshStatus = RefreshCountdownStatus.NORMAL;
+
+
     Runnable mRefreshRunnable = new Runnable() {
         @Override
         public void run() {
-            loadAd(true);
+            if (visibility != VISIBLE || !hasTouchWindow || getVisibility() != VISIBLE) {
+                mRefreshStatus = RefreshCountdownStatus.COUNTDOWN_FINISH;
+            } else {
+                loadAd(true);
+            }
         }
     };
 
+    CountDownTimer mCountDownTimer;
 
     private InnerBannerListener mInnerBannerListener = new InnerBannerListener() {
 
@@ -89,9 +106,15 @@ public class ATBannerView extends FrameLayout {
                         hasCallbackShow = false; //reset the mark of impression
 
                         if (bannerAdapter != null) {
+
                             if (isInView() && getVisibility() == VISIBLE) {
                                 hasCallbackShow = true;
                                 mCustomBannerAd = bannerAdapter;
+
+                                if (mListener != null && !isRefresh) {
+                                    mListener.onBannerLoaded();
+                                }
+
 
                                 /**Mark ad has been showed**/
                                 adCacheInfo.setShowTime(adCacheInfo.getShowTime() + 1);
@@ -99,6 +122,13 @@ public class ATBannerView extends FrameLayout {
                                 //Add Banner Ad to ATBannerView
                                 View networkBannerView = bannerAdapter.getBannerView();
                                 int index = indexOfChild(networkBannerView);
+
+                                //Scenario
+                                AdTrackingInfo adTrackingInfo = mCustomBannerAd.getTrackingInfo();
+                                adTrackingInfo.setmScenario(mScenario);
+
+                                mCustomBannerAd.setAdEventListener(new BannerEventListener(mInnerBannerListener, mCustomBannerAd, isRefresh));
+                                notifyBannerShow(getContext().getApplicationContext(), adCacheInfo, isRefresh);
 
                                 if (index < 0) {
                                     removeAllViews();
@@ -112,18 +142,6 @@ public class ATBannerView extends FrameLayout {
                                 } else {
                                     for (int i = index - 1; i >= 0; i--) {
                                         removeViewAt(i);
-                                    }
-                                }
-
-
-                                notifyBannerShow(getContext().getApplicationContext(), adCacheInfo);
-                                mCustomBannerAd.setAdEventListener(new BannerEventListener(mInnerBannerListener, mCustomBannerAd, isRefresh));
-                                if (mListener != null) {
-                                    if (isRefresh) {
-                                        mListener.onBannerAutoRefreshed(ATAdInfo.fromAdapter(mCustomBannerAd));
-                                    } else {
-                                        mListener.onBannerLoaded();
-                                        mListener.onBannerShow(ATAdInfo.fromAdapter(mCustomBannerAd));
                                     }
                                 }
 
@@ -187,8 +205,17 @@ public class ATBannerView extends FrameLayout {
         }
 
         @Override
-        public void onBannerShow(boolean isRefresh) {
-
+        public void onBannerShow(final boolean isRefresh, final CustomBannerAdapter customBannerAdapter) {
+            SDKContext.getInstance().runOnMainThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (customBannerAdapter != null && isRefresh) {
+                        mListener.onBannerAutoRefreshed(ATAdInfo.fromAdapter(customBannerAdapter));
+                    } else {
+                        mListener.onBannerShow(ATAdInfo.fromAdapter(customBannerAdapter));
+                    }
+                }
+            });
         }
 
         @Override
@@ -203,6 +230,18 @@ public class ATBannerView extends FrameLayout {
             });
             //Refresh after closed
             loadAd(true);
+        }
+
+        @Override
+        public void onDeeplinkCallback(final boolean isRefresh, final CustomBannerAdapter customBannerAdapter, final boolean isSuccess) {
+            SDKContext.getInstance().runOnMainThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mListener != null && mListener instanceof ATBannerExListener) {
+                        ((ATBannerExListener) mListener).onDeeplinkCallback(isRefresh, ATAdInfo.fromAdapter(customBannerAdapter), isSuccess);
+                    }
+                }
+            });
         }
     };
 
@@ -219,18 +258,34 @@ public class ATBannerView extends FrameLayout {
         super(context, attrs, defStyleAttr);
     }
 
-    @Deprecated
-    public void setUnitId(String placementId) {
-        setPlacementId(placementId);
-    }
-
     public void setPlacementId(String placementId) {
         mAdLoadManager = AdLoadManager.getInstance(getContext(), placementId);
         mPlacementId = placementId;
     }
 
-    @Deprecated
-    public void setCustomMap(Map<String, String> customMap) {
+    public void setScenario(String scenario) {
+        if (CommonSDKUtil.isVailScenario(scenario)) {
+            mScenario = scenario;
+        }
+    }
+
+    public ATAdStatusInfo checkAdStatus() {
+        if (SDKContext.getInstance().getContext() == null
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppId())
+                || TextUtils.isEmpty(SDKContext.getInstance().getAppKey())) {
+            Log.e(TAG, "SDK init error!");
+            return new ATAdStatusInfo(false, false, null);
+        }
+
+        if (mAdLoadManager == null) {
+            Log.e(TAG, "PlacementId is empty!");
+            return new ATAdStatusInfo(false, false, null);
+        }
+
+        ATAdStatusInfo adStatusInfo = mAdLoadManager.checkAdStatus(getContext());
+        ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_BANNER, Const.LOGKEY.API_AD_STATUS, adStatusInfo.toString(), "");
+
+        return adStatusInfo;
     }
 
     /**
@@ -273,18 +328,13 @@ public class ATBannerView extends FrameLayout {
         mListener = listener;
     }
 
-    @Deprecated
-    public void clean() {
-        this.destroy();
-    }
-
     public void destroy() {
         if (mCustomBannerAd != null) {
             mCustomBannerAd.destory();
         }
-        if (mAdLoadManager != null) {
-            mAdLoadManager.clean();
-        }
+//        if (mAdLoadManager != null) {
+//            mAdLoadManager.clean();
+//        }
 //        AdCacheManager.getInstance().forceCleanCache(mUnitId);
     }
 
@@ -298,7 +348,7 @@ public class ATBannerView extends FrameLayout {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         hasTouchWindow = false;
-        stopAutoRefresh(mRefreshRunnable);
+//        stopAutoRefresh(mRefreshRunnable);
     }
 
     @Override
@@ -324,7 +374,7 @@ public class ATBannerView extends FrameLayout {
             if (visibility != VISIBLE || !hasTouchWindow || getVisibility() != VISIBLE) {
                 /**Remove the timer if ATBanner is invisible**/
                 CommonLogUtil.i(TAG, "no in window to stop refresh!");
-                stopAutoRefresh(mRefreshRunnable);
+//                stopAutoRefresh(mRefreshRunnable);
             } else {
                 AdCacheInfo adCacheInfo = AdCacheManager.getInstance().getCache(getContext(), mPlacementId);
 
@@ -354,6 +404,16 @@ public class ATBannerView extends FrameLayout {
                     }
 
                     mCustomBannerAd = bannerAdapter;
+
+                    //Scenario
+                    AdTrackingInfo adTrackingInfo = mCustomBannerAd.getTrackingInfo();
+                    adTrackingInfo.setmScenario(mScenario);
+
+                    /**Set Banner Event Listener**/
+                    bannerAdapter.setAdEventListener(new BannerEventListener(mInnerBannerListener, bannerAdapter, mIsRefresh));
+
+                    notifyBannerShow(getContext().getApplicationContext(), adCacheInfo, mIsRefresh);
+
                     int index = indexOfChild(bannerView);
                     if (index < 0) {
                         removeAllViews();
@@ -367,17 +427,6 @@ public class ATBannerView extends FrameLayout {
                         }
                     }
 
-                    notifyBannerShow(getContext().getApplicationContext(), adCacheInfo);
-                    /**Set Banner Event Listener**/
-                    bannerAdapter.setAdEventListener(new BannerEventListener(mInnerBannerListener, bannerAdapter, mIsRefresh));
-
-                    if (mListener != null) {
-                        if (bannerAdapter != null && mIsRefresh) {
-                            mListener.onBannerAutoRefreshed(ATAdInfo.fromAdapter(mCustomBannerAd));
-                        } else {
-                            mListener.onBannerShow(ATAdInfo.fromAdapter(mCustomBannerAd));
-                        }
-                    }
 
                     mAdLoadManager.notifyNewestCacheHasBeenShow(adCacheInfo);
 
@@ -396,7 +445,7 @@ public class ATBannerView extends FrameLayout {
         if (visibility != VISIBLE || !hasTouchWindow || getVisibility() != VISIBLE || !hasWindowFocus) {
             if (mAdLoadManager != null) {
                 CommonLogUtil.i(TAG, "onWindowFocusChanged no in window to stop refresh!");
-                stopAutoRefresh(mRefreshRunnable);
+//                stopAutoRefresh(mRefreshRunnable);
             }
         } else {
             /**Start the timer if ATBanner is visible**/
@@ -415,22 +464,38 @@ public class ATBannerView extends FrameLayout {
     }
 
     private void startAutoRefresh(Runnable runnable) {
-        stopAutoRefresh(runnable);
-        PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(getContext().getApplicationContext()).getPlaceStrategyByAppIdAndPlaceId(mPlacementId);
-        if (placeStrategy != null && placeStrategy.getAutoRefresh() == 1) { //Start to refresh
-            SDKContext.getInstance().runOnMainThreadDelayed(runnable, placeStrategy.getAutoRefreshTime());
+        if (mRefreshStatus == RefreshCountdownStatus.NORMAL) {
+            stopAutoRefresh(runnable);
+            PlaceStrategy placeStrategy = PlaceStrategyManager.getInstance(getContext().getApplicationContext()).getPlaceStrategyByAppIdAndPlaceId(mPlacementId);
+            if (placeStrategy != null && placeStrategy.getAutoRefresh() == 1) { //Start to refresh
+                mRefreshStatus = RefreshCountdownStatus.COUNTDOWN_ING;
+                SDKContext.getInstance().runOnMainThreadDelayed(runnable, placeStrategy.getAutoRefreshTime());
+            }
         }
+
+        if (mRefreshStatus == RefreshCountdownStatus.COUNTDOWN_FINISH) {
+            loadAd(true);
+        }
+
     }
 
     private void stopAutoRefresh(Runnable runnable) {
+        mRefreshStatus = RefreshCountdownStatus.NORMAL;
         SDKContext.getInstance().removeMainThreadRunnable(runnable);
     }
 
-    private void notifyBannerShow(final Context context, final AdCacheInfo adCacheInfo) {
-        ATBaseAdAdapter baseAdAdapter = adCacheInfo.getBaseAdapter();
+
+    private void notifyBannerShow(final Context context, final AdCacheInfo adCacheInfo, final boolean isRefresh) {
+        final ATBaseAdAdapter baseAdAdapter = adCacheInfo.getBaseAdapter();
         final AdTrackingInfo adTrackingInfo = baseAdAdapter.getTrackingInfo();
+
+        String placementId = adTrackingInfo.getmPlacementId();
+        String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(placementId);
+
+        adTrackingInfo.setCurrentRequestId(currentRequestId);
+
         final long timestamp = System.currentTimeMillis();
-        if (adTrackingInfo != null) {
+        if (adTrackingInfo != null && TextUtils.isEmpty(adTrackingInfo.getmShowId())) {
             adTrackingInfo.setmShowId(CommonSDKUtil.creatImpressionId(adTrackingInfo.getmRequestId(), adTrackingInfo.getmUnitGroupUnitId(), timestamp));
         }
 
@@ -438,23 +503,46 @@ public class ATBannerView extends FrameLayout {
             @Override
             public void run() {
                 if (adTrackingInfo != null) {
-                    /**Debug log**/
-                    CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
-
-                    String placementId = adTrackingInfo.getmPlacementId();
-                    String currentRequestId = ShowWaterfallManager.getInstance().getWaterFallNewestRequestId(placementId);
-                    adTrackingInfo.setCurrentRequestId(currentRequestId);
-
 
                     /**Must set before AdCacheManager.saveShowTime()，don't suggest to do it in UI-Thread**/
-                    TrackingInfoUtil.fillTrackingInfoShowTime(context, adTrackingInfo);
+                    TrackingInfoUtil.fillTrackingInfoShowTime(getContext(), adTrackingInfo);
+
                     //Ad Tracking
                     AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo, timestamp);
-                    AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo);
+                    //Save
+                    AdCacheManager.getInstance().saveShowTimeToDisk(context.getApplicationContext(), adCacheInfo);
 
-                    //保存展示
-                    AdCacheManager.getInstance().saveShowTimeToDisk(context.getApplicationContext(), adCacheInfo.getBaseAdapter(), adCacheInfo.isLast());
+                    if (!baseAdAdapter.supportImpressionCallback()) {
+                        notifyBannerImpression(context, baseAdAdapter, isRefresh);
+                    }
                 }
+            }
+        });
+    }
+
+    private void notifyBannerImpression(final Context context, final ATBaseAdAdapter baseAdAdapter, final boolean isRefresh) {
+        final AdTrackingInfo adTrackingInfo = baseAdAdapter.getTrackingInfo();
+        TaskManager.getInstance().run_proxy(new Runnable() {
+            @Override
+            public void run() {
+
+                /**Debug log**/
+                CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+                AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo);
+
+                SDKContext.getInstance().runOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mListener != null) {
+                            if (baseAdAdapter != null && isRefresh) {
+                                mListener.onBannerAutoRefreshed(ATAdInfo.fromAdapter(baseAdAdapter));
+                            } else {
+                                mListener.onBannerShow(ATAdInfo.fromAdapter(baseAdAdapter));
+                            }
+                        }
+                    }
+                });
+
             }
         });
     }

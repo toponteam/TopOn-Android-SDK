@@ -8,20 +8,19 @@
 package com.anythink.core.api;
 
 import android.content.Context;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.anythink.core.common.OffLineTkManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.base.UploadDataLevelManager;
+import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.task.TaskManager;
 
 import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 
 /**
@@ -79,10 +78,7 @@ public class ATSDK {
             }
 
 
-            if (!HAS_INIT) {
-                HAS_INIT = true;
-                SDKContext.getInstance().init(context, appId, appKey);
-            }
+            SDKContext.getInstance().init(context, appId, appKey);
 
             if (listener != null) {
                 listener.onSuccess();
@@ -111,41 +107,22 @@ public class ATSDK {
      *
      * @return
      */
-    public static boolean isChinaSDK() {
-        return SDKContext.getInstance().getChinaHandler() != null;
+    public static boolean isCnSDK() {
+        return SDKContext.getInstance().getExHandler() != null;
     }
 
     /**
      * Before initSDK
      **/
     public static void setChannel(String channel) {
-        String regex = "^[A-Za-z0-9_]+$";
-        if (!TextUtils.isEmpty(channel) && channel.length() <= 128) {
-            boolean isMatch = Pattern.matches(regex, channel);
-            if (isMatch) {
-                SDKContext.getInstance().setChannel(channel);
-            } else {
-                Log.e(Const.RESOURCE_HEAD, "Invail Channel(" + channel + "):Channel contains some characters that are not in the [A-Za-z0-9_]");
-            }
-
-        } else {
-            Log.e(Const.RESOURCE_HEAD, "Invail Channel(" + channel + "):Channel'length over 128");
+        if (CommonSDKUtil.isChannelValid(channel)) {
+            SDKContext.getInstance().setChannel(channel);
         }
-
     }
 
     public static void setSubChannel(String subChannel) {
-        String regex = "^[A-Za-z0-9_]+$";
-        if (!TextUtils.isEmpty(subChannel) && subChannel.length() <= 128) {
-            boolean isMatch = Pattern.matches(regex, subChannel);
-            if (isMatch) {
-                SDKContext.getInstance().setSubChannel(subChannel);
-            } else {
-                Log.e(Const.RESOURCE_HEAD, "Invail SubChannel(" + subChannel + "):SubChannel contains some characters that are not in the [A-Za-z0-9_]");
-            }
-
-        } else {
-            Log.e(Const.RESOURCE_HEAD, "Invail SubChannel(" + subChannel + "):SubChannel'length over 128");
+        if (CommonSDKUtil.isSubChannelValid(subChannel)) {
+            SDKContext.getInstance().setSubChannel(subChannel);
         }
     }
 
@@ -188,18 +165,8 @@ public class ATSDK {
 
     }
 
-
     public static void deniedUploadDeviceInfo(String... deviceInfos) {
         SDKContext.getInstance().deniedUploadDeviceInfo(deviceInfos);
-    }
-
-    @Deprecated
-    public static void addNetworkGDPRInfo(Context context, int networkType, Map<String, Object> gdprInfo) {
-    }
-
-    @Deprecated
-    public static Map<String, Object> getNetworkGDPRInfo(Context context, int networkType) {
-        return null;
     }
 
     /**
@@ -282,6 +249,10 @@ public class ATSDK {
 
             }
         }
+    }
+
+    public static void setAdLogoVisible(boolean visible) {
+        SDKContext.getInstance().setAdLogoVisible(visible);
     }
 
 }

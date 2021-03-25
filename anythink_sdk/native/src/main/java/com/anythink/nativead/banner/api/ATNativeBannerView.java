@@ -278,7 +278,7 @@ public class ATNativeBannerView extends RelativeLayout {
         mIsLoading = true;
         stopAutoRefresh();
         mATNative.setLocalExtra(configMap);
-        mATNative.makeAdRequest(customRequestMap);
+        mATNative.makeAdRequest();
     }
 
     private void init() {

@@ -18,13 +18,17 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.anythink.basead.buiness.OfferAdFunctionUtil;
-import com.anythink.basead.buiness.OfferClickController;
 import com.anythink.basead.buiness.resource.OfferResourceState;
-import com.anythink.basead.listeners.AdListener;
-import com.anythink.basead.myoffer.manager.MyOfferImpressionRecordManager;
+import com.anythink.basead.entity.UserOperateRecord;
+import com.anythink.basead.listeners.AdEventListener;
 import com.anythink.basead.ui.component.RoundImageView;
+import com.anythink.basead.ui.util.ViewUtil;
+import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.BaseAdContent;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.core.common.entity.MyOfferAd;
 import com.anythink.core.common.entity.MyOfferSetting;
+import com.anythink.core.common.entity.OwnBaseAdContent;
 import com.anythink.core.common.res.ImageLoader;
 import com.anythink.core.common.res.ResourceEntry;
 import com.anythink.core.common.res.image.RecycleImageView;
@@ -32,40 +36,75 @@ import com.anythink.core.common.utils.BitmapUtil;
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.CommonUtil;
 
-public class BannerAdView extends RelativeLayout {
+public class BannerAdView extends BaseAdView {
 
     public static final String TAG = BannerAdView.class.getSimpleName();
 
-    String mPlacementId;
-    String mRequestId;
-    MyOfferAd mMyOfferAd;
-    MyOfferSetting mMyOfferSettings;
-    AdListener mMyOfferAdListener;
+    AdEventListener mAdEventListener;
 
     boolean mNeedShowMainImage;
     String mBannerSize;
     int mWidth;
     int mHeight;
 
-
-    OfferClickController mOfferClickControl;
     private View mCloseView;
 
-    boolean hasUseImpressionPlugin;
-    boolean hasRecordImpression;
+    private int mMode = MODE_ASSEMBLE;
+    private static final int MODE_PURE_PICTURE = 1;
+    private static final int MODE_ASSEMBLE = 2;
 
-    public BannerAdView(Context context, String placementId, String requestId, MyOfferAd myOfferAd, MyOfferSetting myOfferSettings, AdListener myOfferAdListener) {
+    private final OnClickListener mOnClickListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (BannerAdView.MODE_ASSEMBLE == mMode) {
+                if (mBaseAdRequestInfo.baseAdSetting != null && mBaseAdRequestInfo.baseAdSetting.getEndCardClickArea() == 0) {//fullscreen
+                    BannerAdView.super.onClick();
+                }
+            } else {
+                BannerAdView.super.onClick();
+            }
+        }
+    };
+
+    private final OnClickListener mCreativeClickListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            BannerAdView.super.onClick();
+        }
+    };
+
+    public BannerAdView(Context context) {
         super(context);
+    }
 
-        mMyOfferAd = myOfferAd;
-        mMyOfferSettings = myOfferSettings;
-        mMyOfferAdListener = myOfferAdListener;
-        mRequestId = requestId;
-        mPlacementId = placementId;
+    public BannerAdView(Context context, BaseAdRequestInfo baseAdRequestInfo, BaseAdContent baseAdContent, AdEventListener adEventListener) {
+        super(context, baseAdRequestInfo, baseAdContent);
 
-        String bannerSize = myOfferSettings.getBannerSize();
+        mAdEventListener = adEventListener;
 
-        String bannerUrl;
+        resigterImpressionView();
+        registerListener();
+    }
+
+    @Override
+    protected void initContentView() {
+
+        //todo 判断是否MRAID 调用initMraid()
+//        if () {
+//            initMraid();
+//        } else {
+        initView();
+//        }
+    }
+
+    private void initMraid() {
+
+    }
+
+    private void initView() {
+        String bannerSize = mBaseAdRequestInfo.baseAdSetting.getBannerSize();
+
+        String bannerUrl = mBaseAdContent instanceof OwnBaseAdContent ? mBaseAdContent.getEndCardImageUrl() : null;
         String layoutName;
         switch (bannerSize) {
             case MyOfferSetting.BANNER_SIZE_320x90:
@@ -73,7 +112,9 @@ public class BannerAdView extends RelativeLayout {
                 mWidth = 320;
                 mHeight = 90;
                 layoutName = "myoffer_banner_ad_layout_320x90";
-                bannerUrl = myOfferAd.getBanner320x90Url();
+                if (bannerUrl == null && mBaseAdContent instanceof MyOfferAd) {
+                    bannerUrl = ((MyOfferAd) mBaseAdContent).getBanner320x90Url();
+                }
                 mNeedShowMainImage = true;
                 break;
 
@@ -82,7 +123,9 @@ public class BannerAdView extends RelativeLayout {
                 mWidth = 300;
                 mHeight = 250;
                 layoutName = "myoffer_banner_ad_layout_300x250";
-                bannerUrl = myOfferAd.getBanner300x250Url();
+                if (bannerUrl == null && mBaseAdContent instanceof MyOfferAd) {
+                    bannerUrl = ((MyOfferAd) mBaseAdContent).getBanner300x250Url();
+                }
                 mNeedShowMainImage = true;
                 break;
 
@@ -91,7 +134,9 @@ public class BannerAdView extends RelativeLayout {
                 mWidth = 728;
                 mHeight = 90;
                 layoutName = "myoffer_banner_ad_layout_728x90";
-                bannerUrl = myOfferAd.getBanner728x90Url();
+                if (bannerUrl == null && mBaseAdContent instanceof MyOfferAd) {
+                    bannerUrl = ((MyOfferAd) mBaseAdContent).getBanner728x90Url();
+                }
                 mNeedShowMainImage = true;
                 break;
 
@@ -101,30 +146,63 @@ public class BannerAdView extends RelativeLayout {
                 mWidth = 320;
                 mHeight = 50;
                 layoutName = "myoffer_banner_ad_layout_320x50";
-                bannerUrl = myOfferAd.getBanner320x50Url();
+                if (bannerUrl == null && mBaseAdContent instanceof MyOfferAd) {
+                    bannerUrl = ((MyOfferAd) mBaseAdContent).getBanner320x50Url();
+                }
                 break;
         }
 
-
-        if (!TextUtils.isEmpty(bannerUrl) && OfferResourceState.isExist(bannerUrl)) {//Only picture
+        if (BannerAdView.MODE_PURE_PICTURE == this.getBannerMode(bannerUrl)) {//Only picture
             CommonLogUtil.d(TAG, "mode: pure picture");
-            LayoutInflater.from(context).inflate(CommonUtil.getResId(getContext(), "myoffer_banner_ad_layout_pure_picture", "layout"), this);
+            LayoutInflater.from(getContext()).inflate(CommonUtil.getResId(getContext(), "myoffer_banner_ad_layout_pure_picture", "layout"), this);
             initPurePictureBannerView(bannerUrl);
         } else {//assemble banner view
             CommonLogUtil.d(TAG, "mode: assemble banner");
-            LayoutInflater.from(context).inflate(CommonUtil.getResId(getContext(), layoutName, "layout"), this);
+            LayoutInflater.from(getContext()).inflate(CommonUtil.getResId(getContext(), layoutName, "layout"), this);
             assembleBannerView();
         }
-
-        registerListener();
     }
+
+    private void resigterImpressionView() {
+        registerImpressionTracker(new Runnable() {
+            @Override
+            public void run() {
+                BannerAdView.super.onShow();
+            }
+        });
+    }
+
+    private int getBannerMode(String bannerUrl) {
+        int result = BannerAdView.MODE_PURE_PICTURE;
+        if (mBaseAdContent instanceof OwnBaseAdContent) {
+            int creativeType = ((OwnBaseAdContent) mBaseAdContent).getCreativeType();
+            switch (creativeType) {
+                case OwnBaseAdContent.CREATIVE_TYPE_SINGLE_PICTURE:
+                    result = BannerAdView.MODE_PURE_PICTURE;
+                    break;
+                case OwnBaseAdContent.CREATIVE_TYPE_SINGLE_PICTURE_AND_TEXT:
+                    result = BannerAdView.MODE_ASSEMBLE;
+                    break;
+            }
+        } else if (mBaseAdContent instanceof MyOfferAd) {
+            if (!TextUtils.isEmpty(bannerUrl) && OfferResourceState.isExist(bannerUrl)) {//Only picture
+                result = BannerAdView.MODE_PURE_PICTURE;
+            } else {
+                result = BannerAdView.MODE_ASSEMBLE;
+            }
+        }
+        this.mMode = result;
+        return result;
+    }
+
 
     private void initPurePictureBannerView(final String bannerUrl) {
 
         RelativeLayout rootView = (RelativeLayout) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_root", "id"));
         mCloseView = (ImageView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_close", "id"));
+        View adTextView = findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_ad_text", "id"));
 
-        if (0 == mMyOfferSettings.getIsShowCloseButton()) {//show close button
+        if (0 == mBaseAdRequestInfo.baseAdSetting.getIsShowCloseButton()) {//show close button
             mCloseView.setVisibility(VISIBLE);
 
             if (TextUtils.equals(MyOfferSetting.BANNER_SIZE_728x90, mBannerSize)) {
@@ -137,28 +215,48 @@ public class BannerAdView extends RelativeLayout {
             mCloseView.setVisibility(GONE);
         }
 
-        int width = CommonUtil.dip2px(getContext(), mWidth);
-        int height = CommonUtil.dip2px(getContext(), mHeight);
+//        int width = CommonUtil.dip2px(getContext(), mWidth);
+//        int height = CommonUtil.dip2px(getContext(), mHeight);
 
         //limit parent's size
         LayoutParams lp = (LayoutParams) rootView.getLayoutParams();
-        lp.width = width;
-        lp.height = height;
+        lp.width = LayoutParams.MATCH_PARENT;
+        lp.height = LayoutParams.MATCH_PARENT;
         rootView.setLayoutParams(lp);
 
-
+        //blur background
         final RecycleImageView bgIv = new RecycleImageView(getContext());
         bgIv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        addView(bgIv, 0, new RelativeLayout.LayoutParams(width, height));
+        addView(bgIv, 0, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
-        //picture
+        //main image
         final RecycleImageView imageView = new RecycleImageView(getContext());
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, bannerUrl), width, height, new ImageLoader.ImageLoaderListener() {
+        ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, bannerUrl), new ImageLoader.ImageLoaderListener() {
             @Override
-            public void onSuccess(String url, Bitmap bitmap) {
+            public void onSuccess(String url, final Bitmap bitmap) {
                 if (TextUtils.equals(bannerUrl, url)) {
                     imageView.setImageBitmap(bitmap);
+
+                    //update image view for click area
+                    post(new Runnable() {
+                        @Override
+                        public void run() {
+                            int viewWidth = getWidth();
+                            int viewHeight = getHeight();
+                            float ratio = (float) bitmap.getWidth() / bitmap.getHeight();
+
+                            int[] fitSize = ViewUtil.getFitSize(viewWidth, viewHeight, ratio);
+
+                            ViewGroup.LayoutParams imageLayoutParams = imageView.getLayoutParams();
+                            if (imageLayoutParams != null) {
+                                imageLayoutParams.width = fitSize[0];
+                                imageLayoutParams.height = fitSize[1];
+
+                                imageView.setLayoutParams(imageLayoutParams);
+                            }
+                        }
+                    });
 
                     Bitmap blurBitmap = BitmapUtil.blurBitmap(getContext(), bitmap);
                     bgIv.setImageBitmap(blurBitmap);
@@ -170,16 +268,18 @@ public class BannerAdView extends RelativeLayout {
 
             }
         });
-        RelativeLayout.LayoutParams imageLayoutParams = new RelativeLayout.LayoutParams(width, height);
+        mClickViewLists.add(imageView);
+        LayoutParams imageLayoutParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         imageLayoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
         addView(imageView, 1, imageLayoutParams);
 
-        if (!TextUtils.isEmpty(mMyOfferAd.getAdChoiceUrl())) {
+        //ad choice
+        if (!TextUtils.isEmpty(mBaseAdContent.getAdChoiceUrl())) {
             final ImageView adChoiceView = (ImageView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_self_ad_logo", "id"));
-            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mMyOfferAd.getAdChoiceUrl()), new ImageLoader.ImageLoaderListener() {
+            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mBaseAdContent.getAdChoiceUrl()), new ImageLoader.ImageLoaderListener() {
                 @Override
                 public void onSuccess(String url, Bitmap bitmap) {
-                    if (TextUtils.equals(mMyOfferAd.getAdChoiceUrl(), url)) {
+                    if (TextUtils.equals(mBaseAdContent.getAdChoiceUrl(), url)) {
                         adChoiceView.setImageBitmap(bitmap);
                     }
                 }
@@ -189,7 +289,17 @@ public class BannerAdView extends RelativeLayout {
 
                 }
             });
+
+            mClickViewLists.add(adChoiceView);
         }
+
+        //AD
+        if (SDKContext.getInstance().isAdLogoVisible()) {
+            adTextView.setVisibility(View.VISIBLE);
+        } else {
+            adTextView.setVisibility(View.GONE);
+        }
+        mClickViewLists.add(adTextView);
 
     }
 
@@ -199,42 +309,45 @@ public class BannerAdView extends RelativeLayout {
         TextView destView = (TextView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_desc", "id"));
         TextView ctaView = (TextView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_ad_install_btn", "id"));
         mCloseView = (ImageView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_close", "id"));
+        View adTextView = findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_ad_text", "id"));
 
         ViewGroup.LayoutParams layoutParams;
-        if (0 == mMyOfferSettings.getIsShowCloseButton()) {//show close button
+        boolean isShowCloseButton = 0 == mBaseAdRequestInfo.baseAdSetting.getIsShowCloseButton();
+        if (isShowCloseButton) {//show close button
             mCloseView.setVisibility(VISIBLE);
         } else {//hide close button
             mCloseView.setVisibility(GONE);
 
-            RelativeLayout.LayoutParams lp;
+            LayoutParams lp;
             switch (mBannerSize) {
                 case MyOfferSetting.BANNER_SIZE_320x50:
-                    lp = ((RelativeLayout.LayoutParams) ctaView.getLayoutParams());
+                    lp = ((LayoutParams) ctaView.getLayoutParams());
                     lp.rightMargin = CommonUtil.dip2px(getContext(), 10);
                     ctaView.setLayoutParams(lp);
                     break;
                 case MyOfferSetting.BANNER_SIZE_320x90:
-                    lp = ((RelativeLayout.LayoutParams) titleView.getLayoutParams());
+                    lp = ((LayoutParams) titleView.getLayoutParams());
                     lp.rightMargin = CommonUtil.dip2px(getContext(), 10);
                     titleView.setLayoutParams(lp);
                     break;
                 case MyOfferSetting.BANNER_SIZE_728x90:
-                    lp = ((RelativeLayout.LayoutParams) ctaView.getLayoutParams());
+                    lp = ((LayoutParams) ctaView.getLayoutParams());
                     lp.rightMargin = CommonUtil.dip2px(getContext(), 46);
                     ctaView.setLayoutParams(lp);
                     break;
             }
         }
 
-        if (!TextUtils.isEmpty(mMyOfferAd.getIconUrl())) {
+        //icon
+        if (!TextUtils.isEmpty(mBaseAdContent.getIconUrl())) {
             layoutParams = iconView.getLayoutParams();
             iconView.setRadiusInDip(3);
             iconView.setNeedRadiu(true);
-            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mMyOfferAd.getIconUrl()), layoutParams.width, layoutParams.height, new ImageLoader.ImageLoaderListener() {
+            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mBaseAdContent.getIconUrl()), layoutParams.width, layoutParams.height, new ImageLoader.ImageLoaderListener() {
 
                 @Override
                 public void onSuccess(String url, Bitmap bitmap) {
-                    if (TextUtils.equals(mMyOfferAd.getIconUrl(), url)) {
+                    if (TextUtils.equals(mBaseAdContent.getIconUrl(), url)) {
                         iconView.setImageBitmap(bitmap);
                     }
                 }
@@ -245,17 +358,27 @@ public class BannerAdView extends RelativeLayout {
                 }
             });
         }
-        titleView.setText(mMyOfferAd.getTitle());
-        destView.setText(mMyOfferAd.getDesc());
-        ctaView.setText(mMyOfferAd.getCtaText());
+        mClickViewLists.add(iconView);
 
-        if (!TextUtils.isEmpty(mMyOfferAd.getAdChoiceUrl())) {
-            final ImageView adChoiceView = (ImageView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_self_ad_logo", "id"));
-            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mMyOfferAd.getAdChoiceUrl()), new ImageLoader.ImageLoaderListener() {
+        //title、desc、cta
+        titleView.setText(mBaseAdContent.getTitle());
+        destView.setText(mBaseAdContent.getDesc());
+        ctaView.setText(mBaseAdContent.getCtaText());
+        mClickViewLists.add(titleView);
+        mClickViewLists.add(destView);
+        mClickViewLists.add(ctaView);
+
+
+        //ad choice
+        ImageView adChoiceView = null;
+        if (!TextUtils.isEmpty(mBaseAdContent.getAdChoiceUrl())) {
+            adChoiceView = (ImageView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_self_ad_logo", "id"));
+            final ImageView finalAdChoiceView = adChoiceView;
+            ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mBaseAdContent.getAdChoiceUrl()), new ImageLoader.ImageLoaderListener() {
                 @Override
                 public void onSuccess(String url, Bitmap bitmap) {
-                    if (TextUtils.equals(mMyOfferAd.getAdChoiceUrl(), url)) {
-                        adChoiceView.setImageBitmap(bitmap);
+                    if (TextUtils.equals(mBaseAdContent.getAdChoiceUrl(), url)) {
+                        finalAdChoiceView.setImageBitmap(bitmap);
                     }
                 }
 
@@ -265,18 +388,22 @@ public class BannerAdView extends RelativeLayout {
                 }
             });
         }
+        mClickViewLists.add(adChoiceView);
 
+        //main image
+        RoundImageView mainImageView = null;
         if (mNeedShowMainImage) {
-            final RoundImageView MainImageView = (RoundImageView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_main_image", "id"));
-            if (!TextUtils.isEmpty(mMyOfferAd.getEndCardImageUrl())) {
-                layoutParams = MainImageView.getLayoutParams();
-                MainImageView.setRadiusInDip(3);
-                MainImageView.setNeedRadiu(true);
-                ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mMyOfferAd.getEndCardImageUrl()), new ImageLoader.ImageLoaderListener() {
+            mainImageView = (RoundImageView) findViewById(CommonUtil.getResId(getContext(), "myoffer_banner_main_image", "id"));
+            final RoundImageView finalMainImageView = mainImageView;
+            if (!TextUtils.isEmpty(mBaseAdContent.getEndCardImageUrl())) {
+                layoutParams = finalMainImageView.getLayoutParams();
+                finalMainImageView.setRadiusInDip(3);
+                finalMainImageView.setNeedRadiu(true);
+                ImageLoader.getInstance(getContext()).load(new ResourceEntry(ResourceEntry.INTERNAL_CACHE_TYPE, mBaseAdContent.getEndCardImageUrl()), new ImageLoader.ImageLoaderListener() {
                     @Override
                     public void onSuccess(String url, Bitmap bitmap) {
-                        if (TextUtils.equals(mMyOfferAd.getEndCardImageUrl(), url)) {
-                            MainImageView.setImageBitmap(bitmap);
+                        if (TextUtils.equals(mBaseAdContent.getEndCardImageUrl(), url)) {
+                            finalMainImageView.setImageBitmap(bitmap);
                         }
                     }
 
@@ -285,71 +412,115 @@ public class BannerAdView extends RelativeLayout {
 
                     }
                 });
+
+                mClickViewLists.add(mainImageView);
             }
         }
+        mClickViewLists.add(mainImageView);
+
+        //cta
+        if (!TextUtils.isEmpty(mBaseAdContent.getCtaText())) {
+            ctaView.setVisibility(View.VISIBLE);
+        } else {
+            ctaView.setVisibility(View.GONE);
+
+            //update layout
+            LayoutParams lp;
+            switch (mBannerSize) {
+                case MyOfferSetting.BANNER_SIZE_320x90:
+                    lp = (LayoutParams) iconView.getLayoutParams();
+                    lp.addRule(RelativeLayout.CENTER_VERTICAL);
+                    lp.addRule(RelativeLayout.ALIGN_TOP, -1);
+                    iconView.setLayoutParams(lp);
+                    break;
+                case MyOfferSetting.BANNER_SIZE_300x250:
+                    lp = (LayoutParams) iconView.getLayoutParams();
+                    lp.topMargin = CommonUtil.dip2px(getContext(), 25);
+                    iconView.setLayoutParams(lp);
+                    break;
+                case MyOfferSetting.BANNER_SIZE_728x90:
+                    lp = (LayoutParams) titleView.getLayoutParams();
+                    lp.rightMargin = CommonUtil.dip2px(getContext(), 20);
+                    titleView.setLayoutParams(lp);
+                    break;
+                case MyOfferSetting.BANNER_SIZE_320x50:
+                default:
+                    lp = (LayoutParams) titleView.getLayoutParams();
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                    if (isShowCloseButton) {
+                        lp.rightMargin = CommonUtil.dip2px(getContext(), 24);
+                    } else {
+                        lp.rightMargin = CommonUtil.dip2px(getContext(), 10);
+                    }
+                    titleView.setLayoutParams(lp);
+                    break;
+            }
+        }
+
+        //AD
+        if (SDKContext.getInstance().isAdLogoVisible()) {
+            adTextView.setVisibility(View.VISIBLE);
+        } else {
+            adTextView.setVisibility(View.GONE);
+        }
+        mClickViewLists.add(adTextView);
 
     }
 
     private void registerListener() {
+
+        int size = mClickViewLists.size();
+        View view;
+        for (int i = 0; i < size; i++) {
+            view = mClickViewLists.get(i);
+            if (view != null) {
+                view.setOnClickListener(mCreativeClickListener);
+            }
+        }
+
+        setOnClickListener(mOnClickListener);
+
         mCloseView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mMyOfferAdListener != null) {
-                    mMyOfferAdListener.onAdClosed();
+                if (mAdEventListener != null) {
+                    mAdEventListener.onAdClosed();
                 }
             }
         });
     }
 
-    public void onClickBannerView() {
-        if (mOfferClickControl == null) {
-            mOfferClickControl = new OfferClickController(getContext(), mPlacementId, mMyOfferAd
-                    , mMyOfferSettings);
-        }
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
 
-        mOfferClickControl.startClick(mRequestId, new OfferClickController.ClickStatusCallback() {
-            @Override
-            public void clickStart() {
-
-            }
-
-            @Override
-            public void clickEnd() {
-
-            }
-
-            @Override
-            public void downloadApp(String url) {
-                OfferAdFunctionUtil.startDownloadApp(getContext(), mRequestId, mMyOfferSettings, mMyOfferAd, url);
-            }
-        });
-
-        if (mMyOfferAdListener != null) {
-            mMyOfferAdListener.onAdClick();
-        }
-
+        BannerAdView.super.removeCache();
     }
-
 
     @Override
-    protected void onWindowVisibilityChanged(int visibility) {
-        super.onWindowVisibilityChanged(visibility);
-        if (visibility == VISIBLE && !hasUseImpressionPlugin) {
-            notifyShow();
+    protected void notifyShow() {
+        OfferAdFunctionUtil.sendAdTracking(OfferAdFunctionUtil.IMPRESSION_TYPE, mBaseAdContent, createUserOperateRecord());
+
+        if (mAdEventListener != null) {
+            mAdEventListener.onAdShow();
         }
     }
 
-    private synchronized void notifyShow() {
-        if (hasRecordImpression) {
-            return;
-        }
-        hasRecordImpression = true;
-        MyOfferImpressionRecordManager.getInstance(getContext()).recordImpression(mMyOfferAd);
-        OfferAdFunctionUtil.sendAdTracking(mRequestId, mMyOfferAd, OfferAdFunctionUtil.IMPRESSION_TYPE, "");
+    @Override
+    protected void notifyClick() {
+        UserOperateRecord userOperateRecord = createUserOperateRecord();
+        userOperateRecord.adClickRecord = getAdClickRecord();
+        OfferAdFunctionUtil.sendAdTracking(OfferAdFunctionUtil.CLICK_TYPE, mBaseAdContent, userOperateRecord);
 
-        if (mMyOfferAdListener != null) {
-            mMyOfferAdListener.onAdShow();
+        if (mAdEventListener != null) {
+            mAdEventListener.onAdClick();
         }
     }
 
+    @Override
+    protected void notifyDeeplinkCallback(boolean isSuccess) {
+        if (mAdEventListener != null) {
+            mAdEventListener.onDeeplinkCallback(isSuccess);
+        }
+    }
 }

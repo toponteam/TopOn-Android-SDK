@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.huawei;
 
 import android.app.Activity;
@@ -16,7 +23,7 @@ public class HuaweiATInterstitialAdapter extends CustomInterstitialAdapter {
     InterstitialAd mInterstitialAd;
 
     @Override
-    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         if (serverExtras.containsKey("ad_id")) {
             mAdId = (String) serverExtras.get("ad_id");
 
@@ -27,6 +34,15 @@ public class HuaweiATInterstitialAdapter extends CustomInterstitialAdapter {
             return;
         }
 
+        HuaweiATInitManager.getInstance().initSDK(context, serverExtras, new HuaweiATInitManager.InitListener() {
+            @Override
+            public void onSuccess() {
+                startLoadAd(context);
+            }
+        });
+    }
+
+    private void startLoadAd(Context context) {
         mInterstitialAd = new InterstitialAd(context);
         mInterstitialAd.setAdId(mAdId);
 
@@ -108,7 +124,7 @@ public class HuaweiATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return HuaweiATInitManager.getInstance().getNetworkSDKVersion();
+        return HuaweiATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

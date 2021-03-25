@@ -44,7 +44,6 @@ public class AdLoadManager extends CommonAdManager<InterstitialLoadParams> {
             adLoadManager = new AdLoadManager(context, placementId);
             PlacementAdManager.getInstance().addAdManager(placementId, adLoadManager);
         }
-        adLoadManager.refreshContext(context);
         return (AdLoadManager) adLoadManager;
     }
 
@@ -90,7 +89,7 @@ public class AdLoadManager extends CommonAdManager<InterstitialLoadParams> {
                     }
 
 
-                    AdCacheManager.getInstance().saveShowTimeToDisk(mApplicationContext, adCacheInfo.getBaseAdapter(), adCacheInfo.isLast());
+                    AdCacheManager.getInstance().saveShowTimeToDisk(mApplicationContext, adCacheInfo);
 
                     /**Send Tracking**/
                     AdTrackingManager.getInstance(mApplicationContext).addAdTrackingInfo(TrackingV2Loader.AD_SDK_SHOW_TYPE, adTrackingInfo, timestamp);
@@ -152,7 +151,7 @@ public class AdLoadManager extends CommonAdManager<InterstitialLoadParams> {
     }
 
     @Override
-    public void onCallbacInternalError(InterstitialLoadParams loadParams, String placementId, String requestId, AdError adError) {
+    public void onCallbackInternalError(InterstitialLoadParams loadParams, String placementId, String requestId, AdError adError) {
         if (loadParams.listener != null) {
             loadParams.listener.onInterstitialAdLoadFail(adError);
         }

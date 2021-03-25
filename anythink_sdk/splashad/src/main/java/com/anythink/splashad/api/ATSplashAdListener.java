@@ -21,6 +21,4 @@ public interface ATSplashAdListener {
 
     public void onAdDismiss(ATAdInfo entity);
 
-    @Deprecated
-    public void onAdTick(long millisUtilFinished);
 }

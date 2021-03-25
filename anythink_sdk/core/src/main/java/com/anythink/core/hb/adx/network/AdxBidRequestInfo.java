@@ -8,6 +8,9 @@
 package com.anythink.core.hb.adx.network;
 
 
+import android.text.TextUtils;
+
+import com.anythink.core.common.base.Const;
 import com.anythink.core.hb.adx.BidRequest;
 import com.anythink.core.strategy.PlaceStrategy;
 
@@ -29,6 +32,9 @@ public class AdxBidRequestInfo extends BaseNetworkInfo {
         super(format);
         this.adSourceId = unitGroupInfo.unitId;
         this.networkFirmId = unitGroupInfo.networkType;
+
+        getDataFrom(unitGroupInfo);
+
         try {
             if (excludeOfferPkgArray != null && excludeOfferPkgArray.size() > 0) {
                 excludePkgJSONArrray = new JSONArray(excludeOfferPkgArray);
@@ -37,6 +43,26 @@ public class AdxBidRequestInfo extends BaseNetworkInfo {
 
         }
 
+    }
+
+    private void getDataFrom(PlaceStrategy.UnitGroupInfo unitGroupInfo) {
+        if (TextUtils.equals(Const.FORMAT.BANNER_FORMAT, this.format)) {
+            if (66 == networkFirmId) {//adx
+                try {
+                    JSONObject jsonObject = new JSONObject(unitGroupInfo.content);
+                    String size = jsonObject.optString("size");
+                    if (!TextUtils.isEmpty(size)) {
+                        String[] sizes = size.split("x");
+                        this.bannerWidth = Integer.parseInt(sizes[0]);
+                        this.bannerHeight = Integer.parseInt(sizes[1]);
+                    }
+                } catch (Exception e) {
+                    if (Const.DEBUG) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 
 
@@ -57,6 +83,19 @@ public class AdxBidRequestInfo extends BaseNetworkInfo {
             networkObject.put(BidRequest.UNIT_ID, adSourceId);
             networkObject.put(BidRequest.FORMAT, format);
             networkObject.put(BidRequest.NW_FIRM_ID, networkFirmId);
+
+            //for banner
+            switch (this.format) {
+                case Const.FORMAT.BANNER_FORMAT:
+                    networkObject.put(BidRequest.AD_WIDTH, bannerWidth);
+                    networkObject.put(BidRequest.AD_HEIGHT, bannerHeight);
+                    break;
+
+                case Const.FORMAT.SPLASH_FORMAT:
+                    networkObject.put(BidRequest.GET_OFFER, 2);//2: receive offer data
+                    break;
+            }
+
             if (excludePkgJSONArrray != null) {
                 networkObject.put(BidRequest.EXCLUDE_OFFER, excludePkgJSONArrray);
             }

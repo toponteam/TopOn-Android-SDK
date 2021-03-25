@@ -1,6 +1,15 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.nend;
 
 import android.content.Context;
+
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.anythink.core.api.ATInitMediation;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
@@ -64,7 +73,7 @@ public class NendATInitManager extends ATInitMediation {
         }
 
         try {
-            clazz = Class.forName("android.support.constraint.ConstraintLayout");
+            clazz = ConstraintLayout.class;
             pluginMap.put("constraintlayout-*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();

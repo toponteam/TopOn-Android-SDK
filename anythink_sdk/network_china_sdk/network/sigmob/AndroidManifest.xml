@@ -41,11 +41,6 @@
                 android:resource="@xml/anythink_bk_sigmob_file_path"/>
         </provider>
 
-        <!--广告展示Activity -->
-        <activity android:name="com.sigmob.sdk.base.common.AdActivity"
-            android:theme="@android:style/Theme.DeviceDefault"
-            android:configChanges="keyboardHidden|orientation|screenSize" />
-
     </application>
 
 

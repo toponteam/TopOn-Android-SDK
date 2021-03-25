@@ -7,6 +7,9 @@
 
 package com.anythink.banner.business;
 
+import android.util.Log;
+
+import com.anythink.banner.api.ATBannerExListener;
 import com.anythink.banner.unitgroup.api.CustomBannerAdapter;
 import com.anythink.banner.unitgroup.api.CustomBannerEventListener;
 import com.anythink.core.common.base.Const;
@@ -23,7 +26,7 @@ public class BannerEventListener implements CustomBannerEventListener {
     boolean isRefresh;
     CustomBannerAdapter bannerAdapter;
 
-    public BannerEventListener(InnerBannerListener bannerListener, CustomBannerAdapter bannerAdapter, boolean isRefresh){
+    public BannerEventListener(InnerBannerListener bannerListener, CustomBannerAdapter bannerAdapter, boolean isRefresh) {
         this.isRefresh = isRefresh;
         listener = bannerListener;
         this.bannerAdapter = bannerAdapter;
@@ -36,7 +39,6 @@ public class BannerEventListener implements CustomBannerEventListener {
                 listener.onBannerClose(isRefresh, bannerAdapter);
             }
             AdTrackingInfo adTrackingInfo = bannerAdapter.getTrackingInfo();
-
             /**Debug log**/
             CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.CLOSE, Const.LOGKEY.SUCCESS, "");
 
@@ -50,6 +52,17 @@ public class BannerEventListener implements CustomBannerEventListener {
 
     @Override
     public void onBannerAdShow() {
+        if (bannerAdapter != null) {
+            if (listener != null) {
+                listener.onBannerShow(isRefresh, bannerAdapter);
+            }
+            AdTrackingInfo adTrackingInfo = bannerAdapter.getTrackingInfo();
+            /**Debug log**/
+            CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.IMPRESSION, Const.LOGKEY.SUCCESS, "");
+            AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_SHOW_TYPE, adTrackingInfo);
+
+        }
+
     }
 
     @Override
@@ -68,5 +81,13 @@ public class BannerEventListener implements CustomBannerEventListener {
             }
         }
 
+    }
+
+
+    @Override
+    public void onDeeplinkCallback(boolean isSuccess) {
+        if (listener != null) {
+            listener.onDeeplinkCallback(isRefresh, bannerAdapter, isSuccess);
+        }
     }
 }

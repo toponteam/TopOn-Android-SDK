@@ -32,9 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by Z on 2017/12/28.
- */
 
 public class PlaceStrategyManager {
     public static final String TAG = PlaceStrategyManager.class.getSimpleName();

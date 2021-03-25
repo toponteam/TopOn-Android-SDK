@@ -9,19 +9,19 @@ package com.anythink.basead.myoffer;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.anythink.basead.buiness.OfferAdFunctionUtil;
 import com.anythink.basead.buiness.OfferClickController;
-import com.anythink.basead.buiness.resource.OfferResourceLoader;
-import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.entity.OfferErrorCode;
+import com.anythink.basead.entity.UserOperateRecord;
 import com.anythink.basead.impression.ImpressionController;
 import com.anythink.basead.impression.ImpressionTracker;
-import com.anythink.basead.listeners.AdListener;
-import com.anythink.basead.myoffer.manager.MyOfferAdManager;
+import com.anythink.basead.listeners.AdEventListener;
 import com.anythink.basead.myoffer.manager.MyOfferImpressionRecordManager;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
+import com.anythink.core.common.entity.BaseAdSetting;
 import com.anythink.core.common.entity.MyOfferSetting;
 
 import java.util.List;
@@ -31,13 +31,12 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
 
     private final String TAG = getClass().getSimpleName();
 
-    AdListener mListener;
+    AdEventListener mListener;
 
     ImpressionTracker mImpressionTracker;
 
     OfferClickController mOfferClickControl;
 
-    String mRequestId;
 
     View mAdView;
 
@@ -47,16 +46,15 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
         @Override
         public void onClick(View v) {
             if (mOfferClickControl == null) {
-                mOfferClickControl = new OfferClickController(mContext, mPlacementId, mMyOfferAd
-                        , mMyOfferSetting);
+                mOfferClickControl = new OfferClickController(mContext, mRequestInfo, mMyOfferAd);
             }
 
             if (mListener != null) {
                 mListener.onAdClick();
             }
 
-            OfferAdFunctionUtil.sendAdTracking(mRequestId, mMyOfferAd, OfferAdFunctionUtil.CLICK_TYPE, "");
-            mOfferClickControl.startClick(mRequestId, new OfferClickController.ClickStatusCallback() {
+            OfferAdFunctionUtil.sendAdTracking(OfferAdFunctionUtil.CLICK_TYPE, mMyOfferAd, new UserOperateRecord(mRequestInfo.requestId, ""));
+            mOfferClickControl.startClick(new UserOperateRecord(mRequestInfo.requestId, ""), new OfferClickController.ClickStatusCallback() {
                 @Override
                 public void clickStart() {
                 }
@@ -66,67 +64,35 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
                 }
 
                 @Override
-                public void downloadApp(final String url) {
-                    OfferAdFunctionUtil.startDownloadApp(mContext, mRequestId, mMyOfferSetting, mMyOfferAd, url);
+                public void deeplinkCallback(boolean isSuccess) {
+                    if (mListener != null) {
+                        mListener.onDeeplinkCallback(isSuccess);
+                    }
                 }
+
             });
         }
     };
 
 
-    View.OnAttachStateChangeListener onAttachStateChangeListene = new View.OnAttachStateChangeListener() {
-        @Override
-        public void onViewAttachedToWindow(View v) {
-            if (v.getVisibility() == View.VISIBLE) {
-                notifyShow();
-            }
-        }
+//    View.OnAttachStateChangeListener onAttachStateChangeListene = new View.OnAttachStateChangeListener() {
+//        @Override
+//        public void onViewAttachedToWindow(View v) {
+//            if (v.getVisibility() == View.VISIBLE) {
+//                notifyShow();
+//            }
+//        }
+//
+//        @Override
+//        public void onViewDetachedFromWindow(View v) {
+//
+//        }
+//    };
 
-        @Override
-        public void onViewDetachedFromWindow(View v) {
-
-        }
-    };
-
-    public MyOfferNativeAd(Context context, String placementId, String offerId, MyOfferSetting myoffer_setting, boolean isDefault) {
-        super(context, placementId, offerId, myoffer_setting, isDefault);
+    public MyOfferNativeAd(Context context, BaseAdRequestInfo baseAdRequestInfo, String offerId, boolean isDefault) {
+        super(context, baseAdRequestInfo, offerId, isDefault);
     }
 
-
-    @Override
-    public void load() {
-        try {
-            OfferError myOfferError = checkLoadParams();
-            if (myOfferError != null) {
-                if (mListener != null) {
-                    mListener.onAdLoadFailed(myOfferError);
-                }
-                return;
-            }
-
-            MyOfferAdManager.getInstance(mContext).load(mPlacementId, mMyOfferAd, mMyOfferSetting, new OfferResourceLoader.ResourceLoaderListener() {
-                @Override
-                public void onSuccess() {
-                    if (mListener != null) {
-                        mListener.onAdCacheLoaded();
-                    }
-                }
-
-                @Override
-                public void onFailed(OfferError error) {
-                    if (mListener != null) {
-                        mListener.onAdLoadFailed(error);
-                    }
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (mListener != null) {
-                mListener.onAdLoadFailed(OfferErrorCode.get(OfferErrorCode.unknow, e.getMessage()));
-            }
-        }
-
-    }
 
     public String getTitle() {
         if (mMyOfferAd != null) {
@@ -175,7 +141,7 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
     }
 
 
-    public void setListener(AdListener listener) {
+    public void setListener(AdEventListener listener) {
         this.mListener = listener;
     }
 
@@ -184,21 +150,8 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
 
     }
 
-    @Override
-    public boolean isReady() {
-        try {
-            if (checkIsReadyParams()) {
-                return MyOfferAdManager.getInstance(mContext).isReady(mMyOfferAd, mMyOfferSetting, mIsDefault);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-
-    public void registerAdView(String requestId, View view, List<View> clickViews) {
-        resigterImpressionView(requestId, view);
+    public void registerAdView(View view, List<View> clickViews) {
+        resigterImpressionView(view);
         if (clickViews != null) {
             for (View childView : clickViews) {
                 childView.setOnClickListener(clickListener);
@@ -208,8 +161,8 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
         }
     }
 
-    public void registerAdView(String requestId, View view) {
-        resigterImpressionView(requestId, view);
+    public void registerAdView(View view) {
+        resigterImpressionView(view);
 //        view.setOnClickListener(clickListener);
         loopToRegisterChildView(view, clickListener);
     }
@@ -230,34 +183,22 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
         if (mImpressionTracker != null) {
             mImpressionTracker.clear();
         }
-
-        if (mAdView != null) {
-            mAdView.removeOnAttachStateChangeListener(onAttachStateChangeListene);
-            mAdView = null;
-        }
     }
 
-    private void resigterImpressionView(String requestId, View view) {
-        mRequestId = requestId;
+    private void resigterImpressionView(View view) {
         mAdView = view;
-        Context context = view.getContext();
-        if (context instanceof Activity) {
-            ImpressionController nativeImpressController = new ImpressionController() {
-                @Override
-                public void recordImpression(View view) {
-                    notifyShow();
-                }
-            };
-
-            if (mImpressionTracker == null) {
-                mImpressionTracker = new ImpressionTracker(view.getContext());
+        ImpressionController nativeImpressController = new ImpressionController() {
+            @Override
+            public void recordImpression(View view) {
+                notifyShow();
             }
+        };
 
-            mImpressionTracker.addView(view, nativeImpressController);
-
-        } else {
-            view.addOnAttachStateChangeListener(onAttachStateChangeListene);
+        if (mImpressionTracker == null) {
+            mImpressionTracker = new ImpressionTracker(view.getContext());
         }
+
+        mImpressionTracker.addView(view, nativeImpressController);
 
     }
 
@@ -268,7 +209,7 @@ public class MyOfferNativeAd extends MyOfferBaseAd {
 
         hadRecordImpression = true;
         MyOfferImpressionRecordManager.getInstance(mContext).recordImpression(mMyOfferAd);
-        OfferAdFunctionUtil.sendAdTracking(mRequestId, mMyOfferAd, OfferAdFunctionUtil.IMPRESSION_TYPE, "");
+        OfferAdFunctionUtil.sendAdTracking(OfferAdFunctionUtil.IMPRESSION_TYPE, mMyOfferAd, new UserOperateRecord(mRequestInfo.requestId, ""));
 
         if (mListener != null) {
             mListener.onAdShow();

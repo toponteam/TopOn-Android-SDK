@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.applovin;
 
 import android.app.Activity;
@@ -15,9 +22,6 @@ import com.applovin.sdk.AppLovinSdk;
 
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/6/27.
- */
 
 public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private static final String TAG = ApplovinATRewardedVideoAdapter.class.getSimpleName();
@@ -186,7 +190,7 @@ public class ApplovinATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return ApplovinATConst.getNetworkVersion();
+        return ApplovinATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

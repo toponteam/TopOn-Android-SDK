@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.unityads;
 
 import android.app.Activity;
@@ -10,9 +17,6 @@ import com.unity3d.ads.metadata.PlayerMetaData;
 
 import java.util.Map;
 
-/**
- * Created by Z on 2018/6/27.
- */
 public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private static final String TAG = UnityAdsATRewardedVideoAdapter.class.getSimpleName();
 
@@ -83,16 +87,16 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         }
     }
 
-//    @Override
-//    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
-//        if (serverExtras != null) {
-//            if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
-//                placement_id = (String) serverExtras.get("placement_id");
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
+    @Override
+    public boolean initNetworkObjectByPlacementId(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+        if (serverExtras != null) {
+            if (serverExtras.containsKey("game_id") && serverExtras.containsKey("placement_id")) {
+                placement_id = (String) serverExtras.get("placement_id");
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public void destory() {
@@ -148,7 +152,7 @@ public class UnityAdsATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return UnityAdsATConst.getNetworkVersion();
+        return UnityAdsATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

@@ -55,7 +55,7 @@ public class KSATDrawAd extends CustomNativeAd {
 
             @Override
             public void onAdShow() {
-
+                notifyAdImpression();
             }
 
             @Override

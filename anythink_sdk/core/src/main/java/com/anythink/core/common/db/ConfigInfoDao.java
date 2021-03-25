@@ -17,9 +17,6 @@ import com.anythink.core.common.utils.CommonLogUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by zhou on 2017/12/29.
- */
 
 public class ConfigInfoDao extends BaseDao<SDKConfigInfo> {
     private static final String TAG = ConfigInfoDao.class.getName();

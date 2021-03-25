@@ -1,9 +1,16 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.helium;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.core.common.base.Const;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.chartboost.heliumsdk.HeliumSdk;
 import com.chartboost.heliumsdk.ad.HeliumAd;
@@ -67,6 +74,24 @@ public class HeliumATInitManager extends ATInitMediation {
 
                         String appId = serviceExtras.get("app_id").toString();
                         String appSignature = serviceExtras.get("app_signature").toString();
+
+                        try {
+                            boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                            if (ccpaSwitch) {
+                                HeliumSdk.setCCPAConsent(false);
+                            }
+                        } catch (Throwable e) {
+
+                        }
+
+                        try {
+                            boolean coppaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY);
+                            if (coppaSwitch) {
+                                HeliumSdk.setSubjectToCoppa(true);
+                            }
+                        } catch (Throwable e) {
+
+                        }
 
                         HeliumSdk.start(context, appId, appSignature, new HeliumSdk.HeliumSdkListener() {
 
@@ -132,7 +157,7 @@ public class HeliumATInitManager extends ATInitMediation {
         return "com.chartboost.heliumsdk.HeliumSdk";
     }
 
-    public String getNetworkSDKVersion() {
+    public String getNetworkVersion() {
         return HeliumSdk.getVersion();
     }
 

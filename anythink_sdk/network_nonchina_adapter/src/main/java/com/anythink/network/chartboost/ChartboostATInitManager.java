@@ -1,19 +1,26 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.chartboost;
 
-import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
-import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.base.AnyThinkBaseAdapter;
+import com.anythink.core.common.base.Const;
 import com.chartboost.sdk.Chartboost;
 import com.chartboost.sdk.ChartboostDelegate;
-import com.chartboost.sdk.Libraries.CBLogging;
 import com.chartboost.sdk.Model.CBError;
+import com.chartboost.sdk.Privacy.model.CCPA;
+import com.chartboost.sdk.Privacy.model.DataUseConsent;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.GoogleSignatureVerifier;
+import com.google.android.gms.common.api.internal.BasePendingResult;
 import com.google.android.gms.tasks.TaskExecutors;
 
 import java.util.ArrayList;
@@ -236,6 +243,17 @@ public class ChartboostATInitManager extends ATInitMediation {
         Chartboost.setDelegate(delegate);
 
         if (TextUtils.isEmpty(mAppId) || !mAppId.equals(appId) || !mAppKey.equals(appKey)) {
+            try {
+                boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                if (ccpaSwitch) {
+                    DataUseConsent dataUseConsent = new CCPA(CCPA.CCPA_CONSENT.OPT_OUT_SALE);
+                    Chartboost.addDataUseConsent(context, dataUseConsent);
+                }
+            } catch (Throwable e) {
+
+            }
+
+
             Chartboost.startWithAppId(context.getApplicationContext(), appId, appKey);
             mAppId = appId;
             mAppKey = appKey;
@@ -293,6 +311,11 @@ public class ChartboostATInitManager extends ATInitMediation {
     }
 
     @Override
+    public String getNetworkVersion() {
+        return ChartboostATConst.getNetworkVersion();
+    }
+
+    @Override
     public String getNetworkSDKClass() {
         return "com.chartboost.sdk.Chartboost";
     }
@@ -322,7 +345,7 @@ public class ChartboostATInitManager extends ATInitMediation {
         }
 
         try {
-            clazz = GooglePlayServicesUtil.class;
+            clazz = BasePendingResult.class;
             pluginMap.put("play-services-base-*.aar", true);
         } catch (Throwable e) {
             e.printStackTrace();

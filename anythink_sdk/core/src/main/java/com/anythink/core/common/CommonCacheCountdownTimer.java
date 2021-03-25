@@ -9,6 +9,7 @@ package com.anythink.core.common;
 
 import android.content.Context;
 import android.os.CountDownTimer;
+import android.os.SystemClock;
 
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.ATCustomLoadListener;
@@ -62,10 +63,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
         }
 
 
-        final CommonAdManager adManager = PlacementAdManager.getInstance().getAdManager(mAdTrackingInfo.getmPlacementId());
-
-
-        context = adManager.getContext();
+        context = SDKContext.getInstance().getContext();
         if (context == null) {
             return;
         }
@@ -87,7 +85,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
         adapter.setTrackingInfo(mAdTrackingInfo);
         adapter.setmUnitgroupInfo(mUnitgroupInfo);
 
-        final long starttime = System.currentTimeMillis();
+        final long starttime = SystemClock.elapsedRealtime();
 
 
         AdTrackingManager.getInstance(context).addAdTrackingInfo(TrackingV2Loader.AD_REQUEST_TYPE, mAdTrackingInfo);
@@ -113,7 +111,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
 
     protected void onAdDataLoaded(long starttime, AnyThinkBaseAdapter adapter) {
         AdTrackingInfo adTrackingInfo = adapter.getTrackingInfo();
-        adTrackingInfo.setDataFillTime(System.currentTimeMillis() - starttime);
+        adTrackingInfo.setDataFillTime(SystemClock.elapsedRealtime() - starttime);
     }
 
 
@@ -129,7 +127,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
         if (!mHasGetResult) {
             mHasGetResult = true;
 
-            adTrackingInfo.setFillTime(System.currentTimeMillis() - starttime);
+            adTrackingInfo.setFillTime(SystemClock.elapsedRealtime() - starttime);
             AdTrackingManager.getInstance(SDKContext.getInstance().getContext()).addAdTrackingInfo(TrackingV2Loader.AD_REQUEST_SUCCESS_TYPE, adTrackingInfo);
 
             CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.SUCCESS, "");
@@ -148,7 +146,7 @@ public class CommonCacheCountdownTimer extends CountDownTimer {
         if (!mHasGetResult) {
             mHasGetResult = true;
 
-            AgentEventManager.onAdsourceLoadFail(adTrackingInfo, 0, adError, System.currentTimeMillis() - startTime);
+            AgentEventManager.onAdsourceLoadFail(adTrackingInfo, 0, adError, SystemClock.elapsedRealtime() - startTime);
             CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.FAIL, adError.printStackTrace());
 
         }

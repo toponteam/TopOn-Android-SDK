@@ -11,8 +11,9 @@ import com.anythink.core.api.ATSDK;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.base.UploadDataLevelManager;
-import com.anythink.core.common.entity.AdxApiUrlSetting;
+import com.anythink.core.common.entity.DynamicUrlSettings;
 import com.anythink.core.common.entity.NetworkInfoBean;
+import com.anythink.core.common.net.AppStrategyLoader;
 import com.anythink.core.common.utils.CommonLogUtil;
 
 import org.json.JSONObject;
@@ -176,18 +177,62 @@ public class AppStrategy {
 
     private String bkId;
 
+    private OfmStrategy ofmStrategy;
+
+    Map<String, Object> appCustomMap;
+
+    /**
+     * v5.7.8
+     */
+    public OfmStrategy getOfmStrategy() {
+        return ofmStrategy;
+    }
+
+    public void setOfmStrategy(OfmStrategy ofmStrategy) {
+        this.ofmStrategy = ofmStrategy;
+    }
+
     /**
      * v5.7.0 AdxSetting
      *
      * @return
      */
-    private AdxApiUrlSetting adxSetting;
+    private DynamicUrlSettings adxSetting;
 
-    public AdxApiUrlSetting getAdxSetting() {
+    /**
+     * v5.7.9
+     * @return
+     */
+    private int ccpaSwitch;
+    private int coppaSwitch;
+
+    /**
+     * v5.7.20
+     */
+    private String tkNoTrackingNetworkFirmId;
+    private String daNoTrackingNetworkFirmId;
+
+    public int getCcpaSwitch() {
+        return ccpaSwitch;
+    }
+
+    public void setCcpaSwitch(int ccpaSwitch) {
+        this.ccpaSwitch = ccpaSwitch;
+    }
+
+    public int getCoppaSwitch() {
+        return coppaSwitch;
+    }
+
+    public void setCoppaSwitch(int coppaSwitch) {
+        this.coppaSwitch = coppaSwitch;
+    }
+
+    public DynamicUrlSettings getDynamicUrlSettings() {
         return adxSetting;
     }
 
-    public void setAdxSetting(AdxApiUrlSetting adxSetting) {
+    public void setDynamicUrlSetting(DynamicUrlSettings adxSetting) {
         this.adxSetting = adxSetting;
     }
 
@@ -428,8 +473,33 @@ public class AppStrategy {
         private static String adx_bid_addr_key = "bid_addr";
         private static String adx_tk_addr_key = "tk_addr";
 
+        /**
+         * 5.7.3 Online Api
+         */
+        private static String online_req_addr_key = "ol_req_addr";
+
+        /**
+         * v5.7.8
+         */
+        private static String ofm_data = "ofm_data";
+
+        /**
+         * 5.7.9
+         */
+        private static String ccpa_switch_key = "ccpa_sw";
+        private static String coppa_switch_key = "coppa_sw";
+
+
+        /**
+         * 5.7.20
+         */
+        private static String tk_no_nt_t = "tk_no_nt_t";
+        private static String da_no_nt_k = "da_no_nt_k";
+
 
     }
+
+
 
     public long getPsidTimeOut() {
         return psidTimeOut;
@@ -593,6 +663,31 @@ public class AppStrategy {
     public void setDaNotKeyFtMap(Map<String, String> daNotKeyFtMap) {
         this.daNotKeyFtMap = daNotKeyFtMap;
     }
+
+    public Map<String, Object> getAppCustomMap() {
+        return appCustomMap;
+    }
+
+    public void setAppCustomMap(Map<String, Object> appCustomMap) {
+        this.appCustomMap = appCustomMap;
+    }
+
+    public void setTkNoTrackingNetworkFirmId(String tk_no_nt_type) {
+        this.tkNoTrackingNetworkFirmId = tk_no_nt_type;
+    }
+
+    public String getTkNoTrackingNetworkFirmId() {
+        return tkNoTrackingNetworkFirmId;
+    }
+
+    public void setDaNoTrackingNetworkFirmId(String da_no_nt_key) {
+        this.daNoTrackingNetworkFirmId = da_no_nt_key;
+    }
+
+    public String getDaNoTrackingNetworkFirmId() {
+        return daNoTrackingNetworkFirmId;
+    }
+
 
     /***
      * Parse AppSetting' Json String
@@ -764,6 +859,20 @@ public class AppStrategy {
                 strategy.setTcpPort(loggerObject.optInt(ResponseKey.tcp_port));
                 strategy.setTcpSwitchType(loggerObject.optInt(ResponseKey.tcp_tk_da_type));
                 strategy.setTcpRate(loggerObject.optString(ResponseKey.tcp_rate));
+
+                /**
+                 * v5.7.20
+                 */
+                if (loggerObject.isNull(ResponseKey.tk_no_nt_t)) {
+                    strategy.setTkNoTrackingNetworkFirmId(null);
+                } else {
+                    strategy.setTkNoTrackingNetworkFirmId(loggerObject.optString(ResponseKey.tk_no_nt_t));
+                }
+                if (loggerObject.isNull(ResponseKey.da_no_nt_k)) {
+                    strategy.setDaNoTrackingNetworkFirmId(null);
+                } else {
+                    strategy.setDaNoTrackingNetworkFirmId(loggerObject.optString(ResponseKey.da_no_nt_k));
+                }
             }
 
             if (!jsonObject.isNull(ResponseKey.new_psid_time)) {
@@ -859,17 +968,46 @@ public class AppStrategy {
              * v5.7.0
              */
             if (jsonObject.isNull(ResponseKey.adx_setting_key)) {
-                strategy.setAdxSetting(null);
+                strategy.setDynamicUrlSetting(null);
             } else {
-                AdxApiUrlSetting adxSetting = new AdxApiUrlSetting();
+                DynamicUrlSettings adxSetting = new DynamicUrlSettings();
                 JSONObject adxSettingObject = jsonObject.optJSONObject(ResponseKey.adx_setting_key);
 
                 adxSetting.setAdxRequestHttpUrl(adxSettingObject.optString(ResponseKey.adx_req_addr_key));
                 adxSetting.setAdxBidRequestHttpUrl(adxSettingObject.optString(ResponseKey.adx_bid_addr_key));
                 adxSetting.setAdxTrackRequestHttpUrl(adxSettingObject.optString(ResponseKey.adx_tk_addr_key));
 
-                strategy.setAdxSetting(adxSetting);
+                /**
+                 * v5.7.3
+                 */
+                adxSetting.setOnlineApiRequestHttpUrl(adxSettingObject.optString(ResponseKey.online_req_addr_key));
+                strategy.setDynamicUrlSetting(adxSetting);
             }
+
+            /**
+             * v.5.7.8
+             */
+            strategy.setOfmStrategy(OfmStrategy.parseOfmStrategy(jsonObject.optString(ResponseKey.ofm_data)));
+
+
+            /**5.7.8 local custom map**/
+            if (jsonObject.isNull(AppStrategyLoader.CUSTOM_KEY)) {
+                strategy.setAppCustomMap(null);
+            } else {
+                JSONObject customObject = new JSONObject(jsonObject.optString(AppStrategyLoader.CUSTOM_KEY));
+                HashMap<String, Object> map = new HashMap<>();
+                Iterator<String> jsonKeyIterator = customObject.keys();
+                while (jsonKeyIterator.hasNext()) {
+                    String key = jsonKeyIterator.next();
+                    map.put(key, customObject.opt(key));
+                }
+                strategy.setAppCustomMap(map);
+            }
+            /**
+             * v5.7.9
+             */
+            strategy.setCcpaSwitch(jsonObject.optInt(ResponseKey.ccpa_switch_key));
+            strategy.setCoppaSwitch(jsonObject.optInt(ResponseKey.coppa_switch_key));
 
         } catch (Exception e) {
             if (Const.DEBUG) {

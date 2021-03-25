@@ -7,10 +7,12 @@
 
 package com.anythink.core.hb;
 
+import android.os.SystemClock;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.AdError;
+import com.anythink.core.common.adx.AdxCacheController;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.common.entity.ATHeadBiddingRequest;
@@ -23,6 +25,7 @@ import com.anythink.core.hb.adx.BidRequest;
 import com.anythink.core.hb.adx.network.AdxBidRequestInfo;
 import com.anythink.core.hb.adx.network.BaseNetworkInfo;
 import com.anythink.core.hb.adx.network.MtgBidRequestInfo;
+import com.anythink.core.hb.adx.network.MyTargetBidRequestInfo;
 import com.anythink.core.hb.callback.BiddingCallback;
 import com.anythink.core.strategy.PlaceStrategy;
 
@@ -70,7 +73,7 @@ public class ATS2SHeadBiddingHandler extends BaseHeadBiddingHandler {
             return;
         }
 
-        final long startBidTime = System.currentTimeMillis();
+        final long startBidTime = SystemClock.elapsedRealtime();
 
         new BidRequest(bidRequestUrl, placementId, requestId, baseNetworkInfoList, extraInfo).start(0, new OnHttpLoaderListener() {
             @Override
@@ -80,7 +83,7 @@ public class ATS2SHeadBiddingHandler extends BaseHeadBiddingHandler {
 
             @Override
             public void onLoadFinish(int reqCode, Object result) {
-                long useTime = System.currentTimeMillis() - startBidTime;
+                long useTime = SystemClock.elapsedRealtime() - startBidTime;
                 List<BiddingResult> responseList = parseS2SResponseList(result);
                 if (responseList.size() == 0) {
                     finishCallback(false);
@@ -88,6 +91,18 @@ public class ATS2SHeadBiddingHandler extends BaseHeadBiddingHandler {
                 }
 
                 for (BiddingResult ATS2SBiddingResult : responseList) {
+
+                    //save splash offer data for adx
+                    if (mRequest.format == Integer.parseInt(Const.FORMAT.SPLASH_FORMAT)) {
+                        switch (ATS2SBiddingResult.networkFirmId) {
+                            case Const.NETWORK_FIRM.ADX_NETWORK_FIRM_ID://Adx
+//                            case Const.NETWORK_FIRM.MINTEGRAL_ONLINE://OpenApi Mintegral
+//                            case Const.NETWORK_FIRM.GDT_ONLINE://OpenApi GDT
+                                saveOwnSplashOffer(ATS2SBiddingResult);
+                                break;
+                        }
+                    }
+
                     PlaceStrategy.UnitGroupInfo unitGroupInfo = requestHBMap.get(ATS2SBiddingResult.networkFirmId + ATS2SBiddingResult.networkUnitId);
 
                     ATS2SHeadBiddingHandler.this.processUnitGrouInfo(unitGroupInfo, ATS2SBiddingResult, useTime);
@@ -111,6 +126,11 @@ public class ATS2SHeadBiddingHandler extends BaseHeadBiddingHandler {
 
     }
 
+    private void saveOwnSplashOffer(BiddingResult result) {
+        if (!TextUtils.isEmpty(result.offerData)) {
+            AdxCacheController.getInstance().saveAdxOffer(mRequest.context, result.token, result.offerData);
+        }
+    }
 
     public void init(ATHeadBiddingRequest request) {
         this.requestId = request.requestId;
@@ -149,6 +169,17 @@ public class ATS2SHeadBiddingHandler extends BaseHeadBiddingHandler {
                     AdxBidRequestInfo adxBidRequestInfo = new AdxBidRequestInfo(String.valueOf(format), unitGroupInfo, SDKContext.getInstance().getExcludeMyOfferPkgList());
                     requestHBMap.put(unitGroupInfo.networkType + adxBidRequestInfo.getRequestInfoId(), unitGroupInfo);
                     baseNetworkInfoList.add(adxBidRequestInfo);
+                    break;
+
+                case 32: //myTarget
+                    ATBaseAdAdapter myTargetAdapter = CustomAdapterFactory.createAdapter(unitGroupInfo);
+                    if (myTargetAdapter != null) {
+                        MyTargetBidRequestInfo myTargetBidRequestInfo = new MyTargetBidRequestInfo(mRequest.context, String.valueOf(format), unitGroupInfo, myTargetAdapter);
+                        requestHBMap.put(unitGroupInfo.networkType + myTargetBidRequestInfo.getRequestInfoId(), unitGroupInfo);
+                        baseNetworkInfoList.add(myTargetBidRequestInfo);
+                    } else {
+                        processFailedUnitGrouInfo(unitGroupInfo, "There is no Network SDK.");
+                    }
                     break;
                 default:
                     processFailedUnitGrouInfo(unitGroupInfo, "This network don't support head bidding in current TopOn's version.");
@@ -205,29 +236,6 @@ public class ATS2SHeadBiddingHandler extends BaseHeadBiddingHandler {
         return ATS2SBiddingResultList;
     }
 
-    private JSONArray parseHBLogJSONArray(List<PlaceStrategy.UnitGroupInfo> unitGroupInfos) {
-        JSONArray jsonArray = new JSONArray();
-        try {
-            for (PlaceStrategy.UnitGroupInfo unitGroupInfo : unitGroupInfos) {
-                JSONObject itemObject = new JSONObject();
-                itemObject.put("network_firm_id", unitGroupInfo.networkType);
-                itemObject.put("ad_source_id", unitGroupInfo.unitId);
-                itemObject.put("content", unitGroupInfo.content);
-
-                if (unitGroupInfo.ecpm != 0) {
-                    itemObject.put("price", unitGroupInfo.ecpm);
-                }
-                if (!TextUtils.isEmpty(unitGroupInfo.errorMsg)) {
-                    itemObject.put("error", unitGroupInfo.errorMsg);
-                }
-                jsonArray.put(itemObject);
-            }
-        } catch (Exception e) {
-
-        }
-
-        return jsonArray;
-    }
 
     @Override
     protected void processUnitGrouInfo(PlaceStrategy.UnitGroupInfo unitGroupInfo, BaseBiddingResult biddingResult, long bidUseTime) {
@@ -247,7 +255,6 @@ public class ATS2SHeadBiddingHandler extends BaseHeadBiddingHandler {
                 }
 
                 BiddingCacheManager.getInstance().addCache(unitGroupInfo.unitId, s2sBiddingResult);
-                //TODO Save Adx Adsource Bid Info to File
             } else {
                 processFailedUnitGrouInfo(unitGroupInfo, "errorCode:[" + s2sBiddingResult.errorCode + "],errorMsg:[" + s2sBiddingResult.errorMsg + "]");
             }

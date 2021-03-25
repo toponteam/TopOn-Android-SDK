@@ -33,9 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by Z on 2017/12/30.
- */
 
 public class TrackingV2Loader extends AbsHttpLoader {
     private static final String TAG = TrackingV2Loader.class.getSimpleName();

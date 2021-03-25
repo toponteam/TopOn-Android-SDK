@@ -43,9 +43,11 @@ android {
             res.srcDirs += 'network/fyber/res'
             res.srcDirs += 'network/inmobi/res'
             res.srcDirs += 'network/ironsource/res'
+            res.srcDirs += 'network/kidoz/res'
             res.srcDirs += 'network/maio/res'
             res.srcDirs += 'network/mintegral/res'
             res.srcDirs += 'network/mopub/res'
+            res.srcDirs += 'network/mytarget/res'
             res.srcDirs += 'network/ogury/res'
             res.srcDirs += 'network/startapp/res'
             res.srcDirs += 'network/superawesome/res'
@@ -70,9 +72,11 @@ networkLibsPath.add("flurry");
 networkLibsPath.add("fyber");
 networkLibsPath.add("inmobi");
 networkLibsPath.add("ironsource");
+networkLibsPath.add("kidoz");
 networkLibsPath.add("maio");
-networkLibsPath.add("mintegral"); //10.2.2
+networkLibsPath.add("mintegral");
 networkLibsPath.add("mopub");
+networkLibsPath.add("mytarget");
 networkLibsPath.add("nend");
 networkLibsPath.add("ogury");
 networkLibsPath.add("startapp");
@@ -113,8 +117,7 @@ dependencies {
     }
     batchImportPackage()
 
-
-
+    implementation 'androidx.appcompat:appcompat:1.1.0'
 }
 
 

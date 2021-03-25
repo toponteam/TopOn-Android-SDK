@@ -28,9 +28,6 @@ import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.views.AppRatingView;
 import com.anythink.nativead.views.RoundImageView;
 
-/**
- * Created by Z on 2018/1/18.
- */
 
 public class ATSplashRender implements ATNativeAdRenderer<CustomNativeAd> {
 

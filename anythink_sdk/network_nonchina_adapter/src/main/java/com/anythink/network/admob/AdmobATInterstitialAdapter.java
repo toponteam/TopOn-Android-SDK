@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 import android.app.Activity;
@@ -13,10 +20,6 @@ import com.google.android.gms.ads.InterstitialAd;
 
 import java.util.Map;
 
-/**
- * Interstitial adapter admob
- * Created by Z on 2018/6/27.
- */
 
 public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
     private static final String TAG = AdmobATInterstitialAdapter.class.getSimpleName();
@@ -84,7 +87,19 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
                 .addNetworkExtrasBundle(AdMobAdapter.class, extras)
                 .build();
 
-        mInterstitialAd.loadAd(mAdRequest);
+
+        postOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mInterstitialAd.loadAd(mAdRequest);
+                } catch (Throwable e) {
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdLoadError("", e.getMessage());
+                    }
+                }
+            }
+        });
 
     }
 
@@ -116,24 +131,13 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
         }
 
         //init
-        AdMobATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras);
-
-        extras = AdMobATInitManager.getInstance().getRequestBundle(context.getApplicationContext());
-
-        postOnMainThread(new Runnable() {
+        AdMobATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtras, new AdMobATInitManager.InitListener() {
             @Override
-            public void run() {
-                try {
-                    startLoadAd(context);
-                } catch (Throwable e) {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdLoadError("", e.getMessage());
-                    }
-                }
+            public void initSuccess() {
+                extras = AdMobATInitManager.getInstance().getRequestBundle(context.getApplicationContext());
+                startLoadAd(context);
             }
         });
-
-
     }
 
     @Override
@@ -173,7 +177,7 @@ public class AdmobATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdmobATConst.getNetworkVersion();
+        return AdMobATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

@@ -9,11 +9,11 @@ package com.anythink.core.common;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.SystemClock;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATBaseAdAdapter;
 import com.anythink.core.api.ATCustomLoadListener;
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.BaseAd;
@@ -26,7 +26,6 @@ import com.anythink.core.common.entity.AdTrackingInfo;
 import com.anythink.core.common.entity.BiddingResult;
 import com.anythink.core.common.entity.TemplateStrategy;
 import com.anythink.core.common.entity.UnitgroupCacheInfo;
-import com.anythink.core.hb.BiddingCacheManager;
 import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
@@ -36,6 +35,7 @@ import com.anythink.core.common.utils.CommonSDKUtil;
 import com.anythink.core.common.utils.CustomAdapterFactory;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
+import com.anythink.core.hb.BiddingCacheManager;
 import com.anythink.core.strategy.AppStrategy;
 import com.anythink.core.strategy.PlaceStrategy;
 
@@ -56,12 +56,13 @@ public abstract class CommonMediationManager {
     protected Context mApplcationContext;
     protected WeakReference<Context> mActivityRef;
 
+    protected int mTid; //Ofm
     protected String mUserId = "";
     protected String mCustomData = "";
 
     boolean isFinishBidding = false;
     protected boolean hasReturnResult = false; //Result return
-    boolean hasLongTimeout = false; //Long timeout
+    protected boolean hasLongTimeout = false; //Long timeout
     boolean requestHasShow = false;
 
     boolean isResultSuccess = false; //1:Success, 2:Fail
@@ -99,7 +100,9 @@ public abstract class CommonMediationManager {
 
     ConcurrentHashMap<String, ATBaseAdAdapter> mLoadingMap;
 
-    private Runnable mLongOverTimeRunnable = new Runnable() {
+    ConcurrentHashMap<String, PlaceStrategy.UnitGroupInfo> mHBRequestUnitGroupInfoMap;
+
+    protected Runnable mLongOverTimeRunnable = new Runnable() {
         @Override
         public void run() {
 
@@ -110,17 +113,18 @@ public abstract class CommonMediationManager {
                 for (String adsourceId : mUnitGroupReturnStatus.keySet()) {
                     mLoadingMap.remove(adsourceId);
                     RequestStatus requestStatus = mUnitGroupReturnStatus.get(adsourceId);
+                    Long adsourceStartTime = mUnitGroupLoadTimeMap.get(adsourceId);
                     if (!requestStatus.isReturnResult) {
                         AdTrackingInfo adTrackingInfo = requestStatus.adTrackingInfo;
                         adTrackingInfo.setLoadStatus(AdTrackingInfo.LONG_OVERTIME_ERROR_CALLBACK);
                         AdError adError = ErrorCode.getErrorCode(ErrorCode.timeOutError, "", "");
-                        mLoadError.putNetworkErrorMsg(adTrackingInfo.getmNetworkType(), adTrackingInfo.getNetworkName(), adError);
+                        mLoadError.putNetworkErrorMsg(adTrackingInfo.getmUnitGroupUnitId(), adTrackingInfo.getmNetworkType(), adTrackingInfo.getNetworkName(), adError);
 
                         requestStatus.isReturnResult = true;
 
                         CommonSDKUtil.printAdTrackingInfoStatusLog(requestStatus.adTrackingInfo, Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.FAIL, adError.printStackTrace());
 
-                        AgentEventManager.onAdsourceLoadFail(adTrackingInfo, 1, adError, 0);
+                        AgentEventManager.onAdsourceLoadFail(adTrackingInfo, 1, adError, adsourceStartTime != null ? SystemClock.elapsedRealtime() - adsourceStartTime : 0);
 
                     }
                 }
@@ -243,10 +247,10 @@ public abstract class CommonMediationManager {
                     } else {
                         CommonLogUtil.i(TAG, "addAdSourceToRequestingPool(Has been returned):start to request: waiting size:" + waitingList.size() + "; requesting size:" + requestingList.size());
                         //If return result, check hb list or normal need to request
-                        //If it is splash, it would not continue to request ad.
-                        if (Const.FORMAT.SPLASH_FORMAT.equals(String.valueOf(mStrategy.getFormat()))) {
-                            return;
-                        }
+//                        //If it is splash, it would not continue to request ad.
+//                        if (Const.FORMAT.SPLASH_FORMAT.equals(String.valueOf(mStrategy.getFormat()))) {
+//                            return;
+//                        }
                         if (waitingList.size() > 0) {
                             PlaceStrategy.UnitGroupInfo unitGroupInfo = waitingList.get(0);
                             //Check whether the number of caches meets the requirements
@@ -290,7 +294,7 @@ public abstract class CommonMediationManager {
                 }
             } else {
                 if (requestingPool.size() == 0 || !mOverTimeRunnableMap.containsKey(requestingPool.get(requestingPool.size() - 1).unitId)) {
-                    addAdSourceToRequestingPool(1, requestWaitingPool, requestingPool, true);
+                    addAdSourceToRequestingPool(1, requestWaitingPool, requestingPool, false);
                 }
             }
             return;
@@ -363,6 +367,8 @@ public abstract class CommonMediationManager {
 
                 for (PlaceStrategy.UnitGroupInfo hbItemUnitGroupInfo : unitGroupInfos) {
 
+                    saveHistoryHeadBidingUnitGroupInfo(hbItemUnitGroupInfo);
+
                     useTime = hbItemUnitGroupInfo.bidUseTime; //Only for Agent
                     double compareEcpm = 0; //Only for Agent
                     int compareResult = 0; //Only for Agent
@@ -420,6 +426,9 @@ public abstract class CommonMediationManager {
                 int compareResult = 0; //Only for Agent
 
                 for (PlaceStrategy.UnitGroupInfo hbItemUnitGroupInfo : unitGroupInfos) {
+
+                    saveHistoryHeadBidingUnitGroupInfo(hbItemUnitGroupInfo);
+
                     useTime = hbItemUnitGroupInfo.bidUseTime;
                     if (lowestUnitGroupInfo == null || hbItemUnitGroupInfo.ecpm > lowestUnitGroupInfo.ecpm) {
                         higerAdSourcesList.add(hbItemUnitGroupInfo);
@@ -479,6 +488,14 @@ public abstract class CommonMediationManager {
         }
     }
 
+    private void saveHistoryHeadBidingUnitGroupInfo(PlaceStrategy.UnitGroupInfo hbItemUnitGroupInfo) {
+        if (mHBRequestUnitGroupInfoMap == null) {
+            mHBRequestUnitGroupInfoMap = new ConcurrentHashMap<>();
+        }
+
+        mHBRequestUnitGroupInfoMap.put(hbItemUnitGroupInfo.unitId, hbItemUnitGroupInfo);
+    }
+
     private void fillHBS2SResultAgentLog(JSONArray hbHandleResultArray, PlaceStrategy.UnitGroupInfo hbItemUnitGroupInfo, double compareEcpm, int compareResult) {
         try {
             JSONObject hbResultObject = new JSONObject();
@@ -511,13 +528,14 @@ public abstract class CommonMediationManager {
      * @param normalList
      * @param hasFinsihBidding
      */
-    protected void startToRequestMediationAd(String placementId, String requestid, PlaceStrategy placeStrategy, List<PlaceStrategy.UnitGroupInfo> normalList, boolean hasFinsihBidding) {
+    protected void startToRequestMediationAd(String placementId, String requestid, PlaceStrategy placeStrategy, List<PlaceStrategy.UnitGroupInfo> normalList, boolean hasFinsihBidding, int tid) {
         isFinishBidding = hasFinsihBidding;
         requestWaitingPool.addAll(normalList);
         mRequestId = requestid;
         mPlacementId = placementId;
         mStrategy = placeStrategy;
         mUnitGroupList = "";
+        mTid = tid;
 
         startLoadUgList = normalList;
 
@@ -529,7 +547,7 @@ public abstract class CommonMediationManager {
             mUnitGroupList = mUnitGroupList + networkName;
         }
 
-        mStartLoadTime = System.currentTimeMillis();
+        mStartLoadTime = SystemClock.elapsedRealtime();
 
         //Start long-timeour runnable
         networkLongOverTimeLoad(mStrategy.getLongOverLoadTime());
@@ -577,9 +595,9 @@ public abstract class CommonMediationManager {
             requestPriority++;
         }
 
-        AdTrackingInfo adTrackingInfo = TrackingInfoUtil.initTrackingInfo(mRequestId, mPlacementId, mUserId, mStrategy, isFromHBPool ? (unitGroupInfo.networkType + "") : mUnitGroupList, mStrategy.getRequestUnitGroupNumber(), mIsRefresh);
+        AdTrackingInfo adTrackingInfo = TrackingInfoUtil.initTrackingInfo(mRequestId, mPlacementId, mUserId, mStrategy, isFromHBPool ? (unitGroupInfo.networkType + "") : mUnitGroupList, mStrategy.getRequestUnitGroupNumber(), mIsRefresh, mTid);
 
-        UnitgroupCacheInfo unitgroupCacheInfo = AdCacheManager.getInstance().getUnitgroupCacheInfoByAdSourceId(mPlacementId, unitGroupInfo.unitId);
+        UnitgroupCacheInfo unitgroupCacheInfo = AdCacheManager.getInstance().getUnitgroupCacheInfoByAdSourceId(mPlacementId, unitGroupInfo);
         AdCacheInfo adCacheInfo = unitgroupCacheInfo != null ? unitgroupCacheInfo.getAdCacheInfo() : null;
         if (adCacheInfo != null && adCacheInfo.isUpStatusAvaiable() && adCacheInfo.isNetworkAdReady()) {
             onCacheAdLoaded(unitGroupInfo);
@@ -589,8 +607,28 @@ public abstract class CommonMediationManager {
         ATBaseAdAdapter adapter = CustomAdapterFactory.createAdapter(unitGroupInfo);
         if (adapter == null) {
             AdError adError = ErrorCode.getErrorCode(ErrorCode.adapterNotExistError, "", unitGroupInfo.adapterClassName + " does not exist!");
-            mLoadError.putNetworkErrorMsg(unitGroupInfo.networkType, "", adError);
+            mLoadError.putNetworkErrorMsg(unitGroupInfo.unitId, unitGroupInfo.networkType, "", adError);
             onAdError(unitGroupInfo, null, adError);
+            try {
+                //Adapter doesn't exist agent
+                AgentEventManager.onAdsourceLoadFail(mRequestId
+                        , mPlacementId
+                        , mStrategy.getGroupId()
+                        , mIsRefresh ? 0 : 1
+                        , unitGroupInfo.networkType
+                        , unitGroupInfo.unitId
+                        , String.valueOf(mStrategy.getFormat())
+                        , isFromHBPool ? hbRequestPriority - 1 : requestPriority - 1
+                        , 0
+                        , adError
+                        , unitGroupInfo.bidType
+                        , unitGroupInfo.ecpm
+                        , 0
+                        , mStrategy.getTracfficGroupId());
+            } catch (Throwable throwable) {
+
+            }
+
             return;
         }
 
@@ -629,7 +667,7 @@ public abstract class CommonMediationManager {
 
         recordAdSourceReturnStatus(adTrackingInfo.getmUnitGroupUnitId(), adTrackingInfo, false);
 
-        mUnitGroupLoadTimeMap.put(unitGroupInfo.unitId, System.currentTimeMillis());
+        mUnitGroupLoadTimeMap.put(unitGroupInfo.unitId, SystemClock.elapsedRealtime());
 
 
         if ((mActivityRef.get() == null)) {
@@ -696,7 +734,7 @@ public abstract class CommonMediationManager {
             }
         };
 
-        if (TextUtils.equals(String.valueOf(mStrategy.getFormat()), Const.FORMAT.BANNER_FORMAT) || TextUtils.equals(String.valueOf(mStrategy.getFormat()), Const.FORMAT.SPLASH_FORMAT)) {
+        if (TextUtils.equals(String.valueOf(mStrategy.getFormat()), Const.FORMAT.BANNER_FORMAT)) {
             SDKContext.getInstance().runOnMainThread(runnable); //Banner's request need to run on main thread
         } else {
             TaskManager.getInstance().runNetworkRequest(runnable);
@@ -717,7 +755,7 @@ public abstract class CommonMediationManager {
     public void onAdDataLoaded(ATBaseAdAdapter baseAdapter) {
         AdTrackingInfo adTrackingInfo = baseAdapter.getTrackingInfo();
         long starttime = mUnitGroupLoadTimeMap.get(adTrackingInfo.getmUnitGroupUnitId());
-        adTrackingInfo.setDataFillTime(System.currentTimeMillis() - starttime);
+        adTrackingInfo.setDataFillTime(SystemClock.elapsedRealtime() - starttime);
     }
 
     /**
@@ -753,7 +791,7 @@ public abstract class CommonMediationManager {
         AdTrackingInfo adTrackingInfo = baseAdapter.getTrackingInfo();
 
         long starttime = mUnitGroupLoadTimeMap.get(adsourceId);
-        adTrackingInfo.setFillTime(System.currentTimeMillis() - starttime);
+        adTrackingInfo.setFillTime(SystemClock.elapsedRealtime() - starttime);
 
         //set placement id for network
         adTrackingInfo.setmNetworkPlacementId(baseAdapter.getNetworkPlacementId());
@@ -815,19 +853,19 @@ public abstract class CommonMediationManager {
         /**Save Offer to Caches**/
         long adCaheTime = baseAdapter.getmUnitgroupInfo().getUnitADCacheTime();
 
-        /**Splash Ad would not be putting in the cache**/
-        if (mStrategy.getFormat() != Integer.parseInt(Const.FORMAT.SPLASH_FORMAT)) {
-            AdCacheManager.getInstance().addCache(mPlacementId, adTrackingInfo.getRequestLevel(), baseAdapter, adObjectList, adCaheTime, mStrategy);
+//        /**Splash Ad would not be putting in the cache**/
+//        if (mStrategy.getFormat() != Integer.parseInt(Const.FORMAT.SPLASH_FORMAT)) {
+        AdCacheManager.getInstance().addCache(mPlacementId, adTrackingInfo.getRequestLevel(), baseAdapter, adObjectList, adCaheTime, mStrategy);
 
-            //If result callback had been canceled or had been showed, it would not to start the countdown.
-            if (!hasCancelReturnResult && !requestHasShow) {
-                CommonAdManager adManager = PlacementAdManager.getInstance().getAdManager(mPlacementId);
-                if (adManager != null && mStrategy.getAutoRequestUnitgroupAd() >= 1) {
-                    adManager.prepareCountdown(baseAdapter, mRequestId, baseAdapter.getmUnitgroupInfo().ecpm);
-                }
+        //If result callback had been canceled or had been showed, it would not to start the countdown.
+        if (!hasCancelReturnResult && !requestHasShow) {
+            CommonAdManager adManager = PlacementAdManager.getInstance().getAdManager(mPlacementId);
+            if (adManager != null && mStrategy.getAutoRequestUnitgroupAd() >= 1) {
+                adManager.prepareCountdown(baseAdapter, mRequestId, baseAdapter.getmUnitgroupInfo().ecpm);
             }
-
         }
+
+//        }
 
         currentCacheNum++;
 
@@ -853,8 +891,8 @@ public abstract class CommonMediationManager {
             SDKContext.getInstance().removeMainThreadRunnable(mLongOverTimeRunnable);
         }
 
-        long loadDuration = System.currentTimeMillis() - mStartLoadTime;
-        AdTrackingInfo anythinkTrackingInfo = TrackingInfoUtil.initTrackingInfo(mRequestId, mPlacementId, mUserId, mStrategy, mUnitGroupList, mStrategy.getRequestUnitGroupNumber(), mIsRefresh);
+        long loadDuration = SystemClock.elapsedRealtime() - mStartLoadTime;
+        AdTrackingInfo anythinkTrackingInfo = TrackingInfoUtil.initTrackingInfo(mRequestId, mPlacementId, mUserId, mStrategy, mUnitGroupList, mStrategy.getRequestUnitGroupNumber(), mIsRefresh, mTid);
         anythinkTrackingInfo.setmIsLoad(true);
         anythinkTrackingInfo.setFillTime(loadDuration);
         if (isCache) {
@@ -869,11 +907,11 @@ public abstract class CommonMediationManager {
             commonAdManager.setLoaded(mStrategy.getAsid());
         }
 
-        if (!Const.FORMAT.SPLASH_FORMAT.equals(mStrategy.getFormat() + "")) {
-            AdCacheManager.getInstance().refreshCacheInfo(startLoadUgList, mPlacementId, mStrategy
-                    , mRequestId, mUserId, mUnitGroupList, mIsRefresh);
+//        if (!Const.FORMAT.SPLASH_FORMAT.equals(mStrategy.getFormat() + "")) {
+        AdCacheManager.getInstance().refreshCacheInfo(startLoadUgList, mPlacementId, mStrategy
+                , mRequestId, mUserId, mUnitGroupList, mIsRefresh);
 
-        }
+//        }
 
         if (!hasCancelReturnResult) {
             onDevelopLoaded();
@@ -920,7 +958,7 @@ public abstract class CommonMediationManager {
             }
 
 
-            mLoadError.putNetworkErrorMsg(adTrackingInfo.getmNetworkType(), baseAdapter.getNetworkName(), adError);
+            mLoadError.putNetworkErrorMsg(adTrackingInfo.getmUnitGroupUnitId(), adTrackingInfo.getmNetworkType(), baseAdapter.getNetworkName(), adError);
             //Record request fail time
             AdSourceRequestFailManager.getInstance().putAdSourceRequestFailTime(adsourceId, System.currentTimeMillis());
 
@@ -951,7 +989,7 @@ public abstract class CommonMediationManager {
 
             CommonSDKUtil.printAdTrackingInfoStatusLog(adTrackingInfo, Const.LOGKEY.REQUEST_RESULT, Const.LOGKEY.FAIL, adError.printStackTrace());
 
-            AgentEventManager.onAdsourceLoadFail(adTrackingInfo, 0, adError, System.currentTimeMillis() - starttime);
+            AgentEventManager.onAdsourceLoadFail(adTrackingInfo, 0, adError, SystemClock.elapsedRealtime() - starttime);
 
         }
 
@@ -986,7 +1024,7 @@ public abstract class CommonMediationManager {
             SDKContext.getInstance().removeMainThreadRunnable(mLongOverTimeRunnable);
         }
 
-        AdTrackingInfo adTrackingInfo = TrackingInfoUtil.initTrackingInfo(mRequestId, mPlacementId, mUserId, mStrategy, mUnitGroupList, mStrategy.getRequestUnitGroupNumber(), mIsRefresh);
+        AdTrackingInfo adTrackingInfo = TrackingInfoUtil.initTrackingInfo(mRequestId, mPlacementId, mUserId, mStrategy, mUnitGroupList, mStrategy.getRequestUnitGroupNumber(), mIsRefresh, mTid);
         AgentEventManager.onAgentForATToAppLoadFail(adTrackingInfo, mLoadError);
 
         if (!hasCancelReturnResult) {
@@ -1074,8 +1112,6 @@ public abstract class CommonMediationManager {
         mIsRefresh = isRefresh;
     }
 
-    protected Map<Integer, ATMediationSetting> mSettingMap;
-
     public boolean hasFinishLoad() {
         /**Return result or All AdSource had been Short-Timeout**/
         return hasReturnResult || (isFinishBidding && requestWaitingPool.size() == 0 && hbRequestWaitingPool.size() == 0 && mOverTimeRunnableMap.size() == 0);
@@ -1145,6 +1181,7 @@ public abstract class CommonMediationManager {
             /**Cancel long-timeout runnable**/
             SDKContext.getInstance().removeMainThreadRunnable(mLongOverTimeRunnable);
         }
+
     }
 
     public abstract void prepareFormatAdapter(ATBaseAdAdapter baseAdapter);
@@ -1217,6 +1254,17 @@ public abstract class CommonMediationManager {
             requestStatus.adTrackingInfo = adTrackingInfo;
             requestStatus.isReturnResult = isReturnResult;
         }
+    }
+
+    /**
+     * @param adSourceId
+     * @return
+     */
+    public PlaceStrategy.UnitGroupInfo getHistoryHBRequestUnitGroupInfo(String adSourceId) {
+        if (mHBRequestUnitGroupInfoMap != null) {
+            return mHBRequestUnitGroupInfoMap.get(adSourceId);
+        }
+        return null;
     }
 
     class RequestStatus {

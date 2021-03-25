@@ -8,22 +8,16 @@
 package com.anythink.nativead.unitgroup.api;
 
 import android.graphics.Bitmap;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.anythink.core.api.ATSDK;
+import com.anythink.nativead.api.NativeAdInteractionType;
 import com.anythink.nativead.unitgroup.BaseNativeAd;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by Z on 2018/1/8.
- */
 
 public class CustomNativeAd extends BaseNativeAd {
 
@@ -31,7 +25,6 @@ public class CustomNativeAd extends BaseNativeAd {
     static final double MAX_STAR_RATING = 5;
 
     public static String IS_AUTO_PLAY_KEY = "is_auto_play";
-    public static String AD_REQUEST_NUM = "ad_num";
 
     // Basic fields
     private String mMainImageUrl;
@@ -49,15 +42,23 @@ public class CustomNativeAd extends BaseNativeAd {
 
     private List<String> mImageUrlList;
 
+    private Map<String, Object> mNetworkInfoMap;
 
-    // Extras
-//    private final Map<String, Object> mExtras;
+    private View adLogoView;
+    private ExtraInfo extraInfo;
+
+    private View.OnClickListener mCloseViewListener;
+
+    private int nInteractionType = NativeAdInteractionType.UNKNOW;
 
     public CustomNativeAd() {
 
 //        mExtras = new HashMap<String, Object>();
     }
 
+    public int getNativeAdInteractionType() {
+        return nInteractionType;
+    }
 
     /**
      * Check if it's template ad
@@ -181,6 +182,9 @@ public class CustomNativeAd extends BaseNativeAd {
 //    final public String getClickDestinationUrl() {
 //        return mClickDestinationUrl;
 //    }
+    final public void setNativeInteractionType(int interactionType) {
+        this.nInteractionType = interactionType;
+    }
 
     final public void setMainImageUrl(final String mainImageUrl) {
         mMainImageUrl = mainImageUrl;
@@ -231,6 +235,30 @@ public class CustomNativeAd extends BaseNativeAd {
         mImageUrlList = imageUrlList;
     }
 
+    final public View getAdLogoView() {
+        return adLogoView;
+    }
+
+    final public void setAdLogoView(View adLogoView) {
+        this.adLogoView = adLogoView;
+    }
+
+    public ExtraInfo getExtraInfo() {
+        return extraInfo;
+    }
+
+    public void setExtraInfo(ExtraInfo extraInfo) {
+        this.extraInfo = extraInfo;
+    }
+
+    final public void setNetworkInfoMap(Map<String, Object> networkInfoMap) {
+        mNetworkInfoMap = networkInfoMap;
+    }
+
+    final public Map<String, Object> getNetworkInfoMap() {
+        return mNetworkInfoMap;
+    }
+
 
     public Bitmap getAdLogo() {
         return null;
@@ -250,6 +278,27 @@ public class CustomNativeAd extends BaseNativeAd {
 
     @Override
     public void prepare(View view, List<View> clickViewList, FrameLayout.LayoutParams layoutParams) {
+
+    }
+
+    @Override
+    final public void bindDislikeListener(View.OnClickListener onClickListener) {
+        this.mCloseViewListener = onClickListener;
+
+        ExtraInfo extraInfo = getExtraInfo();
+        if (extraInfo != null) {
+            View closeView = extraInfo.getCloseView();
+            if (closeView != null) {
+                closeView.setOnClickListener(mCloseViewListener);
+            }
+        }
+    }
+
+    final public boolean checkHasCloseViewListener() {
+        return mCloseViewListener != null;
+    }
+
+    public void impressionTrack(View adView) {
 
     }
 
@@ -275,6 +324,210 @@ public class CustomNativeAd extends BaseNativeAd {
 
     @Override
     public void destroy() {
+        mCloseViewListener = null;
+        extraInfo = null;
+    }
+
+    /**
+     * Only For GDT
+     */
+    public void registerDownloadConfirmListener() {
 
     }
+
+    public void unregeisterDownloadConfirmListener() {
+
+    }
+
+    public static class ExtraInfo {
+        int parentViewId;
+        int titleViewId;
+        int sourceViewId;
+        int descriptionViewId;
+        int mainImageViewId;
+        int adLogoViewId;
+        int calltoActionViewId;
+        int iconViewId;
+        View closeView;
+        List<View> creativeViews;
+        List<View> customViews; //Only for GDT open Ad directly
+
+        public View getCloseView() {
+            return closeView;
+        }
+
+        private void setCloseView(View closeView) {
+            this.closeView = closeView;
+        }
+
+        public int getParentViewId() {
+            return parentViewId;
+        }
+
+        private void setParentViewId(int parentViewId) {
+            this.parentViewId = parentViewId;
+        }
+
+        public int getTitleViewId() {
+            return titleViewId;
+        }
+
+        private void setTitleViewId(int titleViewId) {
+            this.titleViewId = titleViewId;
+        }
+
+        public int getSourceViewId() {
+            return sourceViewId;
+        }
+
+        private void setSourceViewId(int sourceViewId) {
+            this.sourceViewId = sourceViewId;
+        }
+
+        public int getDescriptionViewId() {
+            return descriptionViewId;
+        }
+
+        private void setDescriptionViewId(int descriptionViewId) {
+            this.descriptionViewId = descriptionViewId;
+        }
+
+        public int getMainImageViewId() {
+            return mainImageViewId;
+        }
+
+        private void setMainImageViewId(int mainImageViewId) {
+            this.mainImageViewId = mainImageViewId;
+        }
+
+        public int getAdLogoViewId() {
+            return adLogoViewId;
+        }
+
+        private void setAdLogoViewId(int adLogoViewId) {
+            this.adLogoViewId = adLogoViewId;
+        }
+
+        public int getCalltoActionViewId() {
+            return calltoActionViewId;
+        }
+
+        private void setCalltoActionViewId(int calltoActionViewId) {
+            this.calltoActionViewId = calltoActionViewId;
+        }
+
+        public int getIconViewId() {
+            return iconViewId;
+        }
+
+        private void setIconViewId(int iconViewId) {
+            this.iconViewId = iconViewId;
+        }
+
+        public List<View> getCreativeViews() {
+            return creativeViews;
+        }
+
+        private void setCreativeViews(List<View> creativeViews) {
+            this.creativeViews = creativeViews;
+        }
+
+        public List<View> getCustomViews() {
+            return customViews;
+        }
+
+        private void setCustomViews(List<View> customViews) {
+            this.customViews = customViews;
+        }
+
+        public static class Builder {
+            int parentViewId;
+            int titleViewId;
+            int sourceViewId;
+            int descriptionViewId;
+            int mainImageViewId;
+            int adLogoViewId;
+            int calltoActionViewId;
+            int iconViewId;
+            View closeView;
+            List<View> creativeViews;
+            List<View> customViews; //Only for GDT open Ad directly
+
+            public Builder setParentId(int parentViewId) {
+                this.parentViewId = parentViewId;
+                return this;
+            }
+
+            public Builder setCloseView(View closeView) {
+                this.closeView = closeView;
+                return this;
+            }
+
+            public Builder setTitleViewId(int titleViewId) {
+                this.titleViewId = titleViewId;
+                return this;
+            }
+
+            public Builder setSourceViewId(int sourceViewId) {
+                this.sourceViewId = sourceViewId;
+                return this;
+            }
+
+            public Builder setDescriptionViewId(int descriptionViewId) {
+                this.descriptionViewId = descriptionViewId;
+                return this;
+            }
+
+            public Builder setMainImageViewId(int mainImageViewId) {
+                this.mainImageViewId = mainImageViewId;
+                return this;
+            }
+
+            public Builder setAdLogoViewId(int adLogoViewId) {
+                this.adLogoViewId = adLogoViewId;
+                return this;
+            }
+
+            public Builder setCalltoActionViewId(int calltoActionViewId) {
+                this.calltoActionViewId = calltoActionViewId;
+                return this;
+            }
+
+            public Builder setIconViewId(int iconViewId) {
+                this.iconViewId = iconViewId;
+                return this;
+            }
+
+            public Builder setCreativeViewList(List<View> creativeViews) {
+                this.creativeViews = creativeViews;
+                return this;
+            }
+
+            public Builder setCustomViewList(List<View> customViews) {
+                this.customViews = customViews;
+                return this;
+            }
+
+
+            public ExtraInfo build() {
+                ExtraInfo extraInfo = new ExtraInfo();
+
+                extraInfo.setParentViewId(this.parentViewId);
+                extraInfo.setCloseView(this.closeView);
+                extraInfo.setAdLogoViewId(this.adLogoViewId);
+                extraInfo.setCalltoActionViewId(this.calltoActionViewId);
+                extraInfo.setCreativeViews(this.creativeViews);
+                extraInfo.setDescriptionViewId(this.descriptionViewId);
+                extraInfo.setIconViewId(this.iconViewId);
+                extraInfo.setTitleViewId(this.titleViewId);
+                extraInfo.setMainImageViewId(this.mainImageViewId);
+                extraInfo.setSourceViewId(this.sourceViewId);
+                extraInfo.setCustomViews(this.customViews);
+
+
+                return extraInfo;
+            }
+        }
+    }
+
 }

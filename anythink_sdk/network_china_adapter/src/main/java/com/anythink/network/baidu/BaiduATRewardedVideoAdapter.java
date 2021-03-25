@@ -141,7 +141,7 @@ public class BaiduATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return BaiduATConst.getNetworkVersion();
+        return BaiduATInitManager.getInstance().getNetworkVersion();
     }
 
 }

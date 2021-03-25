@@ -12,7 +12,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
-import com.alphab.receiver.AlphabReceiver;
 import com.anythink.core.api.ATInitMediation;
 import com.mintegral.msdk.MIntegralSDK;
 import com.mintegral.msdk.advanced.view.MTGNativeAdvancedView;
@@ -127,6 +126,11 @@ public class MintegralATInitManager extends ATInitMediation {
     }
 
     @Override
+    public String getNetworkVersion() {
+        return MintegralATConst.getNetworkVersion();
+    }
+
+    @Override
     public String getNetworkSDKClass() {
         return "com.mintegral.msdk.MIntegralSDK";
     }
@@ -134,7 +138,6 @@ public class MintegralATInitManager extends ATInitMediation {
     @Override
     public Map<String, Boolean> getPluginClassStatus() {
         HashMap<String, Boolean> pluginMap = new HashMap<>();
-        pluginMap.put("mintegral_alphab.aar", false);
         pluginMap.put("mintegral_interstitial.aar", false);
         pluginMap.put("mintegral_interstitialvideo.aar", false);
         pluginMap.put("mintegral_mtgbanner.aar", false);
@@ -152,12 +155,6 @@ public class MintegralATInitManager extends ATInitMediation {
         pluginMap.put("mintegral_mtgdownloads.aar", false);
 
         Class clazz;
-        try {
-            clazz = AlphabReceiver.class;
-            pluginMap.put("mintegral_alphab.aar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
 
         try {
             clazz = MTGInterstitialActivity.class;

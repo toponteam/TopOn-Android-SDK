@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.unityads;
 
 import android.app.Activity;
@@ -5,6 +12,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.core.common.base.Const;
 import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
@@ -181,6 +189,19 @@ public class UnityAdsATInitManager extends ATInitMediation {
         if (!TextUtils.isEmpty(game_id)) {
             if (!UnityAds.isInitialized() || TextUtils.isEmpty(mGameId) || !TextUtils.equals(mGameId, game_id)) {
                 UnityAds.addListener(mIUnityAdsExtendedListener);
+
+                try {
+                    boolean ccpaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_CCPA_SWITCH_KEY);
+                    if (ccpaSwitch) {
+                        MetaData gdprMetaData = new MetaData(context.getApplicationContext());
+                        gdprMetaData.set("privacy.consent", false);
+                        gdprMetaData.commit();
+                    }
+                } catch (Throwable e) {
+
+                }
+
+
                 UnityAds.initialize(context, game_id, new IUnityAdsInitializationListener() {
                     @Override
                     public void onInitializationComplete() {
@@ -212,6 +233,11 @@ public class UnityAdsATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "UnityAds";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return UnityAdsATConst.getNetworkVersion();
     }
 
     @Override

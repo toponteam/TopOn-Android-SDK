@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.helium;
 
 import android.app.Activity;
@@ -108,7 +115,7 @@ public class HeliumATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return HeliumATInitManager.getInstance().getNetworkSDKVersion();
+        return HeliumATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

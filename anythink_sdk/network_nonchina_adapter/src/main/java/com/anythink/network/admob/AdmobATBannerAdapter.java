@@ -1,3 +1,10 @@
+    /*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 import android.content.Context;
@@ -13,10 +20,6 @@ import com.google.android.gms.ads.AdView;
 
 import java.util.Map;
 
-/**
- * Banner adapter admob
- * Created by Z on 2018/6/27.
- */
 
 public class AdmobATBannerAdapter extends CustomBannerAdapter {
     private static final String TAG = AdmobATBannerAdapter.class.getSimpleName();
@@ -29,7 +32,7 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
 
 
     @Override
-    public void loadCustomNetworkAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context activity, final Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
 
         String appid = "";
         if (serverExtras.containsKey("app_id") && serverExtras.containsKey("unit_id")) {
@@ -43,8 +46,15 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
             return;
         }
 
-        AdMobATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras);
+        AdMobATInitManager.getInstance().initSDK(activity.getApplicationContext(), serverExtras, new AdMobATInitManager.InitListener() {
+            @Override
+            public void initSuccess() {
+                startLoadAd(activity, serverExtras, localExtras);
+            }
+        });
+    }
 
+    private void startLoadAd(Context activity, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
         Bundle persionalBundle = AdMobATInitManager.getInstance().getRequestBundle(activity.getApplicationContext());
 
         final AdView adView = new AdView(activity);
@@ -136,9 +146,7 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
 
             @Override
             public void onAdOpened() {
-                if (mImpressionEventListener != null) {
-                    mImpressionEventListener.onBannerAdShow();
-                }
+
             }
 
             @Override
@@ -159,8 +167,6 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
                 //                .addNetworkExtras("")
                 .build();
         adView.loadAd(mAdRequest);
-
-
     }
 
     @Override
@@ -180,7 +186,7 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdmobATConst.getNetworkVersion();
+        return AdMobATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -201,6 +207,11 @@ public class AdmobATBannerAdapter extends CustomBannerAdapter {
     private static int px2dip(Context context, float pxValue) {
         final float scale = context.getResources().getDisplayMetrics().density;
         return (int) (pxValue / (scale <= 0 ? 1 : scale) + 0.5f);
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 
 }

@@ -9,9 +9,8 @@ package com.anythink.core.common.utils;
 
 import android.content.Context;
 import android.text.TextUtils;
-import android.util.Log;
 
-import com.anythink.core.api.IATChinaSDKHandler;
+import com.anythink.core.api.IExHandler;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
 import com.anythink.core.strategy.AppStrategy;
@@ -114,7 +113,7 @@ public class MsgUtil {
             mainObject.put(JSON_REQUEST_ANDROID_ID, (isUpLoadAndroidId ? CommonDeviceUtil.getAndroidID(context) : ""));
             mainObject.put(JSON_REQUEST_COMMON_GAID, CommonDeviceUtil.getGoogleAdId());
 
-            IATChinaSDKHandler chinaSDKHandler = SDKContext.getInstance().getChinaHandler();
+            IExHandler chinaSDKHandler = SDKContext.getInstance().getExHandler();
             if (chinaSDKHandler != null) {
                 chinaSDKHandler.fillRequestData(mainObject, appStrategy);
                 mainObject.put("is_cn_sdk", "1");

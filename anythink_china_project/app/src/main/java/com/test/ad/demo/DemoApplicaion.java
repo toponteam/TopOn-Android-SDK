@@ -9,14 +9,17 @@ package com.test.ad.demo;
 
 import android.os.Build;
 import android.support.multidex.MultiDexApplication;
+import android.util.Log;
 import android.webkit.WebView;
 
 import com.anythink.core.api.ATSDK;
 import com.facebook.stetho.Stetho;
 
-/**
- * Created by Z on 2018/1/10.
- */
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 public class DemoApplicaion extends MultiDexApplication {
     public static final String appid = "a5aa1f9deda26d";
@@ -30,7 +33,10 @@ public class DemoApplicaion extends MultiDexApplication {
     public static final String mPlacementId_native_baidu = "b5d148f9f2e47d";
     public static final String mPlacementId_native_kuaishou = "b5e4105d4f21b6";
     public static final String mPlacementId_native_kuaishou_drawer = "b5e5dc4110310f";
+    public static final String mPlacementId_native_adx = "b5fdc16beb3bb4";
+    public static final String mPlacementId_native_online = "b5fdc197e4da39";
     public static final String mPlacementId_native_myoffer = "b5f33a12982b7f";
+
 
     //RewardedVideo
     public static final String mPlacementId_rewardvideo_all = "b5b449fb3d89d7";
@@ -40,7 +46,10 @@ public class DemoApplicaion extends MultiDexApplication {
     public static final String mPlacementId_rewardvideo_baidu = "b5c2c800fb3a52";
     public static final String mPlacementId_rewardvideo_ks = "b5d67459a3e535";
     public static final String mPlacementId_rewardvideo_sigmob = "b5d7228c6c5d6a";
+    public static final String mPlacementId_rewardvideo_adx = "b5fdc16c943b7f";
+    public static final String mPlacementId_rewardvideo_online = "b5fdc1987c5516";
     public static final String mPlacementId_rewardvideo_myoffer = "b5db6c3764aea3";
+
 
     //Banner
     public static final String mPlacementId_banner_all = "b5baca4f74c3d8";
@@ -48,6 +57,8 @@ public class DemoApplicaion extends MultiDexApplication {
     public static final String mPlacementId_banner_GDT = "b5baca43951901";
     public static final String mPlacementId_banner_toutiao = "b5baca45138428";
     public static final String mPLacementId_banner_baidu = "b5c0508c4c073f";
+    public static final String mPLacementId_banner_adx = "b5fdc16d5a63fc";
+    public static final String mPLacementId_banner_online = "b5fdc199071597";
     public static final String mPlacementId_banner_myoffer = "b5f33a1409b96b";
 
     //Interstitial
@@ -60,6 +71,8 @@ public class DemoApplicaion extends MultiDexApplication {
     public static final String mPlacementId_interstitial_baidu = "b5c0508e2c84d4";
     public static final String mPlacementId_interstitial_kuaishou = "b5d6745b8133f2";
     public static final String mPlacementId_interstitial_sigmob = "b5d7614ab30695";
+    public static final String mPlacementId_interstitial_adx = "b5fdc16e15a78b";
+    public static final String mPlacementId_interstitial_online = "b5fdc199aa4cc8";
     public static final String mPlacementId_interstitial_myoffer = "b5db6c39aed9c5";
 
     //Splash
@@ -67,9 +80,11 @@ public class DemoApplicaion extends MultiDexApplication {
     public static final String mPlacementId_splash_gdt = "b5bea7bfd93f01";
     public static final String mPlacementId_splash_toutiao = "b5bea7c1b653ef";
     public static final String mPlacementId_splash_baidu = "b5c05090192a58";
-    public static final String mPlacementId_splash_sigmob = "b5d76150bab3ad";
     public static final String mPlacementId_splash_mintegral = "b5ee8ae8611366";
     public static final String mPlacementId_splash_kuaishou = "b5f22758d9eae6";
+    public static final String mPlacementId_splash_sigmob = "b5d76150bab3ad";
+    public static final String mPlacementId_splash_adx = "b5fdc16eb9e2ee";
+    public static final String mPlacementId_splash_online = "b5fdc19a532489";
     public static final String mPlacementId_splash_myoffer = "b5f33a1598fe94";
 
     @Override
@@ -114,6 +129,29 @@ public class DemoApplicaion extends MultiDexApplication {
 //                , DeviceDataInfo.INSTALLER
 //
 //        );
+
+
+        ATSDK.setChannel("testChannle");
+        ATSDK.setSubChannel("testSubChannle");
+
+        List excludelist = new ArrayList();
+        excludelist.add("com.exclude.myoffer1");
+        excludelist.add("com.exclude.myoffer2");
+        ATSDK.setExcludeMyOfferPkgList(excludelist);
+
+        Log.i("Demoapplication", "isChinaSDK:" + ATSDK.isCnSDK());
+        Log.i("Demoapplication", "SDKVersionName:" + ATSDK.getSDKVersionName());
+
+        Map<String, Object> custommap = new HashMap<String, Object>();
+        custommap.put("key1","initCustomMap1");
+        custommap.put("key2","initCustomMap2");
+        ATSDK.initCustomMap(custommap);
+
+        Map<String, Object> subcustommap = new HashMap<String, Object>();
+        subcustommap.put("key1","initPlacementCustomMap1");
+        subcustommap.put("key2","initPlacementCustomMap2");
+        ATSDK.initPlacementCustomMap("b5aa1fa4165ea3",subcustommap);//native  facebook
+        
         ATSDK.init(this, appid, appKey);
 
     }

@@ -20,10 +20,6 @@ import com.facebook.ads.NativeAdListener;
 import com.facebook.ads.NativeBannerAd;
 import com.facebook.ads.NativeBannerAdView;
 
-/**
- * Created by Z on 2018/1/12.
- */
-
 public class FacebookNativeBannerAd extends CustomNativeAd implements NativeAdListener {
     private final String TAG = FacebookNativeBannerAd.class.getSimpleName();
 
@@ -135,6 +131,7 @@ public class FacebookNativeBannerAd extends CustomNativeAd implements NativeAdLi
 
     @Override
     public void onLoggingImpression(Ad ad) {
+        notifyAdImpression();
     }
 
 

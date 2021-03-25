@@ -14,7 +14,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.anythink.core.api.ATAdConst;
-import com.anythink.nativead.api.ATNative;
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.bytedance.sdk.openadsdk.AdSlot;
@@ -36,7 +36,7 @@ public class TTATAdapter extends CustomNativeAdapter {
     String slotId;
 
     /**
-     * //Is Native Feeds? "0"：yes， "1"：no
+     * NativeType : "0"：express， "1"：self-render
      */
     String layoutType;
     String nativeType;
@@ -58,11 +58,14 @@ public class TTATAdapter extends CustomNativeAdapter {
 
         if (serverExtra.containsKey("layout_type")) {
             layoutType = (String) serverExtra.get("layout_type");
+        } else {
+            //If no exist layoutType, defalut 0
+            layoutType = "0";
         }
 
         int requestNum = 1;
         try {
-            requestNum = Integer.parseInt(serverExtra.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+            requestNum = Integer.parseInt(serverExtra.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
         } catch (Exception e) {
         }
 
@@ -83,264 +86,273 @@ public class TTATAdapter extends CustomNativeAdapter {
         final int finalMediaSize = mediaSize;
         TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
             @Override
-            public void onFinish() {
+            public void onSuccess() {
                 startLoad(context, localExtra, finalRequestNum, finalMediaSize);
+            }
+
+            @Override
+            public void onError(String errorCode, String errorMsg) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
+                }
             }
         });
     }
 
-    private void startLoad(final Context context, Map<String, Object> localExtra, int requestNum, int mediaSize) {
-        TTAdManager ttAdManager = TTAdSdk.getAdManager();
+    private void startLoad(final Context context, final Map<String, Object> localExtra, final int requestNum, final int mediaSize) {
+        runOnNetworkRequestThread(new Runnable() {
+            @Override
+            public void run() {
 
-        int width = context.getResources().getDisplayMetrics().widthPixels;
-        int height = context.getResources().getDisplayMetrics().heightPixels;
-        boolean canInterrupt = false;
-        Bitmap videoPlayBitmap = null;
-        int videoPlaySize = 0;
-        if (localExtra != null) {
+                TTAdManager ttAdManager = TTAdSdk.getAdManager();
 
-            Object widthObject = null;
-            if (localExtra.containsKey(TTATConst.NATIVE_AD_IMAGE_WIDTH)) {
-                widthObject = localExtra.get(TTATConst.NATIVE_AD_IMAGE_WIDTH);
-            } else if (localExtra.containsKey(ATNative.KEY_WIDTH)) {
-                widthObject = localExtra.get(ATNative.KEY_WIDTH);
-            } else if (localExtra.containsKey(ATAdConst.KEY.AD_WIDTH)) {
-                widthObject = localExtra.get(ATAdConst.KEY.AD_WIDTH);
+                int width = context.getResources().getDisplayMetrics().widthPixels;
+                int height = context.getResources().getDisplayMetrics().heightPixels;
+                boolean canInterrupt = false;
+                Bitmap videoPlayBitmap = null;
+                int videoPlaySize = 0;
+                if (localExtra != null) {
+
+                    Object widthObject = null;
+                    if (localExtra.containsKey(ATAdConst.KEY.AD_WIDTH)) {
+                        widthObject = localExtra.get(ATAdConst.KEY.AD_WIDTH);
+                    }
+
+                    Object heightObject = null;
+                    if (localExtra.containsKey(TTATConst.NATIVE_AD_IMAGE_HEIGHT)) {
+                        heightObject = localExtra.get(TTATConst.NATIVE_AD_IMAGE_HEIGHT);
+                    } else if (localExtra.containsKey(ATAdConst.KEY.AD_HEIGHT)) {
+                        heightObject = localExtra.get(ATAdConst.KEY.AD_HEIGHT);
+                    }
+
+                    Object canInterruptObject = localExtra.get(TTATConst.NATIVE_AD_INTERRUPT_VIDEOPLAY);
+                    Object videoPlayBitmapObject = localExtra.get(TTATConst.NATIVE_AD_VIDEOPLAY_BTN_BITMAP);
+                    Object videoPlaySizeObject = localExtra.get(TTATConst.NATIVE_AD_VIDEOPLAY_BTN_SIZE);
+
+                    if (widthObject != null && heightObject != null) {
+                        try {
+                            if (widthObject instanceof Integer || widthObject instanceof String) {
+                                width = Integer.parseInt(widthObject.toString());
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            if (heightObject instanceof Integer || heightObject instanceof String) {
+                                height = Integer.parseInt(heightObject.toString());
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        if (mediaSize == 1) { //690*388
+                            width = 690;
+                            height = 388;
+                        } else if (mediaSize == 2) { //228*150
+                            width = 228;
+                            height = 150;
+                        }
+                    }
+
+                    if (canInterruptObject instanceof Boolean) {
+                        canInterrupt = Boolean.parseBoolean(canInterruptObject.toString());
+                    }
+
+                    if (videoPlayBitmapObject instanceof Bitmap) {
+                        videoPlayBitmap = (Bitmap) videoPlayBitmapObject;
+                    }
+
+                    if (videoPlaySizeObject instanceof Integer) {
+                        videoPlaySize = Integer.parseInt(videoPlaySizeObject.toString());
+                    }
+                }
+
+                final boolean canInterruptFinal = canInterrupt;
+                final Bitmap videoPlayBitmapFinal = videoPlayBitmap;
+                final int videoPlaySizeFinal = videoPlaySize;
+
+
+                TTAdNative mTTAdNative = ttAdManager.createAdNative(context);//baseContext is recommended for activity
+                AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
+
+                if (width > 0 && height > 0) {
+                    adSlotBuilder.setImageAcceptedSize(width, height); //Must be set
+                } else {
+                    adSlotBuilder.setImageAcceptedSize(640, 320); //Must be set
+                }
+                adSlotBuilder.setAdCount(requestNum);
+                adSlotBuilder.setSupportDeepLink(true);
+
+
+                //Native Express
+                if (TextUtils.equals("0", nativeType) && TextUtils.equals("0", layoutType)) {
+                    Log.i(TAG, "load Native Express Ad");
+                    // set size, unit: dp
+                    adSlotBuilder.setExpressViewAcceptedSize(px2dip(context, width), px2dip(context, height)); //Must be set
+                    mTTAdNative.loadNativeExpressAd(adSlotBuilder.build(), new TTAdNative.NativeExpressAdListener() {
+                        @Override
+                        public void onError(int i, String s) {
+                            if (mLoadListener != null) {
+                                mLoadListener.onAdLoadError(String.valueOf(i), s);
+                            }
+                        }
+
+                        @Override
+                        public void onNativeExpressAdLoad(List<TTNativeExpressAd> list) {
+                            final List<TTATNativeExpressAd> customNativeAds = new ArrayList<>();
+                            for (final TTNativeExpressAd ttNativeExpressAd : list) {
+                                TTATNativeExpressAd ttNativeAd = new TTATNativeExpressAd(context, slotId, ttNativeExpressAd, canInterruptFinal, false);
+                                customNativeAds.add(ttNativeAd);
+                            }
+
+                            handleExpressAdRender(customNativeAds);
+                        }
+                    });
+                    return;
+                }
+
+                //Native Express Video
+                if (TextUtils.equals("1", nativeType) && TextUtils.equals("0", layoutType)) {
+                    Log.i(TAG, "load Native Express Video");
+                    // set size, unity: dp
+                    adSlotBuilder.setExpressViewAcceptedSize(px2dip(context, width), px2dip(context, height)); //Must be set
+                    mTTAdNative.loadExpressDrawFeedAd(adSlotBuilder.build(), new TTAdNative.NativeExpressAdListener() {
+                        @Override
+                        public void onError(int i, String s) {
+                            if (mLoadListener != null) {
+                                mLoadListener.onAdLoadError(String.valueOf(i), s);
+                            }
+                        }
+
+                        @Override
+                        public void onNativeExpressAdLoad(List<TTNativeExpressAd> list) {
+                            List<TTATNativeExpressAd> customNativeAds = new ArrayList<>();
+                            for (TTNativeExpressAd ttNativeExpressAd : list) {
+                                TTATNativeExpressAd ttNativeAd = new TTATNativeExpressAd(context, slotId, ttNativeExpressAd, canInterruptFinal, true);
+                                customNativeAds.add(ttNativeAd);
+                            }
+
+                            handleExpressAdRender(customNativeAds);
+                        }
+                    });
+                    return;
+                }
+
+                //  Custom rendering-------------------------------------------------------------------------------------------------------------------------------------
+                /**Load different ads based on Native type**/
+                switch (nativeType) {
+                    case "0": //Information Flow
+                        mTTAdNative.loadFeedAd(adSlotBuilder.build(), new TTAdNative.FeedAdListener() {
+                            @Override
+                            public void onError(int i, String s) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError(String.valueOf(i), s);
+                                }
+
+                            }
+
+                            @Override
+                            public void onFeedAdLoad(List<TTFeedAd> list) {
+                                List<CustomNativeAd> resultList = new ArrayList<>();
+                                for (TTFeedAd ttFeedAd : list) {
+                                    TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
+                                    resultList.add(ttNativeAd);
+                                }
+
+                                if (mLoadListener != null) {
+                                    CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
+                                    customNativeAds = resultList.toArray(customNativeAds);
+                                    mLoadListener.onAdCacheLoaded(customNativeAds);
+                                }
+                            }
+                        });
+                        break;
+                    case "1": //Video stream
+                        mTTAdNative.loadDrawFeedAd(adSlotBuilder.build(), new TTAdNative.DrawFeedAdListener() {
+                            @Override
+                            public void onError(int i, String s) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError(String.valueOf(i), s);
+                                }
+
+                            }
+
+                            @Override
+                            public void onDrawFeedAdLoad(List<TTDrawFeedAd> list) {
+                                List<CustomNativeAd> resultList = new ArrayList<>();
+                                for (TTFeedAd ttFeedAd : list) {
+                                    TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
+                                    resultList.add(ttNativeAd);
+                                }
+                                if (mLoadListener != null) {
+                                    CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
+                                    customNativeAds = resultList.toArray(customNativeAds);
+                                    mLoadListener.onAdCacheLoaded(customNativeAds);
+                                }
+                            }
+                        });
+                        break;
+
+                    case "2": //Native Banner
+                        adSlotBuilder.setNativeAdType(AdSlot.TYPE_BANNER);
+                        mTTAdNative.loadNativeAd(adSlotBuilder.build(), new TTAdNative.NativeAdListener() {
+                            @Override
+                            public void onError(int i, String s) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError(String.valueOf(i), s);
+                                }
+                            }
+
+                            @Override
+                            public void onNativeAdLoad(List<TTNativeAd> list) {
+                                List<CustomNativeAd> resultList = new ArrayList<>();
+                                for (TTNativeAd ttFeedAd : list) {
+                                    TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
+                                    resultList.add(ttNativeAd);
+                                }
+
+                                if (mLoadListener != null) {
+                                    CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
+                                    customNativeAds = resultList.toArray(customNativeAds);
+                                    mLoadListener.onAdCacheLoaded(customNativeAds);
+                                }
+                            }
+                        });
+                        break;
+                    case "3": //Native Interstitial
+                        adSlotBuilder.setNativeAdType(AdSlot.TYPE_INTERACTION_AD);
+                        mTTAdNative.loadNativeAd(adSlotBuilder.build(), new TTAdNative.NativeAdListener() {
+                            @Override
+                            public void onError(int i, String s) {
+                                if (mLoadListener != null) {
+                                    mLoadListener.onAdLoadError(String.valueOf(i), s);
+                                }
+                            }
+
+                            @Override
+                            public void onNativeAdLoad(List<TTNativeAd> list) {
+                                List<CustomNativeAd> resultList = new ArrayList<>();
+                                for (TTNativeAd ttFeedAd : list) {
+                                    TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
+                                    resultList.add(ttNativeAd);
+                                }
+
+                                if (mLoadListener != null) {
+                                    CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
+                                    customNativeAds = resultList.toArray(customNativeAds);
+                                    mLoadListener.onAdCacheLoaded(customNativeAds);
+                                }
+                            }
+                        });
+                        break;
+                    default:
+                        if (mLoadListener != null) {
+                            mLoadListener.onAdLoadError("", "The Native type is not exit.");
+                        }
+                        break;
+                }
             }
-
-            Object heightObject = null;
-            if (localExtra.containsKey(TTATConst.NATIVE_AD_IMAGE_HEIGHT)) {
-                heightObject = localExtra.get(TTATConst.NATIVE_AD_IMAGE_HEIGHT);
-            } else if (localExtra.containsKey(ATNative.KEY_HEIGHT)) {
-                heightObject = localExtra.get(ATNative.KEY_HEIGHT);
-            } else if (localExtra.containsKey(ATAdConst.KEY.AD_HEIGHT)) {
-                heightObject = localExtra.get(ATAdConst.KEY.AD_HEIGHT);
-            }
-
-            Object canInterruptObject = localExtra.get(TTATConst.NATIVE_AD_INTERRUPT_VIDEOPLAY);
-            Object videoPlayBitmapObject = localExtra.get(TTATConst.NATIVE_AD_VIDEOPLAY_BTN_BITMAP);
-            Object videoPlaySizeObject = localExtra.get(TTATConst.NATIVE_AD_VIDEOPLAY_BTN_SIZE);
-
-            if (mediaSize == 1) { //690*388
-                width = 690;
-                height = 388;
-            } else if (mediaSize == 2) { //228*150
-                width = 228;
-                height = 150;
-            } else {
-                try {
-                    if (widthObject instanceof Integer || widthObject instanceof String) {
-                        width = Integer.parseInt(widthObject.toString());
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                try {
-                    if (heightObject instanceof Integer || heightObject instanceof String) {
-                        height = Integer.parseInt(heightObject.toString());
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (canInterruptObject instanceof Boolean) {
-                canInterrupt = Boolean.parseBoolean(canInterruptObject.toString());
-            }
-
-            if (videoPlayBitmapObject instanceof Bitmap) {
-                videoPlayBitmap = (Bitmap) videoPlayBitmapObject;
-            }
-
-            if (videoPlaySizeObject instanceof Integer) {
-                videoPlaySize = Integer.parseInt(videoPlaySizeObject.toString());
-            }
-        }
-
-        final boolean canInterruptFinal = canInterrupt;
-        final Bitmap videoPlayBitmapFinal = videoPlayBitmap;
-        final int videoPlaySizeFinal = videoPlaySize;
-
-
-        TTAdNative mTTAdNative = ttAdManager.createAdNative(context);//baseContext建议为activity
-        AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
-
-        if (width > 0 && height > 0) {
-            adSlotBuilder.setImageAcceptedSize(width, height); //必须设置
-        } else {
-            adSlotBuilder.setImageAcceptedSize(640, 320); //必须设置
-        }
-        adSlotBuilder.setAdCount(requestNum);
-        adSlotBuilder.setSupportDeepLink(true);
-
-
-        //Native Express
-        if (TextUtils.equals("0", nativeType) && TextUtils.equals("0", layoutType)) {
-            Log.i(TAG, "load Native Express Ad");
-            // set size, unit: dp
-            adSlotBuilder.setExpressViewAcceptedSize(px2dip(context, width), px2dip(context, height)); //Must be set
-            mTTAdNative.loadNativeExpressAd(adSlotBuilder.build(), new TTAdNative.NativeExpressAdListener() {
-                @Override
-                public void onError(int i, String s) {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdLoadError(String.valueOf(i), s);
-                    }
-                }
-
-                @Override
-                public void onNativeExpressAdLoad(List<TTNativeExpressAd> list) {
-                    final List<TTATNativeExpressAd> customNativeAds = new ArrayList<>();
-                    for (final TTNativeExpressAd ttNativeExpressAd : list) {
-                        TTATNativeExpressAd ttNativeAd = new TTATNativeExpressAd(context, slotId, ttNativeExpressAd, canInterruptFinal, false);
-                        customNativeAds.add(ttNativeAd);
-                    }
-
-                    handleExpressAdRender(customNativeAds);
-                }
-            });
-            return;
-        }
-
-        //Native Express Video
-        if (TextUtils.equals("1", nativeType)) {
-            Log.i(TAG, "load Native Express Video");
-            // set size, unity: dp
-            adSlotBuilder.setExpressViewAcceptedSize(px2dip(context, width), px2dip(context, height)); //Must be set
-            mTTAdNative.loadExpressDrawFeedAd(adSlotBuilder.build(), new TTAdNative.NativeExpressAdListener() {
-                @Override
-                public void onError(int i, String s) {
-                    if (mLoadListener != null) {
-                        mLoadListener.onAdLoadError(String.valueOf(i), s);
-                    }
-                }
-
-                @Override
-                public void onNativeExpressAdLoad(List<TTNativeExpressAd> list) {
-                    List<TTATNativeExpressAd> customNativeAds = new ArrayList<>();
-                    for (TTNativeExpressAd ttNativeExpressAd : list) {
-                        TTATNativeExpressAd ttNativeAd = new TTATNativeExpressAd(context, slotId, ttNativeExpressAd, canInterruptFinal, true);
-                        customNativeAds.add(ttNativeAd);
-                    }
-
-                    handleExpressAdRender(customNativeAds);
-                }
-            });
-            return;
-        }
-
-        //  Custom rendering-------------------------------------------------------------------------------------------------------------------------------------
-        /**Load different ads based on Native type**/
-        switch (nativeType) {
-            case "0": //Information Flow
-                mTTAdNative.loadFeedAd(adSlotBuilder.build(), new TTAdNative.FeedAdListener() {
-                    @Override
-                    public void onError(int i, String s) {
-                        if (mLoadListener != null) {
-                            mLoadListener.onAdLoadError(String.valueOf(i), s);
-                        }
-
-                    }
-
-                    @Override
-                    public void onFeedAdLoad(List<TTFeedAd> list) {
-                        List<CustomNativeAd> resultList = new ArrayList<>();
-                        for (TTFeedAd ttFeedAd : list) {
-                            TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
-                            resultList.add(ttNativeAd);
-                        }
-
-                        if (mLoadListener != null) {
-                            CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
-                            customNativeAds = resultList.toArray(customNativeAds);
-                            mLoadListener.onAdCacheLoaded(customNativeAds);
-                        }
-                    }
-                });
-                break;
-            case "1": //Video stream
-                mTTAdNative.loadDrawFeedAd(adSlotBuilder.build(), new TTAdNative.DrawFeedAdListener() {
-                    @Override
-                    public void onError(int i, String s) {
-                        if (mLoadListener != null) {
-                            mLoadListener.onAdLoadError(String.valueOf(i), s);
-                        }
-
-                    }
-
-                    @Override
-                    public void onDrawFeedAdLoad(List<TTDrawFeedAd> list) {
-                        List<CustomNativeAd> resultList = new ArrayList<>();
-                        for (TTFeedAd ttFeedAd : list) {
-                            TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
-                            resultList.add(ttNativeAd);
-                        }
-                        if (mLoadListener != null) {
-                            CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
-                            customNativeAds = resultList.toArray(customNativeAds);
-                            mLoadListener.onAdCacheLoaded(customNativeAds);
-                        }
-                    }
-                });
-                break;
-
-            case "2": //Native Banner
-                adSlotBuilder.setNativeAdType(AdSlot.TYPE_BANNER);
-                mTTAdNative.loadNativeAd(adSlotBuilder.build(), new TTAdNative.NativeAdListener() {
-                    @Override
-                    public void onError(int i, String s) {
-                        if (mLoadListener != null) {
-                            mLoadListener.onAdLoadError(String.valueOf(i), s);
-                        }
-                    }
-
-                    @Override
-                    public void onNativeAdLoad(List<TTNativeAd> list) {
-                        List<CustomNativeAd> resultList = new ArrayList<>();
-                        for (TTNativeAd ttFeedAd : list) {
-                            TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
-                            resultList.add(ttNativeAd);
-                        }
-
-                        if (mLoadListener != null) {
-                            CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
-                            customNativeAds = resultList.toArray(customNativeAds);
-                            mLoadListener.onAdCacheLoaded(customNativeAds);
-                        }
-                    }
-                });
-                break;
-            case "3": //Native Interstitial
-                adSlotBuilder.setNativeAdType(AdSlot.TYPE_INTERACTION_AD);
-                mTTAdNative.loadNativeAd(adSlotBuilder.build(), new TTAdNative.NativeAdListener() {
-                    @Override
-                    public void onError(int i, String s) {
-                        if (mLoadListener != null) {
-                            mLoadListener.onAdLoadError(String.valueOf(i), s);
-                        }
-                    }
-
-                    @Override
-                    public void onNativeAdLoad(List<TTNativeAd> list) {
-                        List<CustomNativeAd> resultList = new ArrayList<>();
-                        for (TTNativeAd ttFeedAd : list) {
-                            TTATNativeAd ttNativeAd = new TTATNativeAd(context, slotId, ttFeedAd, canInterruptFinal, videoPlayBitmapFinal, videoPlaySizeFinal);
-                            resultList.add(ttNativeAd);
-                        }
-
-                        if (mLoadListener != null) {
-                            CustomNativeAd[] customNativeAds = new CustomNativeAd[resultList.size()];
-                            customNativeAds = resultList.toArray(customNativeAds);
-                            mLoadListener.onAdCacheLoaded(customNativeAds);
-                        }
-                    }
-                });
-                break;
-            default:
-                if (mLoadListener != null) {
-                    mLoadListener.onAdLoadError("", "The Native type is not exit.");
-                }
-                break;
-        }
+        });
     }
 
     private static int px2dip(Context context, float pxValue) {
@@ -413,6 +425,6 @@ public class TTATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return TTATConst.getNetworkVersion();
+        return TTATInitManager.getInstance().getNetworkVersion();
     }
 }

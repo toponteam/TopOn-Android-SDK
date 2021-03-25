@@ -11,10 +11,11 @@ import android.app.Activity;
 import android.content.Context;
 
 import com.anythink.basead.entity.OfferError;
-import com.anythink.basead.listeners.VideoAdListener;
+import com.anythink.basead.listeners.AdLoadListener;
+import com.anythink.basead.listeners.VideoAdEventListener;
 import com.anythink.core.common.MyOfferAPIProxy;
 import com.anythink.core.common.base.Const;
-import com.anythink.core.common.entity.MyOfferRequestInfo;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.core.common.utils.CommonDeviceUtil;
 import com.anythink.basead.myoffer.MyOfferBaseAd;
 import com.anythink.basead.myoffer.MyOfferRewardVideoAd;
@@ -29,7 +30,7 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     private MyOfferRewardVideoAd mMyOfferRewardVideoAd;
     private boolean isDefaultOffer = false; //用于判断兜底offer的
 
-    MyOfferRequestInfo mMyOfferRequestInfo;
+    BaseAdRequestInfo mMyOfferRequestInfo;
 
     /**
      * @param context
@@ -42,46 +43,13 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
-            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (BaseAdRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
         }
 
         initRewardedVideoObject(context);
 
-        mMyOfferRewardVideoAd.load();
-    }
-
-    private void initRewardedVideoObject(Context context) {
-        mMyOfferRewardVideoAd = new MyOfferRewardVideoAd(context, mMyOfferRequestInfo.placementId, offer_id, mMyOfferRequestInfo.myOfferSetting, isDefaultOffer);
-        mMyOfferRewardVideoAd.setListener(new VideoAdListener() {
-            @Override
-            public void onVideoAdPlayStart() {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayStart();
-                }
-            }
-
-            @Override
-            public void onVideoAdPlayEnd() {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayEnd();
-                }
-            }
-
-            @Override
-            public void onVideoShowFailed(OfferError error) {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayFailed(error.getCode(), error.getDesc());
-                }
-            }
-
-            @Override
-            public void onRewarded() {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onReward();
-                }
-            }
-
+        mMyOfferRewardVideoAd.load(new AdLoadListener() {
             @Override
             public void onAdDataLoaded() {
 
@@ -100,25 +68,11 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                     mLoadListener.onAdLoadError(error.getCode(), error.getDesc());
                 }
             }
-
-            @Override
-            public void onAdShow() {
-            }
-
-            @Override
-            public void onAdClosed() {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdClosed();
-                }
-            }
-
-            @Override
-            public void onAdClick() {
-                if (mImpressionListener != null) {
-                    mImpressionListener.onRewardedVideoAdPlayClicked();
-                }
-            }
         });
+    }
+
+    private void initRewardedVideoObject(Context context) {
+        mMyOfferRewardVideoAd = new MyOfferRewardVideoAd(context, mMyOfferRequestInfo, offer_id, isDefaultOffer);
     }
 
     /**
@@ -132,8 +86,8 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
         if (serverExtras.containsKey("my_oid")) {
             offer_id = serverExtras.get("my_oid").toString();
         }
-        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY)) {
-            mMyOfferRequestInfo = (MyOfferRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.MYOFFER_PARAMS_KEY);
+        if (serverExtras.containsKey(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY)) {
+            mMyOfferRequestInfo = (BaseAdRequestInfo) serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.BASE_AD_PARAMS_KEY);
         }
         if (serverExtras.containsKey(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG)) {
             isDefaultOffer = (Boolean) serverExtras.get(MyOfferAPIProxy.MYOFFER_DEFAULT_TAG);
@@ -151,6 +105,61 @@ public class MyOfferATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             extra.put(MyOfferBaseAd.EXTRA_REQUEST_ID, mMyOfferRequestInfo.requestId);
             extra.put(MyOfferBaseAd.EXTRA_SCENARIO, mScenario);
             extra.put(MyOfferBaseAd.EXTRA_ORIENTATION, orientation);
+
+            mMyOfferRewardVideoAd.setListener(new VideoAdEventListener() {
+                @Override
+                public void onVideoAdPlayStart() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onRewardedVideoAdPlayStart();
+                    }
+                }
+
+                @Override
+                public void onVideoAdPlayEnd() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onRewardedVideoAdPlayEnd();
+                    }
+                }
+
+                @Override
+                public void onVideoShowFailed(OfferError error) {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onRewardedVideoAdPlayFailed(error.getCode(), error.getDesc());
+                    }
+                }
+
+                @Override
+                public void onRewarded() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onReward();
+                    }
+                }
+
+
+                @Override
+                public void onAdShow() {
+                }
+
+                @Override
+                public void onAdClosed() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onRewardedVideoAdClosed();
+                    }
+                }
+
+                @Override
+                public void onAdClick() {
+                    if (mImpressionListener != null) {
+                        mImpressionListener.onRewardedVideoAdPlayClicked();
+                    }
+                }
+
+                @Override
+                public void onDeeplinkCallback(boolean isSuccess) {
+
+                }
+            });
+
             mMyOfferRewardVideoAd.show(extra);
         }
     }

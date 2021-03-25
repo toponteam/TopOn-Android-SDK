@@ -9,7 +9,6 @@ package com.anythink.core.api;
 
 import android.content.Context;
 
-
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +22,10 @@ public abstract class ATInitMediation {
     }
 
     public String getNetworkName() {
+        return "";
+    }
+
+    public String getNetworkVersion() {
         return "";
     }
 
@@ -43,6 +46,10 @@ public abstract class ATInitMediation {
     }
 
     public List getProviderStatus() {
+        return null;
+    }
+
+    public List getMetaValutStatus() {
         return null;
     }
 }

@@ -29,6 +29,8 @@ public class KSATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     int orientation;
 
     boolean isSkipAfterThirtySecond = false;
+    boolean isVideoSoundEnable;
+
     @Override
     public void show(Activity activity) {
         if (mKsRewardVideoAd != null) {
@@ -89,6 +91,7 @@ public class KSATRewardedVideoAdapter extends CustomRewardVideoAdapter {
                     KsVideoPlayConfig videoPlayConfig = new KsVideoPlayConfig.Builder()
                             .showLandscape(orientation == 2)//1:Portrait screen，2:Landscape, default portrait
                             .skipThirtySecond(isSkipAfterThirtySecond)//Optional. After 30s, it can be turned off (interstitial video is effective) After playing for 30s, the close button is displayed
+                            .videoSoundEnable(isVideoSoundEnable)
                             .build();
 
                     mKsRewardVideoAd.showRewardVideoAd(activity, videoPlayConfig);
@@ -127,27 +130,50 @@ public class KSATRewardedVideoAdapter extends CustomRewardVideoAdapter {
             orientation = Integer.parseInt(serverExtra.get("orientation").toString());
         }
 
+        isVideoSoundEnable = true;
+        if (serverExtra.containsKey("video_muted")) {
+            isVideoSoundEnable = TextUtils.equals("0", serverExtra.get("video_muted").toString());
+        }
+
         if (localExtra.containsKey(KSATConst.REWARDEDVIDEO_SKIP_AFTER_THIRTY_SECOND)) {
             Object isAfterThirtySecond = localExtra.get(KSATConst.REWARDEDVIDEO_SKIP_AFTER_THIRTY_SECOND);
             isSkipAfterThirtySecond = (isAfterThirtySecond instanceof Boolean) ? Boolean.parseBoolean(isAfterThirtySecond.toString()) : false;
         }
 
-        KSATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtra);
+        KSATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtra, new KSATInitManager.InitCallback() {
+            @Override
+            public void onFinish() {
+                startLoadAd();
+            }
+        });
+    }
 
+    private void startLoadAd() {
         KsScene adScene = new KsScene.Builder(posId)
                 .adNum(1)
                 .build();
         KsAdSDK.getLoadManager().loadRewardVideoAd(adScene, new KsLoadManager.RewardVideoAdListener() {
             @Override
             public void onError(int code, String msg) {
-                mLoadListener.onAdLoadError(code + "", msg);
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(code + "", msg);
+                }
+            }
+
+            @Override
+            public void onRequestResult(int i) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdDataLoaded();
+                }
             }
 
             @Override
             public void onRewardVideoAdLoad(@Nullable List<KsRewardVideoAd> list) {
                 if (list != null && list.size() > 0) {
                     mKsRewardVideoAd = list.get(0);
-                    mLoadListener.onAdCacheLoaded();
+                    if (mLoadListener != null) {
+                        mLoadListener.onAdCacheLoaded();
+                    }
                 }
                 try {
                     KSATInitManager.getInstance().put(getTrackingInfo().getmUnitGroupUnitId(), mKsRewardVideoAd);
@@ -178,6 +204,6 @@ public class KSATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return KSATConst.getSDKVersion();
+        return KSATInitManager.getInstance().getNetworkVersion();
     }
 }

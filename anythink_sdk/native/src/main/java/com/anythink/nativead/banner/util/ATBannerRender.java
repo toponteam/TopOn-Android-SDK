@@ -28,9 +28,6 @@ import com.anythink.nativead.banner.api.ATNativeBannerSize;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.views.RoundImageView;
 
-/**
- * Created by Z on 2018/1/18.
- */
 
 public class ATBannerRender implements ATNativeAdRenderer<CustomNativeAd> {
 

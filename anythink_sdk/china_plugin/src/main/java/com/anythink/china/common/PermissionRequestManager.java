@@ -11,7 +11,9 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 
 import com.anythink.china.activity.TransparentActivity;
 
@@ -30,16 +32,20 @@ public class PermissionRequestManager {
      * @param permissionList
      */
     public static void requestPermission(Context context, PermissionAuthorizeCallback callback, String... permissionList) {
-        int requestCode = new Random().nextInt(1000000000);
-        if (callback != null) {
-            TransparentActivity.permissionMap.put(requestCode, callback);
+        if (context != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int requestCode = new Random().nextInt(1000000000);
+            if (callback != null) {
+                TransparentActivity.permissionMap.put(requestCode, callback);
+            }
+            Intent intent = new Intent(context, TransparentActivity.class);
+            intent.putExtra(TransparentActivity.TYPE, TransparentActivity.PERMISSION_HANDLE_TYPE);
+            intent.putExtra(TransparentActivity.REQUEST_CODE_KEY, requestCode);
+            intent.putExtra(TransparentActivity.PERMISSION_LIST, permissionList);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } else {
+            Log.i("PermissionManager", "Build.VERSION.SDK_INT below 23 does not require permission");
         }
-        Intent intent = new Intent(context, TransparentActivity.class);
-        intent.putExtra(TransparentActivity.TYPE, TransparentActivity.PERMISSION_HANDLE_TYPE);
-        intent.putExtra(TransparentActivity.REQUEST_CODE_KEY, requestCode);
-        intent.putExtra(TransparentActivity.PERMISSION_LIST, permissionList);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
     }
 
     public static boolean checkPermissionGrant(Context context, String permission) {

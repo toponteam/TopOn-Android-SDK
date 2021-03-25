@@ -8,18 +8,11 @@
 package com.anythink.rewardvideo.bussiness;
 
 import android.content.Context;
-import android.text.TextUtils;
 
 import com.anythink.core.api.ATBaseAdAdapter;
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.CommonMediationManager;
-import com.anythink.core.common.base.AnyThinkBaseAdapter;
-import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.rewardvideo.api.ATRewardVideoListener;
-import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
-
-import java.util.Map;
 
 /**
  * RewardedVideo Mediation Manager

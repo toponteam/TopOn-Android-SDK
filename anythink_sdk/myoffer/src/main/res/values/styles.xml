@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
+<resources>
+    <style name="anythink_myoffer_feedback_dialog" parent="android:style/Theme.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+    <style name="anythink_myoffer_feedback_textview_style">
+        <item name="android:layout_width">0dp</item>
+        <!--        <item name="android:layout_width">83dp</item>-->
+        <item name="android:layout_height">29dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@drawable/anythink_myoffer_bg_feedback_textview_color</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingLeft">2dp</item>
+        <item name="android:paddingRight">2dp</item>
+<!--        <item name="background">@drawable/anythink_myoffer_bg_feedback_textview</item>-->
+    </style>
+
+    <style name="anythink_myoffer_feedback_textview_style_land" parent="anythink_myoffer_feedback_textview_style">
+        <item name="android:layout_height">24dp</item>
+    </style>
+
+
+</resources>

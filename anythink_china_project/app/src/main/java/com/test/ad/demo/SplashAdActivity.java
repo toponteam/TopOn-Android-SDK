@@ -18,27 +18,34 @@ import android.widget.Toast;
 
 public class SplashAdActivity extends Activity {
     String placementIds[] = new String[]{
+            DemoApplicaion.mPlacementId_splash_all,
             DemoApplicaion.mPlacementId_splash_toutiao,
             DemoApplicaion.mPlacementId_splash_gdt,
             DemoApplicaion.mPlacementId_splash_baidu,
             DemoApplicaion.mPlacementId_splash_sigmob,
             DemoApplicaion.mPlacementId_splash_mintegral,
             DemoApplicaion.mPlacementId_splash_kuaishou,
+            DemoApplicaion.mPlacementId_splash_adx,
+            DemoApplicaion.mPlacementId_splash_online,
             DemoApplicaion.mPlacementId_splash_myoffer
     };
 
     String unitGroupName[] = new String[]{
+            "All",
             "Toutiao",
             "GDT",
             "Baidu",
             "Sigmob",
             "Mintegral",
             "Kuaishou",
+            "Adx",
+            "online",
             "MyOffer"
     };
 
     int mCurrentSelectIndex;
     Spinner spinner;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,7 +77,16 @@ public class SplashAdActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(SplashAdActivity.this, SplashAdShowActivity.class);
-                intent.putExtra("unitId", placementIds[mCurrentSelectIndex]);
+                intent.putExtra("placementId", placementIds[mCurrentSelectIndex]);
+                startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.show_in_current_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(SplashAdActivity.this, SplashAdShowInCurrentActivity.class);
+                intent.putExtra("placementId", placementIds[mCurrentSelectIndex]);
                 startActivity(intent);
             }
         });

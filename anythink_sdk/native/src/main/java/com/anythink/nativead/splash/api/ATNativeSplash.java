@@ -96,31 +96,31 @@ public class ATNativeSplash {
         }
     };
 
-    @Deprecated
-    public ATNativeSplash(Activity activity
-            , ViewGroup container
-            , View skipView
-            , String unitId
-            , Map<String, String> customMap
-            , Map<String, Object> nativeConfigMap
-            , ATNativeSplashListener listener) {
-        this(activity, container, skipView, unitId, null,5000L, 5000L, listener);
-    }
-
-
-    @Deprecated
-    public ATNativeSplash(Activity activity
-            , ViewGroup container
-            , View skipView
-            , String unitId
-            , Map<String, String> customMap
-            , Map<String, Object> nativeConfigMap
-            , long requestTimeOut
-            , long fetchDelay
-            , ATNativeSplashListener listener) {
-
-        this(activity, container, skipView, unitId, null, requestTimeOut, fetchDelay, listener);
-    }
+//    @Deprecated
+//    public ATNativeSplash(Activity activity
+//            , ViewGroup container
+//            , View skipView
+//            , String unitId
+//            , Map<String, String> customMap
+//            , Map<String, Object> nativeConfigMap
+//            , ATNativeSplashListener listener) {
+//        this(activity, container, skipView, unitId, null,5000L, 5000L, listener);
+//    }
+//
+//
+//    @Deprecated
+//    public ATNativeSplash(Activity activity
+//            , ViewGroup container
+//            , View skipView
+//            , String unitId
+//            , Map<String, String> customMap
+//            , Map<String, Object> nativeConfigMap
+//            , long requestTimeOut
+//            , long fetchDelay
+//            , ATNativeSplashListener listener) {
+//
+//        this(activity, container, skipView, unitId, null, requestTimeOut, fetchDelay, listener);
+//    }
 
 
     public ATNativeSplash(Activity activity

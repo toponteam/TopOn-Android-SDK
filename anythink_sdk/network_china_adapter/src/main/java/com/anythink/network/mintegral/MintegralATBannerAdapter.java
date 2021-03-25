@@ -83,15 +83,13 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
                 if (mLoadListener != null) {
                     mLoadListener.onAdCacheLoaded();
                 }
-
-                if (mImpressionEventListener != null) {
-                    mImpressionEventListener.onBannerAdShow();
-                }
             }
 
             @Override
             public void onLogImpression() {
-
+                if (mImpressionEventListener != null) {
+                    mImpressionEventListener.onBannerAdShow();
+                }
             }
 
             @Override
@@ -247,7 +245,7 @@ public class MintegralATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return MintegralATConst.getNetworkVersion();
+        return MintegralATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

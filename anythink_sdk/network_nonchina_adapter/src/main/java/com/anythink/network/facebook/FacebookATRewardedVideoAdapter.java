@@ -1,9 +1,17 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.facebook;
 
 import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.api.MediationBidManager;
 import com.anythink.rewardvideo.unitgroup.api.CustomRewardVideoAdapter;
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
@@ -160,7 +168,7 @@ public class FacebookATRewardedVideoAdapter extends CustomRewardVideoAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return FacebookATConst.getNetworkVersion();
+        return FacebookATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -171,5 +179,10 @@ public class FacebookATRewardedVideoAdapter extends CustomRewardVideoAdapter {
     @Override
     public String getNetworkPlacementId() {
         return mUnitid;
+    }
+
+    @Override
+    public MediationBidManager getBidManager() {
+        return FacebookBidkitManager.getInstance();
     }
 }

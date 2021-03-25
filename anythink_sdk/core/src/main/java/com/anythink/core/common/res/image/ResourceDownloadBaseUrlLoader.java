@@ -7,6 +7,8 @@
 
 package com.anythink.core.common.res.image;
 
+import android.os.SystemClock;
+
 import com.anythink.core.common.utils.CommonLogUtil;
 import com.anythink.core.common.utils.task.Worker;
 
@@ -45,7 +47,9 @@ public abstract class ResourceDownloadBaseUrlLoader {
     }
 
     protected long downloadStartTime;
+    protected long downloadRealStartTime;
     protected long downloadEndTime;
+    protected long downloadRealEndTime;
     protected long downloadSize;
 
     protected abstract Map<String, String> onPrepareHeaders();
@@ -80,6 +84,7 @@ public abstract class ResourceDownloadBaseUrlLoader {
             private void doUrlConnect(String urlStr) {
 
                 downloadStartTime = System.currentTimeMillis();
+                downloadRealStartTime = SystemClock.elapsedRealtime();
 
                 HttpURLConnection httpConn = null;
                 try {
@@ -148,6 +153,7 @@ public abstract class ResourceDownloadBaseUrlLoader {
                     }
 
                     downloadEndTime = System.currentTimeMillis();
+                    downloadRealEndTime = SystemClock.elapsedRealtime();
 
                     if (save_success) {
                         CommonLogUtil.d(TAG, "download success --> " + mURL);

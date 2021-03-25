@@ -21,15 +21,15 @@ import com.anythink.core.cap.AdCapV2Manager;
 import com.anythink.core.cap.AdLoadCapManager;
 import com.anythink.core.cap.AdPacingManager;
 import com.anythink.core.common.adx.AdxCacheController;
-import com.anythink.core.common.adx.AdxUrlAddressManager;
+import com.anythink.core.common.adx.DynamicUrlAddressManager;
 import com.anythink.core.common.base.Const;
 import com.anythink.core.common.base.SDKContext;
+import com.anythink.core.common.entity.ATHeadBiddingRequest;
 import com.anythink.core.common.entity.AdCacheInfo;
 import com.anythink.core.common.entity.AdTrackingInfo;
-import com.anythink.core.common.entity.PlacementImpressionInfo;
 import com.anythink.core.common.entity.BiddingResult;
+import com.anythink.core.common.entity.PlacementImpressionInfo;
 import com.anythink.core.common.entity.UnitgroupCacheInfo;
-import com.anythink.core.hb.BiddingCacheManager;
 import com.anythink.core.common.net.TrackingV2Loader;
 import com.anythink.core.common.track.AdTrackingManager;
 import com.anythink.core.common.track.AgentEventManager;
@@ -40,25 +40,24 @@ import com.anythink.core.common.utils.NetworkLogUtil;
 import com.anythink.core.common.utils.TrackingInfoUtil;
 import com.anythink.core.common.utils.task.TaskManager;
 import com.anythink.core.hb.ATHeadBiddingHandler;
-import com.anythink.core.common.entity.ATHeadBiddingRequest;
+import com.anythink.core.hb.BiddingCacheManager;
 import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class CommonAdManager<T extends FormatLoadParams> {
     private final String TAG = getClass().getSimpleName();
 
     protected Context mApplicationContext;
-    protected WeakReference<Context> mActivityRef;
     protected String mPlacementId;
 
     protected ConcurrentHashMap<String, CommonMediationManager> mHistoryMediationManager;
@@ -83,7 +82,6 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
 
 
     public CommonAdManager(Context context, String placementId) {
-        mActivityRef = new WeakReference<>(context);
         mApplicationContext = context.getApplicationContext();
         mPlacementId = placementId;
 
@@ -124,20 +122,6 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
             isInLoadFailInterval = true;
             loadFailStartTime = System.currentTimeMillis();
         }
-    }
-
-
-    public Context getContext() {
-        return mActivityRef.get();
-    }
-
-    /**
-     * Refresh Context
-     *
-     * @param context
-     */
-    public void refreshContext(Context context) {
-        mActivityRef = new WeakReference<>(context);
     }
 
     /**
@@ -195,6 +179,17 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
      * @param mPlacementId
      */
     public void startLoadAd(final Context context, final String format, final String mPlacementId, final T formatLoadParams) {
+        Map<String, Object> localMap = PlacementAdManager.getInstance().getPlacementLocalSettingMap(mPlacementId);
+        final int[] ofmTid = new int[1];
+        ofmTid[0] = 0;
+        if (localMap != null && localMap.containsKey(AdTrackingInfo.OFM_TID_KEY)) {
+            try {
+                ofmTid[0] = (int) localMap.get(AdTrackingInfo.OFM_TID_KEY);
+            } catch (Throwable e) {
+
+            }
+        }
+
         TaskManager.getInstance().run_proxy(new Runnable() {
             @Override
             public void run() {
@@ -202,6 +197,12 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                     SDKContext.getInstance().checkAppStrategy(context, SDKContext.getInstance().getAppId(), SDKContext.getInstance().getAppKey());
                     //Create RequestId
                     final String requestId = CommonSDKUtil.createRequestId(context);
+
+                    //Record requestId
+                    formatLoadParams.requestId = requestId;
+
+                    onCreateRequestId(formatLoadParams.requestId, formatLoadParams);
+
 
                     //If init error, callback error and don't to send tk and agent.
                     if (SDKContext.getInstance().getContext() == null
@@ -213,7 +214,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                             public void run() {
                                 //It would not to send tk and agent, so it use onCallbacInternalError to callback error
                                 AdError adError = ErrorCode.getErrorCode(ErrorCode.appIdOrPlaceIdEmpty, "", "");
-                                onCallbacInternalError(formatLoadParams, mPlacementId, requestId, adError);
+                                onCallbackInternalError(formatLoadParams, mPlacementId, requestId, adError);
                             }
                         });
 
@@ -227,7 +228,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                     /**If default network is loading, it would callback error.**/
                     if (isInDefaultAdSourceLoading()) {
                         AdError adError = ErrorCode.getErrorCode(ErrorCode.loadingError, "", "");
-                        onCallbacInternalError(formatLoadParams, mPlacementId, requestId, adError);
+                        onCallbackInternalError(formatLoadParams, mPlacementId, requestId, adError);
                         return;
                     }
 
@@ -242,7 +243,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                     final String oldAsid = placeStrategy != null ? placeStrategy.getAsid() : "";
 
                     final AdTrackingInfo adTrackingInfo = TrackingInfoUtil.getTrackingInfoForAgent(format, requestId, mPlacementId, mPsid, mSessionId, placeStrategy, formatLoadParams.isRefresh ? 1 : 0);
-
+                    adTrackingInfo.setTid(ofmTid[0]);
 
                     /**No placement strategy to request default AdSource.**/
                     if (placeStrategy == null && formatLoadParams.defaultRequestInfo != null) {
@@ -255,7 +256,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
 
 
                     /**Before request to check upstatus and offer.**/
-                    if ((!format.equals(Const.FORMAT.SPLASH_FORMAT)) && mUpStatus == 1 && !isUpStatusOverTime() && AdCacheManager.getInstance().getCache(context, mPlacementId) != null) {
+                    if (mUpStatus == 1 && !isUpStatusOverTime() && AdCacheManager.getInstance().getCache(context, mPlacementId) != null) {
                         ShowWaterfallManager.getInstance().finishFinalWaterFall(mPlacementId, requestId);
                         onCallbackOfferHasExist(formatLoadParams, mPlacementId, requestId);
                         adTrackingInfo.setmIsLoad(false);
@@ -317,7 +318,8 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                                     //synchronized to handle waterfall udate
                                     synchronized (CommonAdManager.this) {
                                         mUpStatusOverTime = placeStrategy.getUpStatusOverTime();
-                                        adTrackingInfo.setAsid(placeStrategy.getAsid());
+
+                                        TrackingInfoUtil.updateTrackingInfoWithStrategy(adTrackingInfo, placeStrategy);
                                         //Check if the placement matches the ad format
                                         //It would not to send tk, so it use onCallbacInternalError to callback error
                                         if (!TextUtils.equals(String.valueOf(placeStrategy.getFormat()), format)) {
@@ -327,7 +329,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                                             SDKContext.getInstance().runOnMainThread(new Runnable() {
                                                 @Override
                                                 public void run() {
-                                                    onCallbacInternalError(formatLoadParams, mPlacementId, requestId, adError);
+                                                    onCallbackInternalError(formatLoadParams, mPlacementId, requestId, adError);
                                                 }
                                             });
 
@@ -369,15 +371,12 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                                 @Override
                                 public void run() {
                                     synchronized (CommonAdManager.this) {
-                                        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), PlaceStrategy.UnitGroupInfo.TYPE_NORMAL);
-                                        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseHeadBiddingUnitGroupInfoList(placeStrategy.getS2SHeadbiddingUnitGroupListStr(), placeStrategy.getAdxUnitGroupListStr(), placeStrategy.getC2SHeadbiddingUnitGroupListStr());
-                                        insertHBUnitInfoToNormalList(originNormalList, originHbList, mPlacementId);
-
-                                        ShowWaterfallManager.getInstance().refreshPlacementWaterFall(mPlacementId, requestId, placeStrategy, originNormalList);
-
-                                        if (originHbList.size() == 0) {
-                                            ShowWaterfallManager.getInstance().finishFinalWaterFall(mPlacementId, requestId);
+                                        try {
+                                            updateNewStrategyWaterfall(placeStrategy, requestId, mPlacementId);
+                                        } catch (Throwable e) {
+                                            e.printStackTrace();
                                         }
+
                                     }
                                 }
                             });
@@ -387,6 +386,75 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                 }
             }
         });
+    }
+
+
+    /**
+     * update placement strategy waterfall
+     *
+     * @param placeStrategy
+     * @param requestId
+     * @param mPlacementId
+     */
+    private void updateNewStrategyWaterfall(PlaceStrategy placeStrategy, String requestId, String mPlacementId) {
+        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseNormalUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), placeStrategy.getOnlineUnitGroupListStr());
+        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseHeadBiddingUnitGroupInfoList(placeStrategy.getS2SHeadbiddingUnitGroupListStr()
+                , placeStrategy.getAdxUnitGroupListStr()
+                , placeStrategy.getC2SHeadbiddingUnitGroupListStr()
+                , placeStrategy.getFbInHouseHeadbiddingUnitGroupListStr());
+
+        int headBiddingSize = originHbList != null ? originHbList.size() : 0;
+        if (headBiddingSize > 0) {
+            for (PlaceStrategy.UnitGroupInfo hbUgInfo : originHbList) {
+
+                UnitgroupCacheInfo unitgroupCacheInfo = AdCacheManager.getInstance().getUnitgroupCacheInfoByAdSourceId(mPlacementId, hbUgInfo);
+                AdCacheInfo adCacheInfo = unitgroupCacheInfo != null ? unitgroupCacheInfo.getAdCacheInfo() : null;
+
+                /**Search in Ad Cache**/
+                if ((adCacheInfo != null && adCacheInfo.isUpStatusAvaiable() && adCacheInfo.isNetworkAdReady())) {
+                    try {
+                        PlaceStrategy.UnitGroupInfo cahceUnitGroupInfo = adCacheInfo.getBaseAdapter().getmUnitgroupInfo();
+                        hbUgInfo.ecpm = cahceUnitGroupInfo.ecpm;
+                        hbUgInfo.sortType = cahceUnitGroupInfo.sortType;
+                        CommonSDKUtil.insertAdSourceByOrderEcpm(originNormalList, hbUgInfo);
+                        headBiddingSize--;
+                        continue;
+                    } catch (Exception e) {
+                    }
+                }
+
+                /**Search in Bid Cache**/
+                BiddingResult hiBidCache = BiddingCacheManager.getInstance().getCache(hbUgInfo.unitId, hbUgInfo.networkType);
+                if (hiBidCache != null) {
+                    hbUgInfo.ecpm = hiBidCache.price;
+                    hbUgInfo.payload = hiBidCache.token;
+                    CommonSDKUtil.insertAdSourceByOrderEcpm(originNormalList, hbUgInfo);
+                    headBiddingSize--;
+                    continue;
+                }
+
+                /**Search in Request MediationManager**/
+                if (!TextUtils.isEmpty(requestId)) {
+                    CommonMediationManager mediationManager = mHistoryMediationManager.get(requestId);
+                    PlaceStrategy.UnitGroupInfo requestingUnitGroupInfo = mediationManager != null ? mediationManager.getHistoryHBRequestUnitGroupInfo(hbUgInfo.unitId) : null;
+                    if (requestingUnitGroupInfo != null) {
+                        hbUgInfo.ecpm = requestingUnitGroupInfo.ecpm;
+                        hbUgInfo.payload = requestingUnitGroupInfo.payload;
+                        hbUgInfo.sortType = requestingUnitGroupInfo.sortType;
+                        CommonSDKUtil.insertAdSourceByOrderEcpm(originNormalList, hbUgInfo);
+                        headBiddingSize--;
+                        continue;
+                    }
+                }
+
+            }
+        }
+
+        ShowWaterfallManager.getInstance().refreshPlacementWaterFall(mPlacementId, requestId, placeStrategy, originNormalList);
+
+        if (headBiddingSize == 0) {
+            ShowWaterfallManager.getInstance().finishFinalWaterFall(mPlacementId, requestId);
+        }
     }
 
 
@@ -406,8 +474,11 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
             , final PlaceStrategy placeStrategy, final AdTrackingInfo adTrackingInfo, final T formatLoadParams) {
 
         /**Create New Adsource Object to Request**/
-        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), PlaceStrategy.UnitGroupInfo.TYPE_NORMAL);
-        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseHeadBiddingUnitGroupInfoList(placeStrategy.getS2SHeadbiddingUnitGroupListStr(), placeStrategy.getAdxUnitGroupListStr(), placeStrategy.getC2SHeadbiddingUnitGroupListStr());
+        List<PlaceStrategy.UnitGroupInfo> originNormalList = PlaceStrategy.parseNormalUnitGroupInfoList(placeStrategy.getNormalUnitGroupListStr(), placeStrategy.getOnlineUnitGroupListStr());
+        List<PlaceStrategy.UnitGroupInfo> originHbList = PlaceStrategy.parseHeadBiddingUnitGroupInfoList(placeStrategy.getS2SHeadbiddingUnitGroupListStr()
+                , placeStrategy.getAdxUnitGroupListStr()
+                , placeStrategy.getC2SHeadbiddingUnitGroupListStr()
+                , placeStrategy.getFbInHouseHeadbiddingUnitGroupListStr());
 
         /**It will refresh waterfall before start to filter AdSource List.**/
         ShowWaterfallManager.getInstance().refreshPlacementWaterFall(placementId, requestId, placeStrategy, originNormalList);
@@ -466,7 +537,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
 
         //Do not have any adsource (Final)
         if (isFinalWaterFall && (finalAdSourceList == null || finalAdSourceList.size() == 0)) {
-            AdError adError = ErrorCode.getErrorCode(ErrorCode.noVailAdsource, "", "");
+            AdError adError = ErrorCode.getErrorCode(ErrorCode.noAvailableAdsource, "", "");
             adTrackingInfo.setmReason(AdTrackingInfo.NO_VAIL_ADSOURCE_REASON);
 
             onCallbackFail(true, adTrackingInfo, adError, formatLoadParams);
@@ -483,7 +554,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
         mRequestId = requestId;
         mHistoryMediationManager.put(requestId, commonMediationManager);
 
-        commonMediationManager.startToRequestMediationAd(placementId, requestId, placeStrategy, finalAdSourceList, isFinalWaterFall);
+        commonMediationManager.startToRequestMediationAd(placementId, requestId, placeStrategy, finalAdSourceList, isFinalWaterFall, adTrackingInfo.getTid());
 
         mIsLoading = false;
 
@@ -505,8 +576,14 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                 atHeadBiddingRequest.format = placeStrategy.getFormat();
                 atHeadBiddingRequest.hbWaitingToReqeustTime = placeStrategy.getHbWaitingToRequestTime();
                 atHeadBiddingRequest.hbBidMaxTimeOut = placeStrategy.getHbBidTimeout();
-                atHeadBiddingRequest.s2sBidUrl = AdxUrlAddressManager.getInstance().getBidRequestUrl();
+                atHeadBiddingRequest.fbInHouseTimeOut = placeStrategy.getFbInHouseTimeout();
+                atHeadBiddingRequest.s2sBidUrl = DynamicUrlAddressManager.getInstance().getBidRequestUrl();
                 atHeadBiddingRequest.hbList = hbFilterList;
+                List<PlaceStrategy.UnitGroupInfo> normaList = new ArrayList<>();
+                if (finalAdSourceList != null) {
+                    normaList.addAll(finalAdSourceList);
+                }
+                atHeadBiddingRequest.normalList = normaList;
 
                 HeadBiddingFactory.IHeadBiddingHandler hbHandler = new ATHeadBiddingHandler(atHeadBiddingRequest);
                 hbHandler.setTestMode(ATSDK.isNetworkLogDebug());
@@ -559,7 +636,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                         if (requestMediationManager != null) {
                             requestMediationManager.notifyBiddingFinish();
                         }
-                        sendFinishHBTracking(placeStrategy, requestId, formatLoadParams.isRefresh ? 1 : 0, ShowWaterfallManager.getInstance().getNewestWaterFallForPlacementId(placementId), startTime[0]);
+                        sendFinishHBTracking(placeStrategy, requestId, formatLoadParams.isRefresh ? 1 : 0, ShowWaterfallManager.getInstance().getNewestWaterFallForPlacementId(placementId), startTime[0], adTrackingInfo.getTid());
 
                     }
 
@@ -668,7 +745,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
 
             adTrackingInfo.setmReason(AdTrackingInfo.NO_VAIL_ADSOURCE_REASON);
 
-            AdError adError = ErrorCode.getErrorCode(ErrorCode.noVailAdsource, "", "");
+            AdError adError = ErrorCode.getErrorCode(ErrorCode.noAvailableAdsource, "", "");
             throw new AdStatusException(adError, adError.printStackTrace());
         }
     }
@@ -684,7 +761,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
         for (int i = headBiddingFilterList.size() - 1; i >= 0; i--) {
             PlaceStrategy.UnitGroupInfo hbUgInfo = headBiddingFilterList.get(i);
 
-            UnitgroupCacheInfo unitgroupCacheInfo = AdCacheManager.getInstance().getUnitgroupCacheInfoByAdSourceId(placementId, hbUgInfo.getUnitId());
+            UnitgroupCacheInfo unitgroupCacheInfo = AdCacheManager.getInstance().getUnitgroupCacheInfoByAdSourceId(placementId, hbUgInfo);
             AdCacheInfo adCacheInfo = unitgroupCacheInfo != null ? unitgroupCacheInfo.getAdCacheInfo() : null;
 
             if ((adCacheInfo != null && adCacheInfo.isUpStatusAvaiable() && adCacheInfo.isNetworkAdReady())) {
@@ -717,7 +794,6 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
      */
     private boolean checkAdSourceHBTokenIsReady(PlaceStrategy.UnitGroupInfo unitGroupInfo) {
         try {
-            //TODO Test
             BiddingResult hiBidCache = BiddingCacheManager.getInstance().getCache(unitGroupInfo.unitId, unitGroupInfo.networkType);
             if (hiBidCache != null && !hiBidCache.isExpire()) {
                 unitGroupInfo.ecpm = hiBidCache.price;
@@ -759,7 +835,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
         SDKContext.getInstance().runOnMainThread(new Runnable() {
             @Override
             public void run() {
-                onCallbacInternalError(formatLoadParams, mPlacementId, adTrackingInfo.getmRequestId(), adError);
+                onCallbackInternalError(formatLoadParams, mPlacementId, adTrackingInfo.getmRequestId(), adError);
             }
         });
         adTrackingInfo.setmIsLoad(false);
@@ -896,7 +972,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
 
     }
 
-    private void sendFinishHBTracking(final PlaceStrategy placeStrategy, final String requestId, final int isRefresh, final List<PlaceStrategy.UnitGroupInfo> unitGroupInfos, final long startTime) {
+    private void sendFinishHBTracking(final PlaceStrategy placeStrategy, final String requestId, final int isRefresh, final List<PlaceStrategy.UnitGroupInfo> unitGroupInfos, final long startTime, final int tid) {
         TaskManager.getInstance().run_proxy(new Runnable() {
             @Override
             public void run() {
@@ -913,7 +989,7 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
                 adTrackingInfo.setmHbEndTime(System.currentTimeMillis());
                 adTrackingInfo.setmTrafficGroupId(placeStrategy.getTracfficGroupId());
                 adTrackingInfo.setmGroupId(placeStrategy.getGroupId());
-
+                adTrackingInfo.setTid(tid);
 
                 /**Send TK 11**/
                 for (int i = 0; i < unitGroupInfos.size(); i++) {
@@ -1027,9 +1103,9 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
         }
     }
 
-    @Deprecated
-    public void clean() {
-    }
+//    @Deprecated
+//    public void clean() {
+//    }
 
     public boolean isAdReady(Context context) {
         AdCacheInfo adCacheInfo = isAdReady(context, false);
@@ -1098,6 +1174,10 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
     }
 
 
+    public void onCreateRequestId(String requestId, T formatLoadParams) {
+
+    }
+
     public boolean isInDefaultAdSourceLoading() {
         return false;
     }
@@ -1110,5 +1190,5 @@ public abstract class CommonAdManager<T extends FormatLoadParams> {
 
     public abstract void onCallbackOfferHasExist(T formatLoadParams, String placementId, String requestId);
 
-    public abstract void onCallbacInternalError(T formatLoadParams, String placementId, String requestId, AdError adError);
+    public abstract void onCallbackInternalError(T formatLoadParams, String placementId, String requestId, AdError adError);
 }

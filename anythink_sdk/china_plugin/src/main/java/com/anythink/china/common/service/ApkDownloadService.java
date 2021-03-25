@@ -26,27 +26,27 @@ import java.util.Map;
 public class ApkDownloadService extends Service {
 
     private static final String TAG = ApkDownloadService.class.getSimpleName();
-    public static final String EXTRA_URL = "extra_url";
+    public static final String EXTRA_UNIQUE_ID = "extra_unique_id";
 
-    private Map<String, ApkLoader> mApkLoaderMap = new HashMap<>();
+    private Map<String, ApkLoader> mApkLoaderMap = new HashMap<>();//apkRequest.uniqueID -> ApkLoader
 
     public class ApkDownloadBinder extends Binder implements IApkDownloadBinder {
 
         @Override
-        public void pause(String url) {
-            ApkLoader apkLoader = mApkLoaderMap.get(url);
+        public void pause(String uniqueID) {
+            ApkLoader apkLoader = mApkLoaderMap.get(uniqueID);
             if (apkLoader != null) {
                 apkLoader.pause();
-                mApkLoaderMap.remove(url);
+                mApkLoaderMap.remove(uniqueID);
             }
         }
 
         @Override
-        public void stop(String url) {
-            ApkLoader apkLoader = mApkLoaderMap.get(url);
+        public void stop(String uniqueID) {
+            ApkLoader apkLoader = mApkLoaderMap.get(uniqueID);
             if (apkLoader != null) {
                 apkLoader.stop();
-                mApkLoaderMap.remove(url);
+                mApkLoaderMap.remove(uniqueID);
             }
         }
 
@@ -58,10 +58,10 @@ public class ApkDownloadService extends Service {
     }
 
 
-    private void download(String url) {
+    private void download(String uniqueID) {
         try {
             Map<String, ApkRequest> downloadingRequestMap = ApkDownloadManager.getInstance(getApplicationContext()).getDownloadingRequestMap();
-            ApkRequest apkRequest = downloadingRequestMap.get(url);
+            ApkRequest apkRequest = downloadingRequestMap.get(uniqueID);
             if (apkRequest == null) {
                 return;
             }
@@ -70,7 +70,7 @@ public class ApkDownloadService extends Service {
             apkLoader.start(new ApkBaseLoader.DownloadListener() {
                 @Override
                 public void onStartBefore(final ApkRequest apkRequest, final long progress, final long all) {
-                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.url);
+                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.uniqueID);
                     if (apkLoaderListener != null) {
                         apkLoaderListener.onStartBefore(apkRequest, progress, all);
                     }
@@ -79,9 +79,9 @@ public class ApkDownloadService extends Service {
                 @Override
                 public void onSuccess(final ApkRequest apkRequest, final long downloadTime) {
                     if (mApkLoaderMap != null) {
-                        mApkLoaderMap.remove(apkRequest.url);
+                        mApkLoaderMap.remove(apkRequest.uniqueID);
                     }
-                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.url);
+                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.uniqueID);
                     if (apkLoaderListener != null) {
                         apkLoaderListener.onSuccess(apkRequest, downloadTime);
                     }
@@ -89,7 +89,7 @@ public class ApkDownloadService extends Service {
 
                 @Override
                 public void onProgress(final ApkRequest apkRequest, final long progress, final long all) {
-                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.url);
+                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.uniqueID);
                     if (apkLoaderListener != null) {
                         apkLoaderListener.onProgress(apkRequest, progress, all);
                     }
@@ -98,9 +98,9 @@ public class ApkDownloadService extends Service {
                 @Override
                 public void onFailed(final ApkRequest apkRequest, final String msg) {
                     if (mApkLoaderMap != null) {
-                        mApkLoaderMap.remove(apkRequest.url);
+                        mApkLoaderMap.remove(apkRequest.uniqueID);
                     }
-                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.url);
+                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.uniqueID);
                     if (apkLoaderListener != null) {
                         apkLoaderListener.onFailed(apkRequest, msg);
                     }
@@ -109,9 +109,9 @@ public class ApkDownloadService extends Service {
                 @Override
                 public void onCancel(final ApkRequest apkRequest, final long progress, final long all, final int status) {
                     if (mApkLoaderMap != null) {
-                        mApkLoaderMap.remove(apkRequest.url);
+                        mApkLoaderMap.remove(apkRequest.uniqueID);
                     }
-                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.url);
+                    ApkBaseLoader.DownloadListener apkLoaderListener = ApkDownloadManager.getInstance(getApplicationContext()).getApkLoaderListener(apkRequest.uniqueID);
                     if (apkLoaderListener != null) {
                         apkLoaderListener.onCancel(apkRequest, progress, all, status);
                     }
@@ -119,7 +119,7 @@ public class ApkDownloadService extends Service {
             });
 
             if (mApkLoaderMap != null) {
-                mApkLoaderMap.put(url, apkLoader);
+                mApkLoaderMap.put(uniqueID, apkLoader);
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -153,8 +153,8 @@ public class ApkDownloadService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
-            String url = intent.getStringExtra(ApkDownloadService.EXTRA_URL);
-            download(url);
+            String uniqueID = intent.getStringExtra(ApkDownloadService.EXTRA_UNIQUE_ID);
+            download(uniqueID);
         }
 
         return Service.START_NOT_STICKY;

@@ -1,9 +1,17 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.applovin;
 
 import android.content.Context;
 import android.text.TextUtils;
 
 import com.anythink.core.api.ATInitMediation;
+import com.anythink.core.common.base.Const;
 import com.applovin.sdk.AppLovinPrivacySettings;
 import com.applovin.sdk.AppLovinSdk;
 import com.applovin.sdk.AppLovinSdkSettings;
@@ -43,6 +51,15 @@ public class ApplovinATInitManager extends ATInitMediation {
             mSdkKey = sdkKey;
         }
         AppLovinSdk appLovinSdk = AppLovinSdk.getInstance(sdkKey, new AppLovinSdkSettings(), context);
+        try {
+            boolean coppaSwitch = (boolean) serviceExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.APP_COPPA_SWITCH_KEY);
+            if (coppaSwitch) {
+                AppLovinPrivacySettings.setIsAgeRestrictedUser(true, context);
+            }
+        } catch (Throwable e) {
+
+        }
+
 //        appLovinSdk.getSettings().setVerboseLogging(ATSDK.isNetworkLogDebug());
         return appLovinSdk;
     }
@@ -59,6 +76,11 @@ public class ApplovinATInitManager extends ATInitMediation {
     @Override
     public String getNetworkName() {
         return "Applovin";
+    }
+
+    @Override
+    public String getNetworkVersion() {
+        return ApplovinATConst.getNetworkVersion();
     }
 
     @Override

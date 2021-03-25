@@ -54,12 +54,13 @@ networkLibsPath.add("baidu");
 networkLibsPath.add("gdt");
 networkLibsPath.add("ksyun");
 networkLibsPath.add("luomi");
-networkLibsPath.add("mintegral"); //10.2.2
+networkLibsPath.add("mintegral");
 networkLibsPath.add("oneway");
 networkLibsPath.add("sigmob");
 networkLibsPath.add("pangle");
 networkLibsPath.add("uniplay");
 networkLibsPath.add("kuaishou");
+
 
 
 dependencies {
@@ -85,14 +86,21 @@ dependencies {
                     api files(file.getAbsolutePath())
                     packageNameMap.put(name, true)
                 }
-
             }
+
+            fileTree(dir: 'network', include: [path + '/adapter/**/*.aar', path + '/adapter/**/*.jar']).each { File file ->
+                def name = file.name.lastIndexOf('.').with {
+                    it != -1 ? file.name[0..<it] : file.name
+                }
+                if (!packageNameMap.containsKey(name)) {
+                    api files(file.getAbsolutePath())
+                    packageNameMap.put(name, true)
+                }
+            }
+
         }
     }
     batchImportPackage()
-
-
-
 }
 
 

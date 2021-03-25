@@ -129,6 +129,10 @@ public class CommonUtil {
 
     public static String[] jsonArrayToStringArray(JSONArray jsonArray) {
         try {
+            if (jsonArray == null) {
+                return null;
+            }
+
             String[] stringArray = new String[jsonArray.length()];
             for (int i = 0; i < jsonArray.length(); i++) {
                 stringArray[i] = jsonArray.optString(i);

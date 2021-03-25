@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.unityads;
 
 import android.app.Activity;
@@ -145,11 +152,16 @@ public class UnityAdsATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return UnityAdsATConst.getNetworkVersion();
+        return UnityAdsATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
     public String getNetworkName() {
         return UnityAdsATInitManager.getInstance().getNetworkName();
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 }

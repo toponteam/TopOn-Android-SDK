@@ -38,16 +38,6 @@ public class UnitgroupCacheInfo {
         return null;
     }
 
-    public synchronized AdCacheInfo getHasShowAdCacheInfo() {
-        if (adCacheInfoList != null) {
-            for (AdCacheInfo adCacheInfo : adCacheInfoList) {
-                if (adCacheInfo.getShowTime() >= 1) {
-                    return adCacheInfo;
-                }
-            }
-        }
-        return null;
-    }
 
     /**
      * Clear all AdCache
@@ -56,6 +46,17 @@ public class UnitgroupCacheInfo {
         if (adCacheInfoList != null) {
             adCacheInfoList.clear();
             adCacheInfoList = null;
+        }
+    }
+
+    /**
+     * Remove single cache
+     *
+     * @param removeCacheInfo
+     */
+    public synchronized void removeAdCache(AdCacheInfo removeCacheInfo) {
+        if (adCacheInfoList != null && adCacheInfoList.size() > 0) {
+            adCacheInfoList.remove(removeCacheInfo);
         }
     }
 
@@ -96,6 +97,12 @@ public class UnitgroupCacheInfo {
         }
     }
 
+    public boolean isExistCache() {
+        if (adCacheInfoList != null && adCacheInfoList.size() > 0) {
+            return true;
+        }
+        return false;
+    }
 
 //    @Deprecated
 //    private synchronized void cleanNoShowCache() {

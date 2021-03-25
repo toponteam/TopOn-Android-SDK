@@ -1,3 +1,5 @@
+include ':ofm_mediation_adapter'
+include ':ofm_sdk'
 include ':core', ':native', ':packagemodule-os', ':rewardvideo', ':banner', ':Interstitial', ':splashad', ':china_plugin', ':myoffer'
 include ':network_nonchina_adapter',':network_nonchina_sdk'
 include ':network_china_adapter',':network_china_sdk'

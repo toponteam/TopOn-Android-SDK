@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.fyber;
 
 import android.app.Activity;
@@ -206,7 +213,7 @@ public class FyberATInterstitialAdapter extends CustomInterstitialAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return FyberATConst.getNetworkVersion();
+        return FyberATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

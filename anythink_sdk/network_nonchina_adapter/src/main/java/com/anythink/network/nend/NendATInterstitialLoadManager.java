@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.nend;
 
 import android.content.Context;
@@ -40,12 +47,7 @@ public class NendATInterstitialLoadManager {
                             break;
                         case INVALID_RESPONSE_TYPE:
                         case FAILED_AD_REQUEST:
-                        case FAILED_AD_INCOMPLETE:
                         case FAILED_AD_DOWNLOAD:
-                            if (spotAdapter != null) {
-                                spotAdapter.notifyLoadFail("", nendAdInterstitialStatusCode.name());
-                            }
-                            break;
                         default:
                             if (spotAdapter != null) {
                                 spotAdapter.notifyLoadFail("", nendAdInterstitialStatusCode.name());

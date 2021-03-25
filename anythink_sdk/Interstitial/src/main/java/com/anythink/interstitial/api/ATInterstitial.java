@@ -14,7 +14,6 @@ import android.util.Log;
 
 import com.anythink.core.api.ATAdInfo;
 import com.anythink.core.api.ATAdStatusInfo;
-import com.anythink.core.api.ATMediationSetting;
 import com.anythink.core.api.ATSDK;
 import com.anythink.core.api.AdError;
 import com.anythink.core.common.PlacementAdManager;
@@ -25,6 +24,7 @@ import com.anythink.core.strategy.PlaceStrategy;
 import com.anythink.core.strategy.PlaceStrategyManager;
 import com.anythink.interstitial.business.AdLoadManager;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
 
 
@@ -32,12 +32,26 @@ public class ATInterstitial {
     public static final String TAG = ATInterstitial.class.getSimpleName();
     public String mPlacementId;
     public Context mContext;
+    WeakReference<Activity> mActivityWef;
     public ATInterstitialListener mInterstitialListener;
 
 
     AdLoadManager mAdLoadManager;
 
-    private ATInterstitialListener mInterListener = new ATInterstitialListener() {
+
+    private ATInterstitialExListener mInterListener = new ATInterstitialExListener() {
+        @Override
+        public void onDeeplinkCallback(final ATAdInfo adInfo, final boolean isSuccess) {
+            SDKContext.getInstance().runOnMainThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mInterstitialListener != null && mInterstitialListener instanceof ATInterstitialExListener) {
+                        ((ATInterstitialExListener) mInterstitialListener).onDeeplinkCallback(adInfo, isSuccess);
+                    }
+                }
+            });
+        }
+
         @Override
         public void onInterstitialAdLoaded() {
             SDKContext.getInstance().runOnMainThread(new Runnable() {
@@ -119,7 +133,7 @@ public class ATInterstitial {
 
             //判断是否需要自动刷新
             if (isNeedAutoLoadAfterClose()) {
-                load(true);
+                load(getRequestContext(), true);
             }
         }
 
@@ -150,19 +164,21 @@ public class ATInterstitial {
     };
 
     public ATInterstitial(Context context, String placementId) {
-        mContext = context;
-
+        mContext = context.getApplicationContext();
+        if (context instanceof Activity) {
+            mActivityWef = new WeakReference<Activity>((Activity) context);
+        }
         mPlacementId = placementId;
         mAdLoadManager = AdLoadManager.getInstance(context, placementId);
 
     }
 
-    @Deprecated
-    public void addSetting(int networkType, ATMediationSetting setting) {
-    }
-
-    @Deprecated
-    public void setCustomExtra(Map<String, Object> map) {
+    private Context getRequestContext() {
+        Activity activity = null;
+        if (mActivityWef != null) {
+            activity = mActivityWef.get();
+        }
+        return activity != null ? activity : mContext;
     }
 
     public void setLocalExtra(Map<String, Object> map) {
@@ -170,13 +186,16 @@ public class ATInterstitial {
     }
 
     public void load() {
-        load(false);
+        load(getRequestContext(), false);
     }
 
-    private void load(final boolean isAutoRefresh) {
+    public void load(Context context) {
+        load(context != null ? context : getRequestContext(), false);
+    }
+
+    private void load(Context context, final boolean isAutoRefresh) {
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_LOAD, Const.LOGKEY.START, "");
-        mAdLoadManager.refreshContext(mContext);
-        mAdLoadManager.startLoadAd(mContext, isAutoRefresh, mInterListener);
+        mAdLoadManager.startLoadAd(context, isAutoRefresh, mInterListener);
     }
 
     private boolean isNeedAutoLoadAfterClose() {
@@ -239,20 +258,6 @@ public class ATInterstitial {
         controlShow(activity, "");
     }
 
-    @Deprecated
-    public void show(String scenario) {
-        String realScenario = scenario;
-        if (CommonSDKUtil.isVailScenario(scenario)) {
-            realScenario = scenario;
-        }
-        controlShow(null, realScenario);
-    }
-
-    @Deprecated
-    public void show() {
-        controlShow(null, "");
-    }
-
     private void controlShow(Activity activity, String scenario) {
 
         ATSDK.apiLog(mPlacementId, Const.LOGKEY.API_INTERSTITIAL, Const.LOGKEY.API_SHOW, Const.LOGKEY.START, "");
@@ -285,23 +290,4 @@ public class ATInterstitial {
         mAdLoadManager.show(showActivity, scenario, mInterListener);
     }
 
-    @Deprecated
-    public void clean() {
-//        mAdLoadManager.clean();
-    }
-
-    @Deprecated
-    public void onPause() {
-        mAdLoadManager.onPause();
-    }
-
-    @Deprecated
-    public void onResume() {
-        mAdLoadManager.onResume();
-    }
-
-    @Deprecated
-    public void onDestory() {
-        mAdLoadManager.onDestory();
-    }
 }

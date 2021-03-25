@@ -7,18 +7,15 @@
 
 package com.anythink.network.gdt;
 
-import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
-import com.androidquery.AQuery;
 import com.anythink.core.api.ATInitMediation;
 import com.qq.e.ads.cfg.VideoOption;
 import com.qq.e.comm.managers.GDTADManager;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,28 +78,14 @@ public class GDTATInitManager extends ATInitMediation {
     }
 
     @Override
+    public String getNetworkVersion() {
+        return GDTATConst.getNetworkVersion();
+    }
+
+    @Override
     public String getNetworkSDKClass() {
         return "com.qq.e.ads.ADActivity";
     }
-
-
-    @Override
-    public Map<String, Boolean> getPluginClassStatus() {
-        HashMap<String, Boolean> pluginMap = new HashMap<>();
-
-        pluginMap.put("android-query-full.*.aar", false);
-
-        Class clazz;
-        try {
-            clazz = AQuery.class;
-            pluginMap.put("android-query-full.*.aar", true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        return pluginMap;
-    }
-
 
     @Override
     public List getActivityStatus() {
@@ -133,7 +116,7 @@ public class GDTATInitManager extends ATInitMediation {
         return (int) (pxValue / (scale <= 0 ? 1 : scale) + 0.5f);
     }
 
-     int getVideoPlayPolicy(Context context, int autoPlayPolicy) {
+    int getVideoPlayPolicy(Context context, int autoPlayPolicy) {
         if (autoPlayPolicy == VideoOption.AutoPlayPolicy.ALWAYS) {
             return VideoOption.VideoPlayPolicy.AUTO;
         } else if (autoPlayPolicy == VideoOption.AutoPlayPolicy.WIFI) {

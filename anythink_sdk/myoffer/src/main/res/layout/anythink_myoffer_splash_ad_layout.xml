@@ -7,6 +7,7 @@
   -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/anythink_myoffer_splash_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -17,14 +18,23 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop" />
 
+    <com.anythink.basead.ui.component.RoundImageView
+        android:id="@+id/anythink_myoffer_splash_icon"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:scaleType="centerCrop"
+        android:layout_marginTop="60dp"
+        android:visibility="gone"
+        android:layout_centerHorizontal="true"/>
 
     <TextView
         android:id="@+id/anythink_myoffer_splash_ad_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="60dp"
+        android:layout_marginTop="20dp"
         android:layout_marginBottom="16dp"
+        android:layout_below="@id/anythink_myoffer_splash_icon"
         android:ellipsize="middle"
         android:gravity="center"
         android:includeFontPadding="false"
@@ -128,8 +138,6 @@
         android:layout_width="40dp"
         android:layout_height="20dp"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_margin="4dp"
-        android:layout_marginTop="4dp" />
+        android:layout_alignParentRight="true" />
 
 </RelativeLayout>

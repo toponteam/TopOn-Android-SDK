@@ -7,10 +7,6 @@
 
 package com.anythink.core.common.entity;
 
-/**
- * SKD Config
- * Created by zhou on 2017/12/29.
- */
 
 public class SDKConfigInfo {
     public static class TYPE {

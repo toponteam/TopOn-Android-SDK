@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 import android.content.Context;
@@ -9,16 +16,12 @@ import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 
 import java.util.Map;
 
-/**
- * Created by zhou on 2018/1/16.
- */
-
 public class AdmobATAdapter extends CustomNativeAdapter {
 
     private String mUnitId;
 
     @Override
-    public void loadCustomNetworkAd(Context context, Map<String, Object> serverExtras, Map<String, Object> localExtras) {
+    public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtras, final Map<String, Object> localExtras) {
         String appid = "";
         String unitId = "";
         String mediaRatio = "";
@@ -63,8 +66,22 @@ public class AdmobATAdapter extends CustomNativeAdapter {
         }
 
 
-        AdMobATInitManager.getInstance().initSDK(context, serverExtras);
+        final String finalUnitId = unitId;
+        final String finalMediaRatio = mediaRatio;
+        final boolean finalIsAutoPlay = isAutoPlay;
+        AdMobATInitManager.getInstance().initSDK(context, serverExtras, new AdMobATInitManager.InitListener() {
+            @Override
+            public void initSuccess() {
+                startLoadAd(context,
+                        localExtras,
+                        finalUnitId,
+                        finalMediaRatio,
+                        finalIsAutoPlay);
+            }
+        });
+    }
 
+    private void startLoadAd(Context context, Map<String, Object> localExtras, String unitId, String mediaRatio, boolean isAutoPlay) {
         Bundle persionalBundle = AdMobATInitManager.getInstance().getRequestBundle(context);
 
 
@@ -87,12 +104,11 @@ public class AdmobATAdapter extends CustomNativeAdapter {
         AdmobATNativeAd admobiATNativeAd = new AdmobATNativeAd(context, mediaRatio, unitId, selfListener, localExtras);
         admobiATNativeAd.setIsAutoPlay(isAutoPlay);
         admobiATNativeAd.loadAd(context, persionalBundle);
-
     }
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdmobATConst.getNetworkVersion();
+        return AdMobATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

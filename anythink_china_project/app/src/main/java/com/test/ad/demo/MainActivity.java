@@ -12,8 +12,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
-import com.anythink.basead.ui.web.WebLandPageActivity;
-
 public class MainActivity extends Activity {
 
     @Override
@@ -74,6 +72,13 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, NativeListActivity.class));
+            }
+        });
+
+        findViewById(R.id.multiLoadBtn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, MultipleFormatLoadActivity.class));
             }
         });
     }

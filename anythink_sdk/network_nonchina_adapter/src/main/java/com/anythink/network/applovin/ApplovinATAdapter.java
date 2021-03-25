@@ -1,8 +1,16 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.applovin;
 
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.anythink.core.common.base.Const;
 import com.anythink.nativead.unitgroup.api.CustomNativeAd;
 import com.anythink.nativead.unitgroup.api.CustomNativeAdapter;
 import com.applovin.nativeAds.AppLovinNativeAd;
@@ -37,7 +45,7 @@ public class ApplovinATAdapter extends CustomNativeAdapter {
         int requestNum = 1;
         try {
             if (serverExtras != null) {
-                requestNum = Integer.parseInt(serverExtras.get(CustomNativeAd.AD_REQUEST_NUM).toString());
+                requestNum = Integer.parseInt(serverExtras.get(Const.NETWORK_REQUEST_PARAMS_KEY.REQUEST_AD_NUM).toString());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -104,7 +112,7 @@ public class ApplovinATAdapter extends CustomNativeAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return ApplovinATConst.getNetworkVersion();
+        return ApplovinATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override
@@ -125,5 +133,10 @@ public class ApplovinATAdapter extends CustomNativeAdapter {
     @Override
     public String getNetworkPlacementId() {
         return "";
+    }
+
+    @Override
+    public boolean supportImpressionCallback() {
+        return false;
     }
 }

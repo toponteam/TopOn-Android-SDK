@@ -182,112 +182,122 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
         }
     };
 
-    private void startLoadBanner(Context activity, Map<String, Object> serverExtra) {
-        TTAdManager ttAdManager = TTAdSdk.getAdManager();
+    private void startLoadBanner(final Context activity, final Map<String, Object> serverExtra) {
+        runOnNetworkRequestThread(new Runnable() {
+            @Override
+            public void run() {
+                TTAdManager ttAdManager = TTAdSdk.getAdManager();
 
-        String size = "";
-        if (serverExtra.containsKey("size")) {
-            size = serverExtra.get("size").toString();
-        }
-
-        int layoutType = 0;
-        if (serverExtra.containsKey("layout_type")) {
-            layoutType = Integer.parseInt(serverExtra.get("layout_type").toString());
-        }
-
-        int mediaSize = 0;
-        if (serverExtra.containsKey("media_size")) {
-            mediaSize = Integer.parseInt(serverExtra.get("media_size").toString());
-        }
-
-        int bannerWidth = 0;
-        int bannerHeight = 0;
-
-        //Layout Type
-        if (layoutType == 1) {
-            switch (mediaSize) {
-                case 0:
-                    bannerWidth = 600;
-                    bannerHeight = 90;
-                    break;
-                case 1:
-                    bannerWidth = 600;
-                    bannerHeight = 100;
-                    break;
-                case 2:
-                    bannerWidth = 600;
-                    bannerHeight = 150;
-                    break;
-                case 3:
-                    bannerWidth = 600;
-                    bannerHeight = 250;
-                    break;
-                case 4:
-                    bannerWidth = 600;
-                    bannerHeight = 286;
-                    break;
-                case 5:
-                    bannerWidth = 600;
-                    bannerHeight = 200;
-                    break;
-                case 6:
-                    bannerWidth = 600;
-                    bannerHeight = 388;
-                    break;
-                case 7:
-                    bannerWidth = 600;
-                    bannerHeight = 400;
-                    break;
-                case 8:
-                    bannerWidth = 600;
-                    bannerHeight = 500;
-                    break;
-
-            }
-        } else {
-            try {
-                if (!TextUtils.isEmpty(size)) {
-                    String[] bannerSizes = size.split("x");
-                    bannerWidth = Integer.parseInt(bannerSizes[0]); //dip2px(mActivity, Integer.parseInt(bannerSizes[0])) * 3;
-                    bannerHeight = Integer.parseInt(bannerSizes[1]); //dip2px(mActivity, Integer.parseInt(bannerSizes[1])) * 3;
+                String size = "";
+                if (serverExtra.containsKey("size")) {
+                    size = serverExtra.get("size").toString();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+
+                int layoutType = 0;
+                if (serverExtra.containsKey("layout_type")) {
+                    layoutType = Integer.parseInt(serverExtra.get("layout_type").toString());
+                }
+
+                int mediaSize = 0;
+                if (serverExtra.containsKey("media_size")) {
+                    mediaSize = Integer.parseInt(serverExtra.get("media_size").toString());
+                }
+
+                int bannerWidth = 0;
+                int bannerHeight = 0;
+
+                //Layout Type
+                if (layoutType == 1) {
+                    switch (mediaSize) {
+                        case 0:
+                            bannerWidth = 600;
+                            bannerHeight = 90;
+                            break;
+                        case 1:
+                            bannerWidth = 600;
+                            bannerHeight = 100;
+                            break;
+                        case 2:
+                            bannerWidth = 600;
+                            bannerHeight = 150;
+                            break;
+                        case 3:
+                            bannerWidth = 600;
+                            bannerHeight = 250;
+                            break;
+                        case 4:
+                            bannerWidth = 600;
+                            bannerHeight = 286;
+                            break;
+                        case 5:
+                            bannerWidth = 600;
+                            bannerHeight = 200;
+                            break;
+                        case 6:
+                            bannerWidth = 600;
+                            bannerHeight = 388;
+                            break;
+                        case 7:
+                            bannerWidth = 600;
+                            bannerHeight = 400;
+                            break;
+                        case 8:
+                            bannerWidth = 600;
+                            bannerHeight = 500;
+                            break;
+
+                    }
+                } else {
+                    try {
+                        if (!TextUtils.isEmpty(size)) {
+                            String[] bannerSizes = size.split("x");
+                            bannerWidth = Integer.parseInt(bannerSizes[0]); //dip2px(mActivity, Integer.parseInt(bannerSizes[0])) * 3;
+                            bannerHeight = Integer.parseInt(bannerSizes[1]); //dip2px(mActivity, Integer.parseInt(bannerSizes[1])) * 3;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
+                if (bannerWidth == 0 || bannerHeight == 0) {
+                    bannerWidth = 640;
+                    bannerHeight = 100;
+                }
+
+                mBannerWidth = bannerWidth;
+                mBannerHeight = bannerHeight;
+
+                //If BannerView has been configured for width, then use it directly in the template
+                int viewWidth = (mATBannerView != null && mATBannerView.getLayoutParams() != null) ? (int) (mATBannerView.getLayoutParams().width / activity.getResources().getDisplayMetrics().density) : 0;
+                int viewHeight = (mATBannerView != null && mATBannerView.getLayoutParams() != null) ? (int) (mATBannerView.getLayoutParams().height / activity.getResources().getDisplayMetrics().density) : 0;
+
+                TTAdNative mTTAdNative = ttAdManager.createAdNative(activity);//baseContext is recommended for Activity
+                AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
+                adSlotBuilder.setImageAcceptedSize(bannerWidth, bannerHeight); //must be set
+                adSlotBuilder.setAdCount(1);
+
+
+                if (layoutType == 1) {
+                    adSlotBuilder.setExpressViewAcceptedSize(viewWidth <= 0 ? bannerWidth / 2 : viewWidth, viewHeight <= 0 ? 0 : viewHeight);
+                    AdSlot adSlot = adSlotBuilder.build();
+                    mTTAdNative.loadBannerExpressAd(adSlot, expressAdListener);
+                } else {
+                    AdSlot adSlot = adSlotBuilder.build();
+                    mTTAdNative.loadBannerAd(adSlot, ttBannerAdListener);
+                }
             }
-        }
-
-
-        if (bannerWidth == 0 || bannerHeight == 0) {
-            bannerWidth = 640;
-            bannerHeight = 100;
-        }
-
-        mBannerWidth = bannerWidth;
-        mBannerHeight = bannerHeight;
-
-        //If BannerView has been configured for width, then use it directly in the template
-        int viewWidth = (mATBannerView != null && mATBannerView.getLayoutParams() != null) ? (int) (mATBannerView.getLayoutParams().width / activity.getResources().getDisplayMetrics().density) : 0;
-        int viewHeight = (mATBannerView != null && mATBannerView.getLayoutParams() != null) ? (int) (mATBannerView.getLayoutParams().height / activity.getResources().getDisplayMetrics().density) : 0;
-
-        TTAdNative mTTAdNative = ttAdManager.createAdNative(activity);//baseContext is recommended for Activity
-        AdSlot.Builder adSlotBuilder = new AdSlot.Builder().setCodeId(slotId);
-        adSlotBuilder.setImageAcceptedSize(bannerWidth, bannerHeight); //must be set
-        adSlotBuilder.setAdCount(1);
-
-
-        if (layoutType == 1) {
-            adSlotBuilder.setExpressViewAcceptedSize(viewWidth <= 0 ? bannerWidth / 2 : viewWidth, viewHeight <= 0 ? 0 : viewHeight);
-            AdSlot adSlot = adSlotBuilder.build();
-            mTTAdNative.loadBannerExpressAd(adSlot, expressAdListener);
-        } else {
-            AdSlot adSlot = adSlotBuilder.build();
-            mTTAdNative.loadBannerAd(adSlot, ttBannerAdListener);
-        }
+        });
     }
 
     private void bindDislike(Activity activity, TTNativeExpressAd ad, boolean customStyle) {
         //Use the default dislike popup style in the default personalization template
         ad.setDislikeCallback(activity, new TTAdDislike.DislikeInteractionCallback() {
+            @Override
+            public void onShow() {
+
+            }
+
             @Override
             public void onSelected(int position, String value) {
                 if (mImpressionEventListener != null) {
@@ -359,7 +369,7 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
 
         TTATInitManager.getInstance().initSDK(context, serverExtra, new TTATInitManager.InitCallback() {
             @Override
-            public void onFinish() {
+            public void onSuccess() {
                 try {
                     startLoadBanner(context, serverExtra);
                 } catch (Throwable e) {
@@ -368,6 +378,13 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
                     }
                 }
 
+            }
+
+            @Override
+            public void onError(String errorCode, String errorMsg) {
+                if (mLoadListener != null) {
+                    mLoadListener.onAdLoadError(errorCode, errorMsg);
+                }
             }
         });
     }
@@ -396,6 +413,6 @@ public class TTATBannerAdapter extends CustomBannerAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return TTATConst.getNetworkVersion();
+        return TTATInitManager.getInstance().getNetworkVersion();
     }
 }

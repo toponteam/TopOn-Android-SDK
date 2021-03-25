@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright © 2018-2020 TopOn. All rights reserved.
+  ~ https://www.toponad.com
+  ~ Licensed under the TopOn SDK License Agreement
+  ~ https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+  -->
+
+<resources>
+    <string name="anythink_myoffer_feedback_text">Feedback</string>
+
+    <string name="anythink_myoffer_feedback_abnormal">Abnormal</string>
+    <string name="anythink_myoffer_feedback_report">Report</string>
+    <string name="anythink_myoffer_feedback_suggestion">Suggestion</string>
+    <string name="anythink_myoffer_feedback_hint">Please enter the suggestion first! Suggestion is within 100 words</string>
+    <string name="anythink_myoffer_feedback_submit">Submit</string>
+
+    <string name="anythink_myoffer_feedback_video_freeze">Video Freeze</string>
+    <string name="anythink_myoffer_feedback_black_white_screen">Show Failed</string>
+    <string name="anythink_myoffer_feedback_can_not_close">Not Close</string>
+    <string name="anythink_myoffer_feedback_induce_click">Induce Click</string>
+    <string name="anythink_myoffer_feedback_violation_of_laws">Illegal</string>
+    <string name="anythink_myoffer_feedback_fraud_ads">Fraud Ads</string>
+    <string name="anythink_myoffer_feedback_plagiarism">Plagiarism</string>
+    <string name="anythink_myoffer_feedback_vulgar_porn">Vulgar porn</string>
+    <string name="anythink_myoffer_feedback_not_interesting">Boring</string>
+
+    <string name="anythink_myoffer_cta_learn_more">Learn More</string>
+
+</resources>

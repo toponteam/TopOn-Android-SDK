@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.flurry;
 
 import android.content.Context;
@@ -20,9 +27,6 @@ import java.util.Map;
 
 import static android.util.Log.VERBOSE;
 
-/**
- * Created by Z on 2018/1/30.
- */
 
 public class FlurryATInitManager extends ATInitMediation {
 

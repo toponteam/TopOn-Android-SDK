@@ -20,10 +20,6 @@
             android:screenOrientation="sensorPortrait" />
 
         <activity
-            android:name="com.anythink.basead.ui.ApkConfirmDialogActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
-
-        <activity
             android:name="com.anythink.basead.ui.web.WebLandPageActivity"
             android:launchMode="singleTop"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"

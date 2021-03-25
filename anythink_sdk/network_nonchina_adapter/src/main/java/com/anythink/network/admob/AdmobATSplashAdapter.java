@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2018-2020 TopOn. All rights reserved.
+ * https://www.toponad.com
+ * Licensed under the TopOn SDK License Agreement
+ * https://github.com/toponteam/TopOn-Android-SDK/blob/master/LICENSE
+ */
+
 package com.anythink.network.admob;
 
 import android.app.Activity;
@@ -5,6 +12,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ViewGroup;
 
 import com.anythink.splashad.unitgroup.api.CustomSplashAdapter;
 import com.google.ads.mediation.admob.AdMobAdapter;
@@ -28,6 +36,8 @@ public class AdmobATSplashAdapter extends CustomSplashAdapter {
 
     AppOpenAd.AppOpenAdLoadCallback loadCallback;
     FullScreenContentCallback fullScreenContentCallback;
+
+    AppOpenAd mAppOpenAd;
 
     @Override
     public void loadCustomNetworkAd(final Context context, Map<String, Object> serverExtra, Map<String, Object> localExtra) {
@@ -57,14 +67,10 @@ public class AdmobATSplashAdapter extends CustomSplashAdapter {
         }
 
 
-        AdMobATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtra);
-
-
-        extras = AdMobATInitManager.getInstance().getRequestBundle(context.getApplicationContext());
-
-        postOnMainThread(new Runnable() {
+        AdMobATInitManager.getInstance().initSDK(context.getApplicationContext(), serverExtra, new AdMobATInitManager.InitListener() {
             @Override
-            public void run() {
+            public void initSuccess() {
+                extras = AdMobATInitManager.getInstance().getRequestBundle(context.getApplicationContext());
                 startLoadAd(context);
             }
         });
@@ -81,36 +87,9 @@ public class AdmobATSplashAdapter extends CustomSplashAdapter {
             @Override
             public void onAppOpenAdLoaded(final AppOpenAd ad) {
                 AdMobATInitManager.getInstance().removeCache(AdmobATSplashAdapter.this.toString());
+                mAppOpenAd = ad;
                 if (mLoadListener != null) {
                     mLoadListener.onAdCacheLoaded();
-                }
-
-                if (!isDestroyed) {
-                    fullScreenContentCallback = new FullScreenContentCallback() {
-                        @Override
-                        public void onAdFailedToShowFullScreenContent(AdError adError) {
-                            Log.e(TAG, "Admob splash show fail: " + adError.getCode() + ", " + adError.getMessage());
-                            if (mImpressionListener != null) {
-                                mImpressionListener.onSplashAdDismiss();
-                            }
-                        }
-
-                        @Override
-                        public void onAdShowedFullScreenContent() {
-                            if (mImpressionListener != null) {
-                                mImpressionListener.onSplashAdShow();
-                            }
-                        }
-
-                        @Override
-                        public void onAdDismissedFullScreenContent() {
-                            if (mImpressionListener != null) {
-                                mImpressionListener.onSplashAdDismiss();
-                            }
-                        }
-                    };
-
-                    ad.show(((Activity) context), fullScreenContentCallback);
                 }
             }
 
@@ -133,10 +112,51 @@ public class AdmobATSplashAdapter extends CustomSplashAdapter {
         //Keep the callback object alive.
         //If not call this, it would not have any response int the callback listener
         AdMobATInitManager.getInstance().addCache(toString(), this);
-        AdRequest request = new AdRequest.Builder()
+        final AdRequest request = new AdRequest.Builder()
                 .addNetworkExtrasBundle(AdMobAdapter.class, extras)
                 .build();
-        AppOpenAd.load(context, unitid, request, orientation, loadCallback);
+
+        postOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                AppOpenAd.load(context, unitid, request, orientation, loadCallback);
+            }
+        });
+
+    }
+
+    @Override
+    public boolean isAdReady() {
+        return mAppOpenAd != null;
+    }
+
+    @Override
+    public void show(Activity activity, ViewGroup container) {
+        fullScreenContentCallback = new FullScreenContentCallback() {
+            @Override
+            public void onAdFailedToShowFullScreenContent(AdError adError) {
+                Log.e(TAG, "Admob splash show fail: " + adError.getCode() + ", " + adError.getMessage());
+                if (mImpressionListener != null) {
+                    mImpressionListener.onSplashAdDismiss();
+                }
+            }
+
+            @Override
+            public void onAdShowedFullScreenContent() {
+                if (mImpressionListener != null) {
+                    mImpressionListener.onSplashAdShow();
+                }
+            }
+
+            @Override
+            public void onAdDismissedFullScreenContent() {
+                if (mImpressionListener != null) {
+                    mImpressionListener.onSplashAdDismiss();
+                }
+            }
+        };
+
+        mAppOpenAd.show(activity, fullScreenContentCallback);
     }
 
     @Override
@@ -159,7 +179,7 @@ public class AdmobATSplashAdapter extends CustomSplashAdapter {
 
     @Override
     public String getNetworkSDKVersion() {
-        return AdmobATConst.getNetworkVersion();
+        return AdMobATInitManager.getInstance().getNetworkVersion();
     }
 
     @Override

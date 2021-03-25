@@ -54,6 +54,7 @@
         />
 
     <com.anythink.basead.ui.AdTextView
+        android:id="@+id/anythink_myoffer_banner_ad_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="2dp"
@@ -63,9 +64,8 @@
         android:id="@+id/anythink_myoffer_banner_self_ad_logo"
         android:layout_width="34dp"
         android:layout_height="10dp"
-        android:layout_alignRight="@id/anythink_myoffer_banner_ad_install_btn"
-        android:layout_below="@id/anythink_myoffer_banner_ad_install_btn"
-        android:layout_marginTop="1dp" />
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true" />
 
     <TextView
         android:id="@+id/anythink_myoffer_banner_ad_title"

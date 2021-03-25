@@ -14,7 +14,7 @@ public class KSATConst {
     public static final int NETWORK_FIRM_ID = 28;
     public static final String REWARDEDVIDEO_SKIP_AFTER_THIRTY_SECOND = "KS_RV_SKIP_AFTER_THIRTY_SECOND";
 
-    public static String getSDKVersion() {
+    public static String getNetworkVersion() {
         try {
             return KsAdSDK.getSDKVersion();
         } catch (Throwable e) {

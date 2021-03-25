@@ -10,11 +10,11 @@ package com.anythink.basead.net;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.anythink.core.common.adx.AdxUrlAddressManager;
+import com.anythink.core.common.adx.DynamicUrlAddressManager;
 import com.anythink.core.api.AdError;
 import com.anythink.core.api.ErrorCode;
 import com.anythink.core.common.base.SDKContext;
-import com.anythink.core.common.entity.AdxRequestInfo;
+import com.anythink.core.common.entity.BaseAdRequestInfo;
 import com.anythink.core.common.net.AbsHttpLoader;
 import com.anythink.core.common.net.ApiRequestParam;
 import com.anythink.core.common.utils.CommonBase64Util;
@@ -33,7 +33,7 @@ public class AdxOfferLoader extends AbsHttpLoader {
     int mTrafficGroupId;
     int mGroupId;
 
-    public AdxOfferLoader(AdxRequestInfo adxRequestInfo) {
+    public AdxOfferLoader(BaseAdRequestInfo adxRequestInfo) {
 
         this.mPayload = adxRequestInfo.bidId;
         this.mRequestId = adxRequestInfo.requestId;
@@ -49,7 +49,7 @@ public class AdxOfferLoader extends AbsHttpLoader {
 
     @Override
     protected String onPrepareURL() {
-        return AdxUrlAddressManager.getInstance().getAdxOfferRequestUrl();
+        return DynamicUrlAddressManager.getInstance().getAdxOfferRequestUrl();
     }
 
     @Override
@@ -126,6 +126,17 @@ public class AdxOfferLoader extends AbsHttpLoader {
     protected void onLoadFinishCallback(int reqCode, Object result) {
         if (result == null) {
             onErrorCallback(reqCode, "Return Empty Ad.", ErrorCode.getErrorCode(ErrorCode.noADError, "", ""));
+            return;
+        }
+
+        try {
+            JSONObject resultAdJSONObject = new JSONObject(result.toString());
+            if (TextUtils.isEmpty(resultAdJSONObject.optString("data"))) {
+                onErrorCallback(reqCode, "Return Empty Ad.", ErrorCode.getErrorCode(ErrorCode.noADError, "", result.toString()));
+                return;
+            }
+        } catch (Throwable e) {
+            onErrorCallback(reqCode, "Return Empty Ad.", ErrorCode.getErrorCode(ErrorCode.noADError, "", result != null ? result.toString() : "Adx Service Error."));
             return;
         }
         super.onLoadFinishCallback(reqCode, result);
