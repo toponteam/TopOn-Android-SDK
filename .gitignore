@@ -1,1 +1,8 @@
 anythink_sdk/headbidding/build
+anythink_china_project/.gradle
+anythink_china_project/.idea
+anythink_china_project/jacocohelper
+anythink_non-china_project/.gradle
+anythink_non-china_project/.idea
+anythink_non-china_project/jacocohelper
+*.iml
